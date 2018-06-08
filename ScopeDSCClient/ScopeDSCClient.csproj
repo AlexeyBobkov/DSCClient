@@ -1,0 +1,170 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="3.5" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>9.0.30729</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{ECC85252-F03C-4633-90F0-3CA17A4F1998}</ProjectGuid>
+    <OutputType>WinExe</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>ScopeDSCClient</RootNamespace>
+    <AssemblyName>ScopeDSCClient</AssemblyName>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System.Xml.Linq">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System.Data.DataSetExtensions">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System.Data" />
+    <Reference Include="System.Deployment" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="AlignmentForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="AlignmentForm.Designer.cs">
+      <DependentUpon>AlignmentForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="ObjectFromCoordinatesForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ObjectFromCoordinatesForm.Designer.cs">
+      <DependentUpon>ObjectFromCoordinatesForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="ObjectFromListForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ObjectFromListForm.Designer.cs">
+      <DependentUpon>ObjectFromListForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="ObjectLastSelectionForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ObjectLastSelectionForm.Designer.cs">
+      <DependentUpon>ObjectLastSelectionForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="OptionsForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="OptionsForm.Designer.cs">
+      <DependentUpon>OptionsForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="ConnectionForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ConnectionForm.Designer.cs">
+      <DependentUpon>ConnectionForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="ScopeDSCClient.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ScopeDSCClient.Designer.cs">
+      <DependentUpon>ScopeDSCClient.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Program.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <EmbeddedResource Include="AlignmentForm.resx">
+      <DependentUpon>AlignmentForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="ConnectionForm.resx">
+      <DependentUpon>ConnectionForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="ObjectFromCoordinatesForm.resx">
+      <DependentUpon>ObjectFromCoordinatesForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="ObjectFromListForm.resx">
+      <DependentUpon>ObjectFromListForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="ObjectLastSelectionForm.resx">
+      <DependentUpon>ObjectLastSelectionForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="OptionsForm.resx">
+      <DependentUpon>OptionsForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="ScopeDSCClient.resx">
+      <DependentUpon>ScopeDSCClient.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="SkyObjectForm.resx">
+      <DependentUpon>SkyObjectForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+    <None Include="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+    <Compile Include="Properties\Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+    </Compile>
+    <Compile Include="SkyObjectForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="SkyObjectForm.Designer.cs">
+      <DependentUpon>SkyObjectForm.cs</DependentUpon>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\DSTCalculations\DSTCalculations.csproj">
+      <Project>{DBB89338-4DC2-4A0E-8379-CC8C1A5F1647}</Project>
+      <Name>DSTCalculations</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\SerialPortSupport\SerialPortSupport.csproj">
+      <Project>{B6947D80-234D-432E-A80A-15B81DF80683}</Project>
+      <Name>SerialPortSupport</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\SkyObjectPosition\SkyObjectPosition.csproj">
+      <Project>{961233F7-9E95-4499-B1AB-69848D72ED40}</Project>
+      <Name>SkyObjectPosition</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\TouchscreenKeyboard\TouchscreenKeyboard.csproj">
+      <Project>{94070B1D-6DE4-4D45-B2B9-5DA09D0E15C9}</Project>
+      <Name>TouchscreenKeyboard</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

@@ -150,6 +150,10 @@
       <Project>{B6947D80-234D-432E-A80A-15B81DF80683}</Project>
       <Name>SerialPortSupport</Name>
     </ProjectReference>
+    <ProjectReference Include="..\SettingsSupport\SettingsSupport.csproj">
+      <Project>{9513A47D-4AE5-46BA-87CE-B2EBEE2EB875}</Project>
+      <Name>SettingsSupport</Name>
+    </ProjectReference>
     <ProjectReference Include="..\SkyObjectPosition\SkyObjectPosition.csproj">
       <Project>{961233F7-9E95-4499-B1AB-69848D72ED40}</Project>
       <Name>SkyObjectPosition</Name>

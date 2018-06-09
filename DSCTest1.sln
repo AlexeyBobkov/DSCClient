@@ -27,6 +27,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ScopeDSCConfigureHW", "Scop
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TouchscreenKeyboard", "TouchscreenKeyboard\TouchscreenKeyboard.csproj", "{94070B1D-6DE4-4D45-B2B9-5DA09D0E15C9}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SettingsSupport", "SettingsSupport\SettingsSupport.csproj", "{9513A47D-4AE5-46BA-87CE-B2EBEE2EB875}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -61,6 +63,10 @@ Global
 		{94070B1D-6DE4-4D45-B2B9-5DA09D0E15C9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{94070B1D-6DE4-4D45-B2B9-5DA09D0E15C9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{94070B1D-6DE4-4D45-B2B9-5DA09D0E15C9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9513A47D-4AE5-46BA-87CE-B2EBEE2EB875}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9513A47D-4AE5-46BA-87CE-B2EBEE2EB875}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9513A47D-4AE5-46BA-87CE-B2EBEE2EB875}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9513A47D-4AE5-46BA-87CE-B2EBEE2EB875}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

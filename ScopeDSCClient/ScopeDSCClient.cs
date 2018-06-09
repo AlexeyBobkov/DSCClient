@@ -621,16 +621,19 @@ namespace ScopeDSCClient
 
         private void SaveAlignment()
         {
-            if (alignment_ == null)
-                settings_.AlignmentStars = null;
-            else
+            using (settings_.Buffer())
             {
-                settings_.AlignmentStars = alignment_.Stars;
-                settings_.AlignmentEquAxis = alignment_.EquAxis;
-                if(connectionAltAzm_ != null && connectionAltAzm_.connection_ != null)
-                    settings_.AlignmentConnectionAltAzm = alignmentConnectionAltAzm_ = new AlignmentConnectionData(connectionAltAzm_.connection_.PortName, connectionAltAzm_.sessionId_);
-                if (connectionEqu_ != null && connectionEqu_.connection_ != null)
-                    settings_.AlignmentConnectionEqu = alignmentConnectionEqu_ = new AlignmentConnectionData(connectionEqu_.connection_.PortName, connectionEqu_.sessionId_);
+                if (alignment_ == null)
+                    settings_.AlignmentStars = null;
+                else
+                {
+                    settings_.AlignmentStars = alignment_.Stars;
+                    settings_.AlignmentEquAxis = alignment_.EquAxis;
+                    if (connectionAltAzm_ != null && connectionAltAzm_.connection_ != null)
+                        settings_.AlignmentConnectionAltAzm = alignmentConnectionAltAzm_ = new AlignmentConnectionData(connectionAltAzm_.connection_.PortName, connectionAltAzm_.sessionId_);
+                    if (connectionEqu_ != null && connectionEqu_.connection_ != null)
+                        settings_.AlignmentConnectionEqu = alignmentConnectionEqu_ = new AlignmentConnectionData(connectionEqu_.connection_.PortName, connectionEqu_.sessionId_);
+                }
             }
         }
 
@@ -935,18 +938,21 @@ namespace ScopeDSCClient
             if (form.ShowDialog() != DialogResult.OK)
                 return;
 
-            if (latitude_ != form.Latitude)
+            using (settings_.Buffer())
             {
-                settings_.Latitude = latitude_ = form.Latitude;
-                OptionsOrTimeChanged();
+                if (latitude_ != form.Latitude)
+                {
+                    settings_.Latitude = latitude_ = form.Latitude;
+                    OptionsOrTimeChanged();
+                }
+                if (longitude_ != form.Longitude)
+                {
+                    settings_.Longitude = longitude_ = form.Longitude;
+                    OptionsOrTimeChanged();
+                }
+                if (showNearestAzmRotation_ != form.ShowNearestAzmRotation)
+                    settings_.ShowNearestAzmRotation = showNearestAzmRotation_ = form.ShowNearestAzmRotation;
             }
-            if (longitude_ != form.Longitude)
-            {
-                settings_.Longitude = longitude_ = form.Longitude;
-                OptionsOrTimeChanged();
-            }
-            if (showNearestAzmRotation_ != form.ShowNearestAzmRotation)
-                settings_.ShowNearestAzmRotation = showNearestAzmRotation_ = form.ShowNearestAzmRotation;
             UpdateUI();
         }
 
@@ -1225,7 +1231,7 @@ namespace ScopeDSCClient
         private void ScopeDSCClient_FormClosing(object sender, FormClosingEventArgs e)
         {
             CloseAllConnections();
-            settings_.Save();
+            //settings_.Save();
         }
 
         private void buttonTrackStars_Click(object sender, EventArgs e)
@@ -1265,65 +1271,63 @@ namespace ScopeDSCClient
     }
 
     //Application settings wrapper class
-    sealed class ScopeDSCClientSettings : ApplicationSettingsBase
+    sealed class ScopeDSCClientSettings
     {
-        [UserScopedSettingAttribute()]
-        [DefaultSettingValueAttribute("37.257471")]
+        public ScopeDSCClientSettings()
+        {
+            profile_.AddTypes = SettingsSupport.AddType.Short;
+        }
+
         public double Latitude
         {
-            get { return (double)this["Latitude"]; }
-            set { this["Latitude"] = value; }
+            get { return profile_.GetValue(section_, "Latitude", 37.257471); }
+            set { profile_.SetValue(section_, "Latitude", value); }
         }
 
-        [UserScopedSettingAttribute()]
-        [DefaultSettingValueAttribute("-121.942246")]
         public double Longitude
         {
-            get { return (double)this["Longitude"]; }
-            set { this["Longitude"] = value; }
+            get { return profile_.GetValue(section_, "Longitude", -121.942246); }
+            set { profile_.SetValue(section_, "Longitude", value); }
         }
 
-        [UserScopedSettingAttribute()]
-        [DefaultSettingValueAttribute("false")]
         public bool ShowNearestAzmRotation
         {
-            get { return (bool)this["ShowNearestAzmRotation"]; }
-            set { this["ShowNearestAzmRotation"] = value; }
+            get { return profile_.GetValue(section_, "ShowNearestAzmRotation", false); }
+            set { profile_.SetValue(section_, "ShowNearestAzmRotation", value); }
         }
 
-        [UserScopedSettingAttribute()]
-        [DefaultSettingValueAttribute("")]
         public AlignStar[] AlignmentStars
         {
-            get { return (AlignStar[])this["AlignmentStars"]; }
-            set { this["AlignmentStars"] = value; }
+            get { return (AlignStar[])profile_.GetValue(section_, "AlignmentStars"); }
+            set { profile_.SetValue(section_, "AlignmentStars", value); }
         }
 
-        [UserScopedSettingAttribute()]
-        [DefaultSettingValueAttribute("")]
         public Vect3 AlignmentEquAxis
         {
-            get { return (Vect3)this["AlignmentEquAxis"]; }
-            set { this["AlignmentEquAxis"] = value; }
+            get { return (Vect3)profile_.GetValue(section_, "AlignmentEquAxis"); }
+            set { profile_.SetValue(section_, "AlignmentEquAxis", value); }
         }
 
-        [UserScopedSettingAttribute()]
-        [DefaultSettingValueAttribute("")]
         public ScopeDSCClient.AlignmentConnectionData AlignmentConnectionAltAzm
         {
-            get { return (ScopeDSCClient.AlignmentConnectionData)this["AlignmentConnectionAltAzm"]; }
-            set { this["AlignmentConnectionAltAzm"] = value; }
+            get { return (ScopeDSCClient.AlignmentConnectionData)profile_.GetValue(section_, "AlignmentConnectionAltAzm"); }
+            set { profile_.SetValue(section_, "AlignmentConnectionAltAzm", value); }
         }
 
-        [UserScopedSettingAttribute()]
-        [DefaultSettingValueAttribute("")]
         public ScopeDSCClient.AlignmentConnectionData AlignmentConnectionEqu
         {
-            get { return (ScopeDSCClient.AlignmentConnectionData)this["AlignmentConnectionEqu"]; }
-            set { this["AlignmentConnectionEqu"] = value; }
+            get { return (ScopeDSCClient.AlignmentConnectionData)profile_.GetValue(section_, "AlignmentConnectionEqu"); }
+            set { profile_.SetValue(section_, "AlignmentConnectionEqu", value); }
         }
-    }
 
+        public SettingsSupport.XmlBuffer Buffer()
+        {
+            return profile_.Buffer();
+        }
+
+        private const string section_ = "entries";
+        private SettingsSupport.XmlProfile profile_ = new SettingsSupport.XmlProfile();
+    }
 }
 
 namespace ScopeDSCClientHelper

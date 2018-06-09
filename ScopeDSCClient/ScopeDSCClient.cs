@@ -1304,19 +1304,19 @@ namespace ScopeDSCClient
 
         public Vect3 AlignmentEquAxis
         {
-            get { return (Vect3)profile_.GetValue(section_, "AlignmentEquAxis"); }
+            get { return (Vect3)profile_.GetValue(section_, "AlignmentEquAxis", null, new Vect3()); }
             set { profile_.SetValue(section_, "AlignmentEquAxis", value); }
         }
 
         public ScopeDSCClient.AlignmentConnectionData AlignmentConnectionAltAzm
         {
-            get { return (ScopeDSCClient.AlignmentConnectionData)profile_.GetValue(section_, "AlignmentConnectionAltAzm"); }
+            get { return (ScopeDSCClient.AlignmentConnectionData)profile_.GetValue(section_, "AlignmentConnectionAltAzm", null, new ScopeDSCClient.AlignmentConnectionData()); }
             set { profile_.SetValue(section_, "AlignmentConnectionAltAzm", value); }
         }
 
         public ScopeDSCClient.AlignmentConnectionData AlignmentConnectionEqu
         {
-            get { return (ScopeDSCClient.AlignmentConnectionData)profile_.GetValue(section_, "AlignmentConnectionEqu"); }
+            get { return (ScopeDSCClient.AlignmentConnectionData)profile_.GetValue(section_, "AlignmentConnectionEqu", null, new ScopeDSCClient.AlignmentConnectionData()); }
             set { profile_.SetValue(section_, "AlignmentConnectionEqu", value); }
         }
 

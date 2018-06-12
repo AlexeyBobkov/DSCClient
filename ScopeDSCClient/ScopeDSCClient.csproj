@@ -146,14 +146,6 @@
       <Project>{DBB89338-4DC2-4A0E-8379-CC8C1A5F1647}</Project>
       <Name>DSTCalculations</Name>
     </ProjectReference>
-    <ProjectReference Include="..\SerialPortSupport\SerialPortSupport.csproj">
-      <Project>{B6947D80-234D-432E-A80A-15B81DF80683}</Project>
-      <Name>SerialPortSupport</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\SettingsSupport\SettingsSupport.csproj">
-      <Project>{9513A47D-4AE5-46BA-87CE-B2EBEE2EB875}</Project>
-      <Name>SettingsSupport</Name>
-    </ProjectReference>
     <ProjectReference Include="..\SkyObjectPosition\SkyObjectPosition.csproj">
       <Project>{961233F7-9E95-4499-B1AB-69848D72ED40}</Project>
       <Name>SkyObjectPosition</Name>
@@ -161,6 +153,10 @@
     <ProjectReference Include="..\TouchscreenKeyboard\TouchscreenKeyboard.csproj">
       <Project>{94070B1D-6DE4-4D45-B2B9-5DA09D0E15C9}</Project>
       <Name>TouchscreenKeyboard</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\UtilityLibrary\UtilityLibrary\UtilityLibrary.csproj">
+      <Project>{F7BEF099-2D2A-4355-8B9C-0B9C45C0000E}</Project>
+      <Name>UtilityLibrary</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

@@ -40,7 +40,7 @@ namespace ScopeDSCClient
 
             int i;
 
-            string[] ports = SerialPortSupport.SerialConnection.MakeCorrectPortNames(SerialPort.GetPortNames());
+            string[] ports = AAB.UtilityLibrary.SerialConnection.MakeCorrectPortNames(SerialPort.GetPortNames());
             comboBoxSerialPort.Items.Add("Select Port");
             comboBoxSerialPort.Items.AddRange(ports);
             comboBoxSerialPort.Items.Add("Disconnect All");

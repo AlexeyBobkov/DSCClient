@@ -12,22 +12,16 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ScopeDSCClient", "ScopeDSCC
 	ProjectSection(ProjectDependencies) = postProject
 		{94070B1D-6DE4-4D45-B2B9-5DA09D0E15C9} = {94070B1D-6DE4-4D45-B2B9-5DA09D0E15C9}
 		{DBB89338-4DC2-4A0E-8379-CC8C1A5F1647} = {DBB89338-4DC2-4A0E-8379-CC8C1A5F1647}
-		{B6947D80-234D-432E-A80A-15B81DF80683} = {B6947D80-234D-432E-A80A-15B81DF80683}
 		{961233F7-9E95-4499-B1AB-69848D72ED40} = {961233F7-9E95-4499-B1AB-69848D72ED40}
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SkyObjectPosition", "SkyObjectPosition\SkyObjectPosition.csproj", "{961233F7-9E95-4499-B1AB-69848D72ED40}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SerialPortSupport", "SerialPortSupport\SerialPortSupport.csproj", "{B6947D80-234D-432E-A80A-15B81DF80683}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ScopeDSCConfigureHW", "ScopeDSCConfigureHW\ScopeDSCConfigureHW.csproj", "{59AD355D-1C3D-4DDE-BD79-9193A612D7A3}"
-	ProjectSection(ProjectDependencies) = postProject
-		{B6947D80-234D-432E-A80A-15B81DF80683} = {B6947D80-234D-432E-A80A-15B81DF80683}
-	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TouchscreenKeyboard", "TouchscreenKeyboard\TouchscreenKeyboard.csproj", "{94070B1D-6DE4-4D45-B2B9-5DA09D0E15C9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SettingsSupport", "SettingsSupport\SettingsSupport.csproj", "{9513A47D-4AE5-46BA-87CE-B2EBEE2EB875}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UtilityLibrary", "UtilityLibrary\UtilityLibrary\UtilityLibrary.csproj", "{F7BEF099-2D2A-4355-8B9C-0B9C45C0000E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -51,10 +45,6 @@ Global
 		{961233F7-9E95-4499-B1AB-69848D72ED40}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{961233F7-9E95-4499-B1AB-69848D72ED40}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{961233F7-9E95-4499-B1AB-69848D72ED40}.Release|Any CPU.Build.0 = Release|Any CPU
-		{B6947D80-234D-432E-A80A-15B81DF80683}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{B6947D80-234D-432E-A80A-15B81DF80683}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{B6947D80-234D-432E-A80A-15B81DF80683}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{B6947D80-234D-432E-A80A-15B81DF80683}.Release|Any CPU.Build.0 = Release|Any CPU
 		{59AD355D-1C3D-4DDE-BD79-9193A612D7A3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{59AD355D-1C3D-4DDE-BD79-9193A612D7A3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{59AD355D-1C3D-4DDE-BD79-9193A612D7A3}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -63,10 +53,10 @@ Global
 		{94070B1D-6DE4-4D45-B2B9-5DA09D0E15C9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{94070B1D-6DE4-4D45-B2B9-5DA09D0E15C9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{94070B1D-6DE4-4D45-B2B9-5DA09D0E15C9}.Release|Any CPU.Build.0 = Release|Any CPU
-		{9513A47D-4AE5-46BA-87CE-B2EBEE2EB875}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{9513A47D-4AE5-46BA-87CE-B2EBEE2EB875}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{9513A47D-4AE5-46BA-87CE-B2EBEE2EB875}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{9513A47D-4AE5-46BA-87CE-B2EBEE2EB875}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F7BEF099-2D2A-4355-8B9C-0B9C45C0000E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F7BEF099-2D2A-4355-8B9C-0B9C45C0000E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F7BEF099-2D2A-4355-8B9C-0B9C45C0000E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F7BEF099-2D2A-4355-8B9C-0B9C45C0000E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

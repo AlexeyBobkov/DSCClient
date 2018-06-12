@@ -9,7 +9,7 @@ using System.Windows.Forms;
 using System.Configuration;
 using SkyObjectPosition;
 using DSCCalculations;
-using SerialPortSupport;
+using AAB.UtilityLibrary;
 
 namespace ScopeDSCClient
 {
@@ -1275,7 +1275,7 @@ namespace ScopeDSCClient
     {
         public ScopeDSCClientSettings()
         {
-            profile_.AddTypes = SettingsSupport.AddType.Short;
+            profile_.AddTypes = AAB.UtilityLibrary.AddType.Short;
         }
 
         public double Latitude
@@ -1298,35 +1298,35 @@ namespace ScopeDSCClient
 
         public AlignStar[] AlignmentStars
         {
-            get { return (AlignStar[])profile_.GetValue(section_, "AlignmentStars"); }
+            get { return (AlignStar[])profile_.GetValue(section_, "AlignmentStars", null); }
             set { profile_.SetValue(section_, "AlignmentStars", value); }
         }
 
         public Vect3 AlignmentEquAxis
         {
-            get { return (Vect3)profile_.GetValue(section_, "AlignmentEquAxis", null, new Vect3()); }
+            get { return (Vect3)profile_.GetValue(section_, "AlignmentEquAxis", new Vect3(), null); }
             set { profile_.SetValue(section_, "AlignmentEquAxis", value); }
         }
 
         public ScopeDSCClient.AlignmentConnectionData AlignmentConnectionAltAzm
         {
-            get { return (ScopeDSCClient.AlignmentConnectionData)profile_.GetValue(section_, "AlignmentConnectionAltAzm", null, new ScopeDSCClient.AlignmentConnectionData()); }
+            get { return (ScopeDSCClient.AlignmentConnectionData)profile_.GetValue(section_, "AlignmentConnectionAltAzm", new ScopeDSCClient.AlignmentConnectionData()); }
             set { profile_.SetValue(section_, "AlignmentConnectionAltAzm", value); }
         }
 
         public ScopeDSCClient.AlignmentConnectionData AlignmentConnectionEqu
         {
-            get { return (ScopeDSCClient.AlignmentConnectionData)profile_.GetValue(section_, "AlignmentConnectionEqu", null, new ScopeDSCClient.AlignmentConnectionData()); }
+            get { return (ScopeDSCClient.AlignmentConnectionData)profile_.GetValue(section_, "AlignmentConnectionEqu", new ScopeDSCClient.AlignmentConnectionData()); }
             set { profile_.SetValue(section_, "AlignmentConnectionEqu", value); }
         }
 
-        public SettingsSupport.XmlBuffer Buffer()
+        public AAB.UtilityLibrary.XmlBuffer Buffer()
         {
             return profile_.Buffer();
         }
 
         private const string section_ = "entries";
-        private SettingsSupport.XmlProfile profile_ = new SettingsSupport.XmlProfile();
+        private AAB.UtilityLibrary.XmlProfile profile_ = new AAB.UtilityLibrary.XmlProfile();
     }
 }
 

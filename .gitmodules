@@ -1,0 +1,3 @@
+[submodule "UtilityLibrary"]
+	path = UtilityLibrary
+	url = https://github.com/AlexeyBobkov/UtilityLibrary

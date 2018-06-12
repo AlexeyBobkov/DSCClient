@@ -88,9 +88,9 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\SerialPortSupport\SerialPortSupport.csproj">
-      <Project>{B6947D80-234D-432E-A80A-15B81DF80683}</Project>
-      <Name>SerialPortSupport</Name>
+    <ProjectReference Include="..\UtilityLibrary\UtilityLibrary\UtilityLibrary.csproj">
+      <Project>{F7BEF099-2D2A-4355-8B9C-0B9C45C0000E}</Project>
+      <Name>UtilityLibrary</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

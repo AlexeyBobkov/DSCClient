@@ -42,6 +42,8 @@
             this.buttonCancel = new System.Windows.Forms.Button();
             this.timer1 = new System.Windows.Forms.Timer(this.components);
             this.buttonCorrectPolarAxis = new System.Windows.Forms.Button();
+            this.buttonSaveAlignment = new System.Windows.Forms.Button();
+            this.buttonLoadAlignment = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // comboBoxObj
@@ -95,9 +97,9 @@
             this.buttonAddObject.Location = new System.Drawing.Point(417, 121);
             this.buttonAddObject.Margin = new System.Windows.Forms.Padding(4);
             this.buttonAddObject.Name = "buttonAddObject";
-            this.buttonAddObject.Size = new System.Drawing.Size(201, 139);
+            this.buttonAddObject.Size = new System.Drawing.Size(205, 137);
             this.buttonAddObject.TabIndex = 5;
-            this.buttonAddObject.Text = "Add Object";
+            this.buttonAddObject.Text = "Add";
             this.buttonAddObject.UseVisualStyleBackColor = true;
             this.buttonAddObject.Click += new System.EventHandler(this.buttonAddObject_Click);
             // 
@@ -123,8 +125,9 @@
             this.textBoxResults.Multiline = true;
             this.textBoxResults.Name = "textBoxResults";
             this.textBoxResults.ReadOnly = true;
-            this.textBoxResults.Size = new System.Drawing.Size(755, 402);
-            this.textBoxResults.TabIndex = 8;
+            this.textBoxResults.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
+            this.textBoxResults.Size = new System.Drawing.Size(572, 416);
+            this.textBoxResults.TabIndex = 11;
             // 
             // label5
             // 
@@ -133,16 +136,16 @@
             this.label5.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.label5.Name = "label5";
             this.label5.Size = new System.Drawing.Size(465, 29);
-            this.label5.TabIndex = 7;
+            this.label5.TabIndex = 10;
             this.label5.Text = "Object Position and Current Alignment:";
             // 
             // buttonReset
             // 
-            this.buttonReset.Location = new System.Drawing.Point(844, 584);
+            this.buttonReset.Location = new System.Drawing.Point(692, 121);
             this.buttonReset.Margin = new System.Windows.Forms.Padding(4);
             this.buttonReset.Name = "buttonReset";
             this.buttonReset.Size = new System.Drawing.Size(205, 137);
-            this.buttonReset.TabIndex = 11;
+            this.buttonReset.TabIndex = 6;
             this.buttonReset.Text = "Reset";
             this.buttonReset.UseVisualStyleBackColor = true;
             this.buttonReset.Click += new System.EventHandler(this.buttonReset_Click);
@@ -150,22 +153,22 @@
             // buttonOK
             // 
             this.buttonOK.DialogResult = System.Windows.Forms.DialogResult.OK;
-            this.buttonOK.Location = new System.Drawing.Point(844, 121);
+            this.buttonOK.Location = new System.Drawing.Point(692, 598);
             this.buttonOK.Margin = new System.Windows.Forms.Padding(4);
             this.buttonOK.Name = "buttonOK";
             this.buttonOK.Size = new System.Drawing.Size(205, 137);
-            this.buttonOK.TabIndex = 9;
+            this.buttonOK.TabIndex = 12;
             this.buttonOK.Text = "OK";
             this.buttonOK.UseVisualStyleBackColor = true;
             // 
             // buttonCancel
             // 
             this.buttonCancel.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.buttonCancel.Location = new System.Drawing.Point(844, 286);
+            this.buttonCancel.Location = new System.Drawing.Point(916, 598);
             this.buttonCancel.Margin = new System.Windows.Forms.Padding(4);
             this.buttonCancel.Name = "buttonCancel";
             this.buttonCancel.Size = new System.Drawing.Size(205, 137);
-            this.buttonCancel.TabIndex = 10;
+            this.buttonCancel.TabIndex = 13;
             this.buttonCancel.Text = "Cancel";
             this.buttonCancel.UseVisualStyleBackColor = true;
             // 
@@ -176,20 +179,44 @@
             // 
             // buttonCorrectPolarAxis
             // 
-            this.buttonCorrectPolarAxis.Location = new System.Drawing.Point(645, 121);
+            this.buttonCorrectPolarAxis.Location = new System.Drawing.Point(916, 121);
             this.buttonCorrectPolarAxis.Margin = new System.Windows.Forms.Padding(4);
             this.buttonCorrectPolarAxis.Name = "buttonCorrectPolarAxis";
-            this.buttonCorrectPolarAxis.Size = new System.Drawing.Size(160, 139);
-            this.buttonCorrectPolarAxis.TabIndex = 6;
+            this.buttonCorrectPolarAxis.Size = new System.Drawing.Size(205, 137);
+            this.buttonCorrectPolarAxis.TabIndex = 7;
             this.buttonCorrectPolarAxis.Text = "Correct Polar Axis";
             this.buttonCorrectPolarAxis.UseVisualStyleBackColor = true;
             this.buttonCorrectPolarAxis.Click += new System.EventHandler(this.buttonCorrectPolarAxis_Click);
+            // 
+            // buttonSaveAlignment
+            // 
+            this.buttonSaveAlignment.Location = new System.Drawing.Point(916, 286);
+            this.buttonSaveAlignment.Margin = new System.Windows.Forms.Padding(4);
+            this.buttonSaveAlignment.Name = "buttonSaveAlignment";
+            this.buttonSaveAlignment.Size = new System.Drawing.Size(205, 137);
+            this.buttonSaveAlignment.TabIndex = 9;
+            this.buttonSaveAlignment.Text = "Save";
+            this.buttonSaveAlignment.UseVisualStyleBackColor = true;
+            this.buttonSaveAlignment.Click += new System.EventHandler(this.buttonSaveAlignment_Click);
+            // 
+            // buttonLoadAlignment
+            // 
+            this.buttonLoadAlignment.Location = new System.Drawing.Point(692, 286);
+            this.buttonLoadAlignment.Margin = new System.Windows.Forms.Padding(4);
+            this.buttonLoadAlignment.Name = "buttonLoadAlignment";
+            this.buttonLoadAlignment.Size = new System.Drawing.Size(205, 137);
+            this.buttonLoadAlignment.TabIndex = 8;
+            this.buttonLoadAlignment.Text = "Load";
+            this.buttonLoadAlignment.UseVisualStyleBackColor = true;
+            this.buttonLoadAlignment.Click += new System.EventHandler(this.buttonLoadAlignment_Click);
             // 
             // AlignmentForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(15F, 29F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1102, 755);
+            this.ClientSize = new System.Drawing.Size(1167, 771);
+            this.Controls.Add(this.buttonSaveAlignment);
+            this.Controls.Add(this.buttonLoadAlignment);
             this.Controls.Add(this.buttonCorrectPolarAxis);
             this.Controls.Add(this.buttonCancel);
             this.Controls.Add(this.buttonOK);
@@ -227,5 +254,7 @@
         private System.Windows.Forms.Button buttonCancel;
         private System.Windows.Forms.Timer timer1;
         private System.Windows.Forms.Button buttonCorrectPolarAxis;
+        private System.Windows.Forms.Button buttonSaveAlignment;
+        private System.Windows.Forms.Button buttonLoadAlignment;
     }
 }

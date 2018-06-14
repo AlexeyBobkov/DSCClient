@@ -8,6 +8,7 @@ using System.Text;
 using System.Windows.Forms;
 using SkyObjectPosition;
 using DSCCalculations;
+using AAB.UtilityLibrary;
 
 namespace ScopeDSCClient
 {
@@ -68,6 +69,7 @@ namespace ScopeDSCClient
             timer1.Enabled = true;
 
             buttonOK.Enabled = false;
+            buttonSaveAlignment.Enabled = alignment_.IsAligned;
 
             init_ = true;
             CalcAndOutputResults();
@@ -133,6 +135,7 @@ namespace ScopeDSCClient
         private void AlignmentChanged()
         {
             buttonOK.Enabled = true;
+            buttonSaveAlignment.Enabled = alignment_.IsAligned;
             CalcAndOutputResults();
         }
 
@@ -155,6 +158,13 @@ namespace ScopeDSCClient
 
             foreach (SkyObjectPosCalc.SkyPosition star in objs)
                 comboBoxObj.Items.Add(star.Name);
+        }
+
+        private string MakeProfileName()
+        {
+            DateTime dt = DateTime.Now;
+            return String.Format("Alignment{0}-{1}-{2}_{3}-{4}-{5}.xml",
+                dt.Year.ToString("D4"), dt.Month.ToString("D2"), dt.Day.ToString("D2"), dt.Hour.ToString("D2"), dt.Minute.ToString("D2"), dt.Second.ToString("D2"));
         }
 
         private void comboBoxType_SelectedIndexChanged(object sender, EventArgs e)
@@ -217,6 +227,70 @@ namespace ScopeDSCClient
         {
             alignment_.CorrectEquAxis(new Vect3(0, latitude_ * Const.toRad));
             AlignmentChanged();
+        }
+
+        private void buttonLoadAlignment_Click(object sender, EventArgs e)
+        {
+            OpenFileDialog openfile = new OpenFileDialog();
+            openfile.InitialDirectory = Application.StartupPath + @"\";
+            openfile.Filter = "XML files (*.xml)|*.xml|All files (*.*)|*.*";
+            openfile.FilterIndex = 1;
+            openfile.RestoreDirectory = true;
+
+            try
+            {
+                DialogResult res = openfile.ShowDialog();
+                if (res != DialogResult.OK)
+                    return;
+
+                XmlProfile profile = new XmlProfile(openfile.FileName);
+                AlignStar[] stars = (AlignStar[])profile.GetValue("entries", "AlignmentStars", null, typeof(AlignStar[]));
+                Vect3 alignmentEquAxis = (Vect3)profile.GetValue("entries", "AlignmentEquAxis", new Vect3());
+                if (stars != null)
+                {
+                    alignment_ = new DSCAlignment(alignmentEquAxis, Precisions.Default);
+                    for (int i = 0; i < stars.Length; ++i)
+                        alignment_.AddStar(stars[i]);
+
+                    alignment_.ForceAlignment();
+                    AlignmentChanged();
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+                return;
+            }
+        }
+
+        private void buttonSaveAlignment_Click(object sender, EventArgs e)
+        {
+            if (!alignment_.IsAligned)
+                return;
+
+            SaveFileDialog savefile = new SaveFileDialog();
+            savefile.FileName = MakeProfileName();
+            savefile.Filter = "XML files (*.xml)|*.xml|All files (*.*)|*.*";
+
+            try
+            {
+                DialogResult res = savefile.ShowDialog();
+                if (res != DialogResult.OK)
+                    return;
+
+                XmlProfile profile = new XmlProfile(savefile.FileName);
+                profile.AddTypes = AddType.Short;
+                using (profile.Buffer())
+                {
+                    profile.SetValue("entries", "AlignmentStars", alignment_.Stars);
+                    profile.SetValue("entries", "AlignmentEquAxis", alignment_.EquAxis);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+                return;
+            }
         }
     }
 }

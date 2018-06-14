@@ -56,25 +56,25 @@ namespace SkyObjectPosition
             az = Atan2D(y, x * SinD(lat) - z * CosD(lat)) + 180;
             alt = AsinD(x * CosD(lat) + z * SinD(lat));
 
-            // Atmospheric refraction
-            // The formulas were borrowed from the site
-            // http://wise-obs.tau.ac.il/~eran/Wise/Util/Refraction.html
-            //
-            // Refraction correction formulae 
-            // approximate formulae for refraction correction for objects with zenith distance of up to 75 grad (altitude > 15 grad) :
-            // R = 0.00452_grad * P / ((273 + T) * tan a) 
-            // and for object below altitude of 15 grad:
-            // R = P * (0.1594 + 0.0196*a + 0.00002*a*a)/((273+T)*(1 + 0.505*a + 0.0845*a*a))
-            // Where P is the barometric pressure in millibars, T is the temperature in oC, a is the altitude measured in degrees and R is thr amount of refraction measured in degrees.
-            // We use P = 1000, T = 15
-            //if (alt > 15)
-            //    alt += 4.52 / (288 * TanD(alt));
-            //else if (alt >= 0)
-            //    alt += (159.4 + 19.6 * alt + 0.02 * alt * alt) / (288 * (1 + 0.505 * alt + 0.0845 * alt * alt));
-
-            // Atmospheric refraction, Sæmundsson formula for P = 1010, T = 10
+            // Atmospheric refraction, Sæmundsson formula for P = 1010, T = 10 (Jean Meeus, "Astronomical Algorithms")
             if (alt > -2 && alt < 89)
                 alt += 0.017 / TanD(alt + 10.3 / (alt + 5.11));
+        }
+
+        static public void AzAlt2Equ(double d, double lat, double lon, double az, double alt, out double dec, out double ra)
+        {
+            // Atmospheric refraction, Bennett formula (Jean Meeus, "Astronomical Algorithms")
+            if (alt > -2 && alt < 89)
+                alt -= 1 / (60 * TanD(alt + 7.31 / (alt + 4.4)));
+
+            az -= 180;
+            double y = SinD(az) * CosD(alt);
+            double x = CosD(az) * CosD(alt);
+            double z = SinD(alt);
+
+            double dHA = Atan2D(y, x * SinD(lat) + z * CosD(lat));  // hour angle
+            ra = LST(d, lon) - dHA;
+            dec = AsinD(-x * CosD(lat) + z * SinD(lat));
         }
 
         public static double SinD(double a) { return Math.Sin(a * Math.PI / 180.0); }

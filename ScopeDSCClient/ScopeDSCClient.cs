@@ -448,14 +448,15 @@ namespace ScopeDSCClient
             else
             {
                 s += "Encoder Abs Positions: Azm = " + PrintAngle(AzmAngle * Const.toDeg, false, false) + ", Alt = " + PrintAngle(AltAngle * Const.toDeg, false, false) + Environment.NewLine;
-                s += "Error Count: " + errorCnt_ + Environment.NewLine;
+                s += "ErrCnt = " + errorCnt_ + Environment.NewLine;
             }
 
             if (connectionEqu_ == null)
                 s += "Equ Angle Unknown" + Environment.NewLine;
             else
-                s += "Equ Angle: " + PrintAngle(EquAngle * Const.toDeg) + Environment.NewLine;
+                s += "Equ Angle = " + PrintAngle(EquAngle * Const.toDeg) + Environment.NewLine;
 
+            s += Environment.NewLine;
             if (connectionAltAzm_ == null || connectionEqu_ == null)
                 s += "Scope Position Unknown";
             else if (alignment_ != null && alignment_.IsAligned)
@@ -464,27 +465,34 @@ namespace ScopeDSCClient
 
                 s += "Scope Position: Azm = " + PrintAngle(SkyObjectPosCalc.Rev(horz.Azm * Const.toDeg), false, false);
                 s += ", Alt = " + PrintAngle(SkyObjectPosCalc.Rev(horz.Alt * Const.toDeg), false, false) + Environment.NewLine;
+
+                double dec, ra;
+                SkyObjectPosCalc.AzAlt2Equ(d, latitude_, longitude_, SkyObjectPosCalc.Rev(horz.Azm * Const.toDeg), SkyObjectPosCalc.Rev(horz.Alt * Const.toDeg), out dec, out ra);
+                s += "R.A.\t= " + ScopeDSCClient.PrintTime(ra) + " (" + ra.ToString("F5") + "\x00B0)" + Environment.NewLine;
+                s += "Dec.\t= " + ScopeDSCClient.PrintAngle(dec, true) + " (" + ScopeDSCClient.PrintDec(dec, "F5") + "\x00B0)" + Environment.NewLine;
             }
 
+            s += Environment.NewLine;
             if (object_ == null)
-            {
-                s += Environment.NewLine;
                 s += "No Object Selected";
-            }
             else
             {
-                s += Environment.NewLine;
-                s += "Object: " + object_.Name + Environment.NewLine;
+                double azm, alt;
+                object_.CalcAzimuthal(d, latitude_, longitude_, out azm, out alt);
+                s += object_.Name + ": Azm = " + PrintAngle(azm, false, false);
+                s += ", Alt = " + PrintAngle(alt, false, false) + Environment.NewLine;
 
                 double dec, ra;
                 object_.CalcTopoRaDec(d, latitude_, longitude_, out dec, out ra);
                 s += "R.A.\t= " + ScopeDSCClient.PrintTime(ra) + " (" + ra.ToString("F5") + "\x00B0)" + Environment.NewLine;
                 s += "Dec.\t= " + ScopeDSCClient.PrintAngle(dec, true) + " (" + ScopeDSCClient.PrintDec(dec, "F5") + "\x00B0)" + Environment.NewLine;
 
+                /*
                 double azm, alt;
                 object_.CalcAzimuthal(d, latitude_, longitude_, out azm, out alt);
                 s += "Azm.\t= " + ScopeDSCClient.PrintAngle(azm) + " (" + azm.ToString("F5") + "\x00B0)" + Environment.NewLine;
                 s += "Alt.\t= " + ScopeDSCClient.PrintAngle(alt) + " (" + alt.ToString("F5") + "\x00B0)";
+                 * */
             }
 
             textBoxObject.Text = s;
@@ -572,6 +580,8 @@ namespace ScopeDSCClient
             connectionAndAlignTextChanged_ = true;
             scopePosAndObjTextChanged_ = true;
 
+            // Not necessary, because Equ is persistent and always reports correct angle.
+            /*
             if (alignment_ != null && 
                 connectionEqu_ != null &&
                 connectionEqu_.connection_ != null &&
@@ -582,6 +592,7 @@ namespace ScopeDSCClient
                 SaveAlignment();
                 AlignmentChanged();
             }
+            */
         }
 
         private void ConnectionChangedGPS()
@@ -1275,7 +1286,7 @@ namespace ScopeDSCClient
     {
         public ScopeDSCClientSettings()
         {
-            profile_.AddTypes = AAB.UtilityLibrary.AddType.Short;
+            profile_.AddTypes = AddType.Short;
         }
 
         public double Latitude
@@ -1298,13 +1309,13 @@ namespace ScopeDSCClient
 
         public AlignStar[] AlignmentStars
         {
-            get { return (AlignStar[])profile_.GetValue(section_, "AlignmentStars", null); }
+            get { return (AlignStar[])profile_.GetValue(section_, "AlignmentStars", null, typeof(AlignStar[])); }
             set { profile_.SetValue(section_, "AlignmentStars", value); }
         }
 
         public Vect3 AlignmentEquAxis
         {
-            get { return (Vect3)profile_.GetValue(section_, "AlignmentEquAxis", new Vect3(), null); }
+            get { return (Vect3)profile_.GetValue(section_, "AlignmentEquAxis", new Vect3()); }
             set { profile_.SetValue(section_, "AlignmentEquAxis", value); }
         }
 
@@ -1320,13 +1331,13 @@ namespace ScopeDSCClient
             set { profile_.SetValue(section_, "AlignmentConnectionEqu", value); }
         }
 
-        public AAB.UtilityLibrary.XmlBuffer Buffer()
+        public XmlBuffer Buffer()
         {
             return profile_.Buffer();
         }
 
         private const string section_ = "entries";
-        private AAB.UtilityLibrary.XmlProfile profile_ = new AAB.UtilityLibrary.XmlProfile();
+        private XmlProfile profile_ = new XmlProfile();
     }
 }
 

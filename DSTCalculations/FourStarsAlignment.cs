@@ -172,15 +172,18 @@ namespace DSCCalculations
             try
             {
                 ForceAlignment();
-                if (iterationCnt_ <= 0)
-                    s += "\tType: static" + Environment.NewLine;
-                else
-                    s += "\tType: dynamic, " + iterationCnt_.ToString() + " iterations" + Environment.NewLine;
-                s += "\th Offset: " + (altOffset_ * Const.toDeg).ToString("F5") + Environment.NewLine;
-                s += "\tEquatorial Axis: " + equAxis_.ToString() + Environment.NewLine;
-                s += "\tEqu Angle Factor: " + (equHorzDiff_ / equScopeDiff_).ToString("F5") + Environment.NewLine;
                 if (verbose)
                 {
+                    if (iterationCnt_ <= 0)
+                        s += "\tType: static" + Environment.NewLine;
+                    else
+                        s += "\tType: dynamic, " + iterationCnt_.ToString() + " iterations" + Environment.NewLine;
+                    s += "\th Offset: " + (altOffset_ * Const.toDeg).ToString("F5") + Environment.NewLine;
+                }
+                s += "\tEquatorial Axis: " + equAxis_.ToString() + Environment.NewLine;
+                if (verbose)
+                {
+                    s += "\tEqu Angle Factor: " + (equHorzDiff_ / equScopeDiff_).ToString("F5") + Environment.NewLine;
                     s += "\tReported Equ Angle Diff: " + ((stars_[2].EquAngle - stars_[0].EquAngle) * Const.toDeg).ToString("F5") + Environment.NewLine;
                     s += "\tActual Equ Angle Diff: " + (equHorzDiff_ * Const.toDeg).ToString("F5") + Environment.NewLine;
                     s += "\tQuality: " + quality_.ToString() + Environment.NewLine;

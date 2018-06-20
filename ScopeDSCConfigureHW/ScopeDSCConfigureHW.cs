@@ -24,6 +24,8 @@ namespace ScopeDSCConfigureHW
         private const byte CONNCAPS_EQU = 2;
         private const byte CONNCAPS_GPS = 4;
         private byte capabilities_ = 0;
+        private long altRes_ = 0;
+        private long azmRes_ = 0;
         private double dMotorLastStartAngle_ = 0;
         private double dMotorLastEndAngle_ = 0;
 
@@ -34,7 +36,7 @@ namespace ScopeDSCConfigureHW
 
         private void ScopeDSCConfigureHW_Load(object sender, EventArgs e)
         {
-            UpdateUI();
+            UpdateUI(false);
         }
 
         private void ScopeDSCConfigureHW_FormClosing(object sender, FormClosingEventArgs e)
@@ -42,12 +44,14 @@ namespace ScopeDSCConfigureHW
             CloseConnection();
         }
 
-        private void UpdateUI()
+        private void UpdateUI(bool edit)
         {
             string s = "";
             if (connection_ == null)
             {
                 s += "No connection" + Environment.NewLine;
+                textAltRes.Text = "";
+                textAzmRes.Text = "";
             }
             else
             {
@@ -67,8 +71,17 @@ namespace ScopeDSCConfigureHW
                     s += Environment.NewLine;
                 }
 
+                s += "Alt Resolution " + altRes_.ToString() + Environment.NewLine;
+                s += "Azm Resolution " + azmRes_.ToString() + Environment.NewLine;
+
                 s += "Last Start Angle " + dMotorLastStartAngle_.ToString("F2") + Environment.NewLine;
                 s += "Last End Angle " + dMotorLastEndAngle_.ToString("F2") + Environment.NewLine;
+
+                if (edit)
+                {
+                    textAltRes.Text = altRes_.ToString();
+                    textAzmRes.Text = azmRes_.ToString();
+                }
             }
 
             textBoxConnection.Text = s;
@@ -77,7 +90,7 @@ namespace ScopeDSCConfigureHW
         private void SerialError()
         {
             CloseConnection();
-            UpdateUI();
+            UpdateUI(true);
         }
 
         private void CloseConnection()
@@ -128,14 +141,28 @@ namespace ScopeDSCConfigureHW
         private void ReceiveCapabilities(byte[] data)
         {
             capabilities_ = data[0];
-            UpdateUI();
+            UpdateUI(false);
         }
 
         private void ReceiveMotorLastAngles(byte[] data)
         {
             dMotorLastStartAngle_ = (double)((((System.Int32)data[3]) << 24) + (((System.Int32)data[2]) << 16) + (((System.Int32)data[1]) << 8) + (System.Int32)data[0]) / 100.0;
             dMotorLastEndAngle_ = (double)((((System.Int32)data[7]) << 24) + (((System.Int32)data[6]) << 16) + (((System.Int32)data[5]) << 8) + (System.Int32)data[4]) / 100.0;
-            UpdateUI();
+            UpdateUI(false);
+        }
+
+        private void ReceiveAltAzmResolutionFirstTime(byte[] data)
+        {
+            altRes_ = (long)((((long)data[1]) << 8) + data[0]);
+            azmRes_ = (long)((((long)data[3]) << 8) + data[2]);
+            UpdateUI(true);
+        }
+
+        private void ReceiveAltAzmResolution(byte[] data)
+        {
+            altRes_ = (long)((((long)data[1]) << 8) + data[0]);
+            azmRes_ = (long)((((long)data[3]) << 8) + data[2]);
+            UpdateUI(false);
         }
 
         private void ReceiveDummy(byte[] data)
@@ -166,9 +193,10 @@ namespace ScopeDSCConfigureHW
                 {
                     SendCommand('c', 1, this.ReceiveCapabilities);
                     SendCommand('t', 8, this.ReceiveMotorLastAngles);
+                    SendCommand('h', 4, this.ReceiveAltAzmResolutionFirstTime);
                 }
             }
-            UpdateUI();
+            UpdateUI(false);
         }
 
         private void buttonSave_Click(object sender, EventArgs e)
@@ -183,12 +211,23 @@ namespace ScopeDSCConfigureHW
                 new_capabilities |= CONNCAPS_GPS;
 
             SendCommand(new byte[] { (byte)'A', (byte)'2', (byte)('0' + new_capabilities) }, 1, this.ReceiveDummy);
+
+            try
+            {
+                long altRes = Convert.ToInt32(textAltRes.Text);
+                long azmRes = Convert.ToInt32(textAzmRes.Text);
+                SendCommand(new byte[] { (byte)'x', (byte)(altRes & 0xff), (byte)(altRes / 256), (byte)(azmRes & 0xff), (byte)(azmRes / 256) }, 1, this.ReceiveDummy);
+            }
+            catch
+            {
+            }
         }
 
         private void timer1_Tick(object sender, EventArgs e)
         {
             SendCommand('c', 1, this.ReceiveCapabilities);
             SendCommand('t', 8, this.ReceiveMotorLastAngles);
+            SendCommand('h', 4, this.ReceiveAltAzmResolution);
         }
     }
 }

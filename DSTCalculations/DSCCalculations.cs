@@ -59,8 +59,15 @@ namespace DSCCalculations
 
         public PairA(double azm, double alt)
         {
-            Azm = azm;
+            //alt = Rev(alt + Math.PI / 2);
+            //if (alt < 0)
+            //{
+            //    alt = -alt;
+            //    azm += Math.PI;
+            //}
+            //Alt = alt - Math.PI / 2;
             Alt = alt;
+            Azm = Rev(azm);
         }
 
         public PairA Offset(double azmOff, double altOff_)
@@ -74,6 +81,12 @@ namespace DSCCalculations
         public override string ToString()
         {
             return "{A = " + (Azm * Const.toDeg).ToString("F5") + ", h = " + (Alt * Const.toDeg).ToString("F5") + "}";
+        }
+
+        public static double Rev(double a)
+        {
+            a += Math.PI;
+            return a - Math.Floor(a / (2 * Math.PI)) * (2 * Math.PI) - Math.PI;
         }
     }
     public class PairATypeConverter : TypeConverter<PairA>
@@ -366,6 +379,7 @@ namespace DSCCalculations
         public abstract PairA Scope2Horz(PairA scope, double equAngle);
         public abstract PairA Horz2Scope(PairA horz, double equAngle);
         public abstract Alignment AddStar(AlignStar newStar);
+        public abstract bool CorrectOffsets(AlignStar star);
         public abstract void ForceAlignment();
         public abstract bool IsAligned { get; }
         public abstract AlignStar[] Stars { get; }
@@ -399,6 +413,7 @@ namespace DSCCalculations
             return this;
         }
 
+        public override bool CorrectOffsets(AlignStar star) { return currAlignment_.CorrectOffsets(star); }
         public override void ForceAlignment() { currAlignment_.ForceAlignment(); }
         public override bool IsAligned { get { return currAlignment_.IsAligned; } }
         public override AlignStar[] Stars { get { return currAlignment_.Stars; } }

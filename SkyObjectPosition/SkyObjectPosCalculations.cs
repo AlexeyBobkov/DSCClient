@@ -1,4 +1,6 @@
-﻿//
+﻿//#define DBG_TIME
+
+//
 // Most of the formulas used for calculations were borrowed from the Paul Schlyter, Stockholm, Sweden web site pages:
 // http://www.stjarnhimlen.se/comp/ppcomp.html
 // http://www.stjarnhimlen.se/comp/tutorial.html
@@ -13,6 +15,15 @@ namespace SkyObjectPosition
 
         public static double CalcTime(int iYear, int iMonth, int iDay, int iHour, int iMin, int iSec, int imSec)
         {
+#if DBG_TIME
+            iYear = 2008;
+            iMonth = 6;
+            iDay = 16;
+            iHour = 19;
+            iMin = 0;
+            iSec = 0;
+            imSec = 0;
+#endif
             double d = 367 * iYear - (7 * (iYear + ((iMonth + 9) / 12))) / 4 + (275 * iMonth) / 9 + iDay - 730530;
             d += (iHour + (iMin + (iSec + imSec / 1000.0) / 60.0) / 60.0) / 24.0;
             return d;

@@ -200,8 +200,10 @@ namespace ScopeDSCClient
 
             try
             {
-                alignment_.AddStar(new AlignStar(obj.Name, new Vect3(azm * Const.toRad, alt * Const.toRad), new PairA(parent_.AzmAngle, parent_.AltAngle), parent_.EquAngle));
-                alignment_.ForceAlignment();
+                DSCAlignment alignmentNew = (DSCAlignment)alignment_.Clone();
+                alignmentNew.AddStar(new AlignStar(obj.Name, new Vect3(azm * Const.toRad, alt * Const.toRad), new PairA(parent_.AzmAngle, parent_.AltAngle), parent_.EquAngle));
+                alignmentNew.ForceAlignment();
+                alignment_ = alignmentNew;
             }
             catch (Exception ex)
             {
@@ -291,6 +293,29 @@ namespace ScopeDSCClient
                 MessageBox.Show(ex.Message);
                 return;
             }
+        }
+
+        private void buttonCorrectOffsets_Click(object sender, EventArgs e)
+        {
+            if (!alignment_.IsAligned)
+                return;
+            double d = ScopeDSCClient.CalcTime();
+            SkyObjectPosCalc.SkyPosition obj = GetObject();
+
+            double azm, alt;
+            obj.CalcAzimuthal(d, latitude_, longitude_, out azm, out alt);
+
+            try
+            {
+                alignment_.CorrectOffsets(new AlignStar(obj.Name, new Vect3(azm * Const.toRad, alt * Const.toRad), new PairA(parent_.AzmAngle, parent_.AltAngle), parent_.EquAngle));
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Correct Alignment Error", MessageBoxButtons.OK);
+                return;
+            }
+
+            AlignmentChanged();
         }
     }
 }

@@ -38,6 +38,10 @@
             this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.label1 = new System.Windows.Forms.Label();
             this.timer1 = new System.Windows.Forms.Timer(this.components);
+            this.label2 = new System.Windows.Forms.Label();
+            this.textAltRes = new System.Windows.Forms.TextBox();
+            this.textAzmRes = new System.Windows.Forms.TextBox();
+            this.label3 = new System.Windows.Forms.Label();
             this.groupBox1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -45,7 +49,7 @@
             // 
             this.buttonConnection.Location = new System.Drawing.Point(37, 27);
             this.buttonConnection.Name = "buttonConnection";
-            this.buttonConnection.Size = new System.Drawing.Size(218, 139);
+            this.buttonConnection.Size = new System.Drawing.Size(218, 189);
             this.buttonConnection.TabIndex = 0;
             this.buttonConnection.Text = "Connection";
             this.buttonConnection.UseVisualStyleBackColor = true;
@@ -57,7 +61,7 @@
             this.textBoxConnection.Multiline = true;
             this.textBoxConnection.Name = "textBoxConnection";
             this.textBoxConnection.ReadOnly = true;
-            this.textBoxConnection.Size = new System.Drawing.Size(251, 118);
+            this.textBoxConnection.Size = new System.Drawing.Size(251, 168);
             this.textBoxConnection.TabIndex = 2;
             // 
             // checkBoxAltAzm
@@ -92,10 +96,10 @@
             // 
             // buttonSave
             // 
-            this.buttonSave.Location = new System.Drawing.Point(195, 351);
+            this.buttonSave.Location = new System.Drawing.Point(331, 492);
             this.buttonSave.Name = "buttonSave";
-            this.buttonSave.Size = new System.Drawing.Size(218, 108);
-            this.buttonSave.TabIndex = 4;
+            this.buttonSave.Size = new System.Drawing.Size(218, 126);
+            this.buttonSave.TabIndex = 8;
             this.buttonSave.Text = "Save to Board";
             this.buttonSave.UseVisualStyleBackColor = true;
             this.buttonSave.Click += new System.EventHandler(this.buttonSave_Click);
@@ -105,7 +109,7 @@
             this.groupBox1.Controls.Add(this.checkBoxEqu);
             this.groupBox1.Controls.Add(this.checkBoxAltAzm);
             this.groupBox1.Controls.Add(this.checkBoxGPS);
-            this.groupBox1.Location = new System.Drawing.Point(37, 195);
+            this.groupBox1.Location = new System.Drawing.Point(37, 247);
             this.groupBox1.Name = "groupBox1";
             this.groupBox1.Size = new System.Drawing.Size(512, 126);
             this.groupBox1.TabIndex = 3;
@@ -127,18 +131,54 @@
             this.timer1.Interval = 1000;
             this.timer1.Tick += new System.EventHandler(this.timer1_Tick);
             // 
+            // label2
+            // 
+            this.label2.AutoSize = true;
+            this.label2.Location = new System.Drawing.Point(34, 405);
+            this.label2.Name = "label2";
+            this.label2.Size = new System.Drawing.Size(113, 18);
+            this.label2.TabIndex = 4;
+            this.label2.Text = "Alt Resolution";
+            // 
+            // textAltRes
+            // 
+            this.textAltRes.Location = new System.Drawing.Point(169, 405);
+            this.textAltRes.Name = "textAltRes";
+            this.textAltRes.Size = new System.Drawing.Size(100, 24);
+            this.textAltRes.TabIndex = 6;
+            // 
+            // textAzmRes
+            // 
+            this.textAzmRes.Location = new System.Drawing.Point(169, 439);
+            this.textAzmRes.Name = "textAzmRes";
+            this.textAzmRes.Size = new System.Drawing.Size(100, 24);
+            this.textAzmRes.TabIndex = 7;
+            // 
+            // label3
+            // 
+            this.label3.AutoSize = true;
+            this.label3.Location = new System.Drawing.Point(34, 439);
+            this.label3.Name = "label3";
+            this.label3.Size = new System.Drawing.Size(127, 18);
+            this.label3.TabIndex = 5;
+            this.label3.Text = "Azm Resolution";
+            // 
             // ScopeDSCConfigureHW
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(10F, 18F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(592, 488);
+            this.ClientSize = new System.Drawing.Size(592, 650);
+            this.Controls.Add(this.textAzmRes);
+            this.Controls.Add(this.label3);
+            this.Controls.Add(this.textAltRes);
+            this.Controls.Add(this.label2);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.groupBox1);
             this.Controls.Add(this.buttonSave);
             this.Controls.Add(this.textBoxConnection);
             this.Controls.Add(this.buttonConnection);
             this.Font = new System.Drawing.Font("Microsoft Sans Serif", 11.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.Margin = new System.Windows.Forms.Padding(4);
             this.Name = "ScopeDSCConfigureHW";
             this.Text = "Configure Board";
             this.Load += new System.EventHandler(this.ScopeDSCConfigureHW_Load);
@@ -161,6 +201,10 @@
         private System.Windows.Forms.GroupBox groupBox1;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Timer timer1;
+        private System.Windows.Forms.Label label2;
+        private System.Windows.Forms.TextBox textAltRes;
+        private System.Windows.Forms.TextBox textAzmRes;
+        private System.Windows.Forms.Label label3;
 
     }
 }

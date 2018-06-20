@@ -56,7 +56,11 @@ namespace DSCCalculations
             return DoHorz2Scope(horz, equAngle);
         }
         public override Alignment AddStar(AlignStar newStar) { return this; }
-        public override void ForceAlignment() {}
+        public override bool CorrectOffsets(AlignStar star)
+        {
+            throw new ApplicationException("PolarCorrectedAlignment can't be offset-corrected");
+        }
+        public override void ForceAlignment() { }
         public override bool IsAligned { get { return true; } }
         public override AlignStar[] Stars { get { return stars_; } }
         public override Vect3 EquAxis { get { return equAxis_; } }

@@ -1050,6 +1050,8 @@ namespace ScopeDSCClient
                 altOffset_ = tmp;
             }
             swapAzmAltEncoders_ = data.swapAzmAltEncoders_;
+
+            //SendCommand(connectionAltAzm_, new byte[] { (byte)'z', (byte)(10000 & 0xff), (byte)(10000 / 256), (byte)(10000 & 0xff), (byte)(10000 / 256) }, 1, this.ReceiveAcknowlage);
             SendCommand(connectionAltAzm_, 'h', 4, this.ReceiveAltAzmResolution);
 
             ConnectionChangedAltAzm();
@@ -1096,8 +1098,17 @@ namespace ScopeDSCClient
                 connectionData.connection_.SendReceiveRequest(new byte[] { (byte)cmd }, receiveCnt, new BaseConnectionHandler(this, receiveDelegate, connectionData.connection_));
         }
 
+        private void SendCommand(ConnectionData connectionData, byte[] cmd, int receiveCnt, ReceiveDelegate receiveDelegate)
+        {
+            if (connectionData != null && connectionData.connection_ != null)
+                connectionData.connection_.SendReceiveRequest(cmd, receiveCnt, new BaseConnectionHandler(this, receiveDelegate, connectionData.connection_));
+        }
+
         private void SendScopeMotionCommand(char cmd) { SendCommand(connectionEqu_, cmd, 1, ReceiveDummy); }
 
+        private void ReceiveAcknowlage(byte[] data)
+        {
+        }
         private void ReceiveAltAzmResolution(byte[] data)
         {
             if (swapAzmAltEncoders_)
@@ -1330,6 +1341,20 @@ namespace ScopeDSCClient
             get { return (ScopeDSCClient.AlignmentConnectionData)profile_.GetValue(section_, "AlignmentConnectionEqu", new ScopeDSCClient.AlignmentConnectionData()); }
             set { profile_.SetValue(section_, "AlignmentConnectionEqu", value); }
         }
+
+        /*
+        public long AzmResolution
+        {
+            get { return profile_.GetValue(section_, "AzmResolution", 1800); }
+            set { profile_.SetValue(section_, "AzmResolution", value); }
+        }
+
+        public long AltResolution
+        {
+            get { return profile_.GetValue(section_, "AltResolution", 1800); }
+            set { profile_.SetValue(section_, "AltResolution", value); }
+        }
+        */
 
         public XmlBuffer Buffer()
         {

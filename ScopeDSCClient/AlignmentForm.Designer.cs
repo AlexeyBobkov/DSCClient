@@ -44,6 +44,7 @@
             this.buttonCorrectPolarAxis = new System.Windows.Forms.Button();
             this.buttonSaveAlignment = new System.Windows.Forms.Button();
             this.buttonLoadAlignment = new System.Windows.Forms.Button();
+            this.buttonCorrectOffsets = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // comboBoxObj
@@ -127,7 +128,7 @@
             this.textBoxResults.ReadOnly = true;
             this.textBoxResults.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
             this.textBoxResults.Size = new System.Drawing.Size(572, 416);
-            this.textBoxResults.TabIndex = 11;
+            this.textBoxResults.TabIndex = 14;
             // 
             // label5
             // 
@@ -136,16 +137,16 @@
             this.label5.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.label5.Name = "label5";
             this.label5.Size = new System.Drawing.Size(465, 29);
-            this.label5.TabIndex = 10;
+            this.label5.TabIndex = 13;
             this.label5.Text = "Object Position and Current Alignment:";
             // 
             // buttonReset
             // 
-            this.buttonReset.Location = new System.Drawing.Point(692, 121);
+            this.buttonReset.Location = new System.Drawing.Point(916, 121);
             this.buttonReset.Margin = new System.Windows.Forms.Padding(4);
             this.buttonReset.Name = "buttonReset";
             this.buttonReset.Size = new System.Drawing.Size(205, 137);
-            this.buttonReset.TabIndex = 6;
+            this.buttonReset.TabIndex = 7;
             this.buttonReset.Text = "Reset";
             this.buttonReset.UseVisualStyleBackColor = true;
             this.buttonReset.Click += new System.EventHandler(this.buttonReset_Click);
@@ -157,7 +158,7 @@
             this.buttonOK.Margin = new System.Windows.Forms.Padding(4);
             this.buttonOK.Name = "buttonOK";
             this.buttonOK.Size = new System.Drawing.Size(205, 137);
-            this.buttonOK.TabIndex = 12;
+            this.buttonOK.TabIndex = 11;
             this.buttonOK.Text = "OK";
             this.buttonOK.UseVisualStyleBackColor = true;
             // 
@@ -168,7 +169,7 @@
             this.buttonCancel.Margin = new System.Windows.Forms.Padding(4);
             this.buttonCancel.Name = "buttonCancel";
             this.buttonCancel.Size = new System.Drawing.Size(205, 137);
-            this.buttonCancel.TabIndex = 13;
+            this.buttonCancel.TabIndex = 12;
             this.buttonCancel.Text = "Cancel";
             this.buttonCancel.UseVisualStyleBackColor = true;
             // 
@@ -179,42 +180,54 @@
             // 
             // buttonCorrectPolarAxis
             // 
-            this.buttonCorrectPolarAxis.Location = new System.Drawing.Point(916, 121);
+            this.buttonCorrectPolarAxis.Location = new System.Drawing.Point(916, 430);
             this.buttonCorrectPolarAxis.Margin = new System.Windows.Forms.Padding(4);
             this.buttonCorrectPolarAxis.Name = "buttonCorrectPolarAxis";
             this.buttonCorrectPolarAxis.Size = new System.Drawing.Size(205, 137);
-            this.buttonCorrectPolarAxis.TabIndex = 7;
+            this.buttonCorrectPolarAxis.TabIndex = 10;
             this.buttonCorrectPolarAxis.Text = "Correct Polar Axis";
             this.buttonCorrectPolarAxis.UseVisualStyleBackColor = true;
             this.buttonCorrectPolarAxis.Click += new System.EventHandler(this.buttonCorrectPolarAxis_Click);
             // 
             // buttonSaveAlignment
             // 
-            this.buttonSaveAlignment.Location = new System.Drawing.Point(916, 286);
+            this.buttonSaveAlignment.Location = new System.Drawing.Point(692, 275);
             this.buttonSaveAlignment.Margin = new System.Windows.Forms.Padding(4);
             this.buttonSaveAlignment.Name = "buttonSaveAlignment";
             this.buttonSaveAlignment.Size = new System.Drawing.Size(205, 137);
-            this.buttonSaveAlignment.TabIndex = 9;
+            this.buttonSaveAlignment.TabIndex = 8;
             this.buttonSaveAlignment.Text = "Save";
             this.buttonSaveAlignment.UseVisualStyleBackColor = true;
             this.buttonSaveAlignment.Click += new System.EventHandler(this.buttonSaveAlignment_Click);
             // 
             // buttonLoadAlignment
             // 
-            this.buttonLoadAlignment.Location = new System.Drawing.Point(692, 286);
+            this.buttonLoadAlignment.Location = new System.Drawing.Point(916, 275);
             this.buttonLoadAlignment.Margin = new System.Windows.Forms.Padding(4);
             this.buttonLoadAlignment.Name = "buttonLoadAlignment";
             this.buttonLoadAlignment.Size = new System.Drawing.Size(205, 137);
-            this.buttonLoadAlignment.TabIndex = 8;
+            this.buttonLoadAlignment.TabIndex = 9;
             this.buttonLoadAlignment.Text = "Load";
             this.buttonLoadAlignment.UseVisualStyleBackColor = true;
             this.buttonLoadAlignment.Click += new System.EventHandler(this.buttonLoadAlignment_Click);
+            // 
+            // buttonCorrectOffsets
+            // 
+            this.buttonCorrectOffsets.Location = new System.Drawing.Point(692, 121);
+            this.buttonCorrectOffsets.Margin = new System.Windows.Forms.Padding(4);
+            this.buttonCorrectOffsets.Name = "buttonCorrectOffsets";
+            this.buttonCorrectOffsets.Size = new System.Drawing.Size(205, 137);
+            this.buttonCorrectOffsets.TabIndex = 6;
+            this.buttonCorrectOffsets.Text = "Correct Offsets";
+            this.buttonCorrectOffsets.UseVisualStyleBackColor = true;
+            this.buttonCorrectOffsets.Click += new System.EventHandler(this.buttonCorrectOffsets_Click);
             // 
             // AlignmentForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(15F, 29F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1167, 771);
+            this.Controls.Add(this.buttonCorrectOffsets);
             this.Controls.Add(this.buttonSaveAlignment);
             this.Controls.Add(this.buttonLoadAlignment);
             this.Controls.Add(this.buttonCorrectPolarAxis);
@@ -256,5 +269,6 @@
         private System.Windows.Forms.Button buttonCorrectPolarAxis;
         private System.Windows.Forms.Button buttonSaveAlignment;
         private System.Windows.Forms.Button buttonLoadAlignment;
+        private System.Windows.Forms.Button buttonCorrectOffsets;
     }
 }

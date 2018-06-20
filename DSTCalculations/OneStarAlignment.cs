@@ -53,6 +53,21 @@ namespace DSCCalculations
                 return this;
             }
         }
+        public override bool CorrectOffsets(AlignStar star)
+        {
+            if (star == null || star_ == null)
+                return false;
+            PairA scopeOld = Horz2Scope((PairA)star.Horz, star.EquAngle);
+            double deltaAlt = star.Scope.Alt - scopeOld.Alt;
+            double deltaAzm = star.Scope.Azm - scopeOld.Azm;
+            altOffset_ += deltaAlt;
+            azmOffset_ += deltaAzm;
+
+            if (star_ != null)
+                star_.Scope = star_.Scope.Offset(+deltaAzm, +deltaAlt);
+
+            return true;
+        }
         public override void ForceAlignment() { }
         public override bool IsAligned { get { return star_ != null; } }
         public override AlignStar[] Stars { get { return new AlignStar[] {star_}; } }
@@ -89,7 +104,8 @@ namespace DSCCalculations
             equAxis_ = equAxis;
             azmOffset_ = azmOffset;
             altOffset_ = altOffset;
-            star_ = (AlignStar)star.Clone();
+            if(star != null)
+                star_ = (AlignStar)star.Clone();
             precesions_ = precesions;
         }
         public override Object Clone() { return new OneStarAlignment(equAxis_, azmOffset_, altOffset_, star_, precesions_); }

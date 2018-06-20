@@ -63,6 +63,23 @@ namespace DSCCalculations
         {
             return this;
         }
+        public override bool CorrectOffsets(AlignStar star)
+        {
+            if (star == null)
+                return false;
+
+            ForceAlignment();
+            PairA scopeOld = Horz2Scope((PairA)star.Horz, star.EquAngle);
+            double deltaAlt = star.Scope.Alt - scopeOld.Alt, deltaAzm = star.Scope.Azm - scopeOld.Azm;
+
+            altOffset_ += deltaAlt;
+            rotationToStand_ = new Rotation3(-deltaAzm, new Vect3(0, 0, 1)) * rotationToStand_;
+
+            foreach (AlignStar s in stars_)
+                if (s != null)
+                    s.Scope = s.Scope.Offset(+deltaAzm, +deltaAlt);
+            return true;
+        }
 
         private void AlignStatic()
         {

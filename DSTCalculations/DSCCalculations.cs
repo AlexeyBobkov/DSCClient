@@ -49,6 +49,7 @@ namespace DSCCalculations
     }
 
     // azm-alt "vector"
+    // Note that the azimuth is CLOCKWISE from x axis (not counterclockwise like in spherical coordinates!)
     [TypeConverter(typeof(PairATypeConverter))]
     public struct PairA
     {
@@ -115,11 +116,11 @@ namespace DSCCalculations
         }
         public Vect3(double azm, double alt)
         {
-            Polar2Cartesian(azm, alt, out x_, out y_, out z_);
+            Horizontal2Cartesian(azm, alt, out x_, out y_, out z_);
         }
         public Vect3(PairA aa)
         {
-            Polar2Cartesian(aa.Azm, aa.Alt, out x_, out y_, out z_);
+            Horizontal2Cartesian(aa.Azm, aa.Alt, out x_, out y_, out z_);
         }
 
         [XmlAttribute]
@@ -132,18 +133,18 @@ namespace DSCCalculations
         public double Azm { get { return Cartesian2Azm(x_, y_, z_); } }
         public double Alt { get { return Cartesian2Alt(x_, y_, z_); } }
 
-        public static void Polar2Cartesian(double azm, double alt, out double x, out double y, out double z)
+        public static void Horizontal2Cartesian(double azm, double alt, out double x, out double y, out double z)
         {
             double cos_alt = Math.Cos(alt);
             x = cos_alt * Math.Cos(azm);
-            y = -cos_alt * Math.Sin(azm);
+            y = -cos_alt * Math.Sin(azm);       // minus, because the azimuth is CLOCKWISE in x-y plane
             z = Math.Sin(alt);
         }
 
-        public static double Cartesian2Azm(double x, double y, double z) { return Math.Atan2(-y, x); }
+        public static double Cartesian2Azm(double x, double y, double z) { return Math.Atan2(-y, x); }  // -y, because the azimuth is CLOCKWISE in x-y plane
         public static double Cartesian2Alt(double x, double y, double z) { return Math.Atan2(z, Math.Sqrt(x * x + y * y)); }
 
-        public static void Cartesian2Polar(double x, double y, double z, out double azm, out double alt)
+        public static void Cartesian2Horizontal(double x, double y, double z, out double azm, out double alt)
         {
             azm = Cartesian2Azm(x, y, z);
             alt = Cartesian2Alt(x, y, z);

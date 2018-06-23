@@ -1141,6 +1141,7 @@ namespace ScopeDSCClient
                 altPos = (UInt16)((((UInt16)data[1]) << 8) + data[0]);
                 azmPos = (UInt16)((((UInt16)data[3]) << 8) + data[2]);
             }
+            /*
             if (!positionsValid_)
             {
                 //azmOffset_ = azmRes_ / 2 - azmPos;
@@ -1165,6 +1166,7 @@ namespace ScopeDSCClient
                         altOffset_ += altRes_;
                 }
             }
+            */
             if (azmPos_ != azmPos || altPos_ != altPos || !positionsValid_)
                 ScopePosChanged();
             azmPos_ = azmPos;
@@ -1314,7 +1316,7 @@ namespace ScopeDSCClient
 
         public bool ShowNearestAzmRotation
         {
-            get { return profile_.GetValue(section_, "ShowNearestAzmRotation", false); }
+            get { return profile_.GetValue(section_, "ShowNearestAzmRotation", true); }
             set { profile_.SetValue(section_, "ShowNearestAzmRotation", value); }
         }
 

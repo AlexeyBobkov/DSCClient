@@ -58,6 +58,7 @@ namespace StellariumServer
             {
                 sendData_ = data;
             }
+            evt_.Set(); // wake up thread
             return true;
         }
 
@@ -66,6 +67,7 @@ namespace StellariumServer
             if (thread_ != null)
             {
                 exitThread_ = true;
+                evt_.Set(); // wake up thread
                 evtStopped_.WaitOne();
                 thread_ = null;
             }
@@ -84,6 +86,7 @@ namespace StellariumServer
         private IReceiveHandler handler_;
         private byte[] sendData_;
         private System.Object lockThis_ = new System.Object();
+        private AutoResetEvent evt_ = new AutoResetEvent(false);
         private AutoResetEvent evtStopped_ = new AutoResetEvent(false);
         private bool exitThread_ = false;
         private Thread thread_;
@@ -112,71 +115,68 @@ namespace StellariumServer
                 Socket s = null;
                 try
                 {
+                    // wait connection and connect
+                    {
+                        IAsyncResult connectResult = myList.BeginAcceptSocket(null, null);
+                        WaitHandle[] waitObjs = new WaitHandle[] { connectResult.AsyncWaitHandle, evt_ };
+                        while (!connectResult.IsCompleted && !exitThread_)
+                            WaitHandle.WaitAny(waitObjs);
+                        if (exitThread_)
+                            break;
+                        s = myList.EndAcceptSocket(connectResult);
+                        SetStatusChanged(true);
+                    }
 
-                    // wait connection
-                    while (!myList.Pending() && !exitThread_)
-                        System.Threading.Thread.Sleep(1000);
-                    if (exitThread_)
-                        break;
-
-                    s = myList.AcceptSocket();
-                    SetStatusChanged(true);
-
-                    IAsyncResult sent = null, receive = null;
-                    byte[] rData = new byte[20];
+                    IAsyncResult sendResult = null, receiveResult = null;
+                    byte[] receivedData = new byte[20];
                     int bytesRead = 0;
                     while (!exitThread_ && SocketConnected(s))
                     {
-                        bool didSomething = false;
-                        
                         // send
-                        if (sent != null && sent.IsCompleted)
+                        if (sendResult != null && sendResult.IsCompleted)
                         {
-                            s.EndSend(sent);
-                            sent = null;
-                            didSomething = true;
+                            s.EndSend(sendResult);
+                            sendResult = null;
                         }
-                        if (sent == null)
+                        if (sendResult == null)
                         {
-                            byte[] sData = null;
+                            byte[] sendData = null;
                             lock (lockThis_)
                             {
                                 if (sendData_ != null)
                                 {
-                                    sData = sendData_;
+                                    sendData = sendData_;
                                     sendData_ = null;
                                 }
                             }
-                            if (sData != null)
-                            {
-                                sent = s.BeginSend(sData, 0, sData.Length, SocketFlags.None, null, null);
-                                didSomething = true;
-                            }
+                            if (sendData != null)
+                                sendResult = s.BeginSend(sendData, 0, sendData.Length, SocketFlags.None, null, null);
                         }
 
                         // receive
-                        if (receive != null && receive.IsCompleted)
+                        if (receiveResult != null && receiveResult.IsCompleted)
                         {
-                            bytesRead += s.EndReceive(receive);
-                            receive = null;
+                            bytesRead += s.EndReceive(receiveResult);
+                            receiveResult = null;
 
-                            if (bytesRead >= rData.Length)
+                            if (bytesRead >= receivedData.Length)
                             {
-                                UInt32 uRA = rData[12] + (((UInt32)rData[13]) << 8) + (((UInt32)rData[14]) << 16) + (((UInt32)rData[15]) << 24);
-                                Int32 uDec = (Int32)(rData[16] + (((UInt32)rData[17]) << 8) + (((UInt32)rData[18]) << 16) + (((UInt32)rData[19]) << 24));
+                                UInt32 uRA = receivedData[12] + (((UInt32)receivedData[13]) << 8) + (((UInt32)receivedData[14]) << 16) + (((UInt32)receivedData[15]) << 24);
+                                Int32 uDec = (Int32)(receivedData[16] + (((UInt32)receivedData[17]) << 8) + (((UInt32)receivedData[18]) << 16) + (((UInt32)receivedData[19]) << 24));
                                 handler_.ReceivedGoto((double)uDec * 90.0 / 0x40000000, (double)uRA * 360.0 / 0x100000000);
                                 bytesRead = 0;
                             }
-                            didSomething = true;
                         }
-                        if (receive == null)
-                        {
-                            receive = s.BeginReceive(rData, bytesRead, rData.Length - bytesRead, SocketFlags.None, null, null);
-                            didSomething = true;
-                        }
+                        if (receiveResult == null)
+                            receiveResult = s.BeginReceive(receivedData, bytesRead, receivedData.Length - bytesRead, SocketFlags.None, null, null);
 
-                        if (!didSomething && !exitThread_)
-                            System.Threading.Thread.Sleep(250);
+                        if (exitThread_)
+                            break;
+
+                        // wait sent, receive + external event
+                        WaitHandle.WaitAny(sendResult != null ?
+                            new WaitHandle[] { receiveResult.AsyncWaitHandle, sendResult.AsyncWaitHandle, evt_ } :
+                            new WaitHandle[] { receiveResult.AsyncWaitHandle, evt_ });
                     }
                 }
                 catch (Exception e)

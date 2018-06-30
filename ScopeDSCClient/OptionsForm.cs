@@ -44,11 +44,15 @@ namespace ScopeDSCClient
 
         public double Latitude = 37.28203, Longitude = -121.85925;
         public bool ShowNearestAzmRotation = false;
+        public bool ConnectToStellarium = false;
+        public int TcpPort = 0;
         
-        public OptionsForm(bool nightMode, bool showNearestAzmRotation)
+        public OptionsForm(bool nightMode, bool showNearestAzmRotation, bool connectToStellarium, int tcpPort)
         {
             nightMode_ = nightMode;
             ShowNearestAzmRotation = showNearestAzmRotation;
+            ConnectToStellarium = connectToStellarium;
+            TcpPort = tcpPort;
             InitializeComponent();
         }
 
@@ -78,6 +82,10 @@ namespace ScopeDSCClient
             SetLocationText();
 
             checkBoxShowNearestAzmRotation.Checked = ShowNearestAzmRotation;
+            checkBoxConnectToStellarium.Checked = ConnectToStellarium;
+            labelStellariumTcpPort.Enabled = ConnectToStellarium;
+            textBoxStellariumTCPPort.Enabled = ConnectToStellarium;
+            textBoxStellariumTCPPort.Text = TcpPort.ToString();
 
             init_ = true;
         }
@@ -275,6 +283,25 @@ namespace ScopeDSCClient
             if (!init_)
                 return;
             ShowNearestAzmRotation = checkBoxShowNearestAzmRotation.Checked;
+        }
+
+        private void checkBoxConnectToStellarium_CheckedChanged(object sender, EventArgs e)
+        {
+            ConnectToStellarium = checkBoxConnectToStellarium.Checked;
+            labelStellariumTcpPort.Enabled = ConnectToStellarium;
+            textBoxStellariumTCPPort.Enabled = ConnectToStellarium;
+        }
+
+        private void textBoxStellariumTCPPort_TextChanged(object sender, EventArgs e)
+        {
+            try
+            {
+                TcpPort = Convert.ToInt32(textBoxStellariumTCPPort.Text);
+            }
+            catch
+            {
+                TcpPort = 0;
+            }
         }
     }
 }

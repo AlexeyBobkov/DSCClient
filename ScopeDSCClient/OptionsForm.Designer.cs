@@ -45,6 +45,9 @@
             this.label5 = new System.Windows.Forms.Label();
             this.buttonScreenKbd = new ScopeDSCClientHelper.NoSelectButton();
             this.checkBoxShowNearestAzmRotation = new System.Windows.Forms.CheckBox();
+            this.checkBoxConnectToStellarium = new System.Windows.Forms.CheckBox();
+            this.labelStellariumTcpPort = new System.Windows.Forms.Label();
+            this.textBoxStellariumTCPPort = new System.Windows.Forms.TextBox();
             this.groupBoxLocUnits.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -55,7 +58,7 @@
             this.buttonOK.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.buttonOK.Name = "buttonOK";
             this.buttonOK.Size = new System.Drawing.Size(201, 92);
-            this.buttonOK.TabIndex = 13;
+            this.buttonOK.TabIndex = 16;
             this.buttonOK.Text = "OK";
             this.buttonOK.UseVisualStyleBackColor = true;
             // 
@@ -66,7 +69,7 @@
             this.buttonCancel.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.buttonCancel.Name = "buttonCancel";
             this.buttonCancel.Size = new System.Drawing.Size(201, 92);
-            this.buttonCancel.TabIndex = 14;
+            this.buttonCancel.TabIndex = 17;
             this.buttonCancel.Text = "Cancel";
             this.buttonCancel.UseVisualStyleBackColor = true;
             // 
@@ -225,7 +228,7 @@
             this.buttonScreenKbd.Location = new System.Drawing.Point(51, 433);
             this.buttonScreenKbd.Name = "buttonScreenKbd";
             this.buttonScreenKbd.Size = new System.Drawing.Size(114, 92);
-            this.buttonScreenKbd.TabIndex = 12;
+            this.buttonScreenKbd.TabIndex = 15;
             this.buttonScreenKbd.Text = "7";
             this.buttonScreenKbd.UseVisualStyleBackColor = true;
             this.buttonScreenKbd.Click += new System.EventHandler(this.buttonScreenKbd_Click);
@@ -241,11 +244,42 @@
             this.checkBoxShowNearestAzmRotation.UseVisualStyleBackColor = true;
             this.checkBoxShowNearestAzmRotation.CheckedChanged += new System.EventHandler(this.checkBoxShowNearestAzmRotation_CheckedChanged);
             // 
+            // checkBoxConnectToStellarium
+            // 
+            this.checkBoxConnectToStellarium.AutoSize = true;
+            this.checkBoxConnectToStellarium.Location = new System.Drawing.Point(321, 321);
+            this.checkBoxConnectToStellarium.Name = "checkBoxConnectToStellarium";
+            this.checkBoxConnectToStellarium.Size = new System.Drawing.Size(282, 33);
+            this.checkBoxConnectToStellarium.TabIndex = 12;
+            this.checkBoxConnectToStellarium.Text = "Connect to Stellarium";
+            this.checkBoxConnectToStellarium.UseVisualStyleBackColor = true;
+            this.checkBoxConnectToStellarium.CheckedChanged += new System.EventHandler(this.checkBoxConnectToStellarium_CheckedChanged);
+            // 
+            // labelStellariumTcpPort
+            // 
+            this.labelStellariumTcpPort.AutoSize = true;
+            this.labelStellariumTcpPort.Location = new System.Drawing.Point(375, 370);
+            this.labelStellariumTcpPort.Name = "labelStellariumTcpPort";
+            this.labelStellariumTcpPort.Size = new System.Drawing.Size(252, 29);
+            this.labelStellariumTcpPort.TabIndex = 13;
+            this.labelStellariumTcpPort.Text = "Stellarium TCP Port:";
+            // 
+            // textBoxStellariumTCPPort
+            // 
+            this.textBoxStellariumTCPPort.Location = new System.Drawing.Point(633, 367);
+            this.textBoxStellariumTCPPort.Name = "textBoxStellariumTCPPort";
+            this.textBoxStellariumTCPPort.Size = new System.Drawing.Size(100, 35);
+            this.textBoxStellariumTCPPort.TabIndex = 14;
+            this.textBoxStellariumTCPPort.TextChanged += new System.EventHandler(this.textBoxStellariumTCPPort_TextChanged);
+            // 
             // OptionsForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(15F, 29F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(898, 574);
+            this.Controls.Add(this.textBoxStellariumTCPPort);
+            this.Controls.Add(this.labelStellariumTcpPort);
+            this.Controls.Add(this.checkBoxConnectToStellarium);
             this.Controls.Add(this.checkBoxShowNearestAzmRotation);
             this.Controls.Add(this.buttonScreenKbd);
             this.Controls.Add(this.label5);
@@ -293,5 +327,8 @@
         private System.Windows.Forms.Label label5;
         private ScopeDSCClientHelper.NoSelectButton buttonScreenKbd;
         private System.Windows.Forms.CheckBox checkBoxShowNearestAzmRotation;
+        private System.Windows.Forms.CheckBox checkBoxConnectToStellarium;
+        private System.Windows.Forms.Label labelStellariumTcpPort;
+        private System.Windows.Forms.TextBox textBoxStellariumTCPPort;
     }
 }

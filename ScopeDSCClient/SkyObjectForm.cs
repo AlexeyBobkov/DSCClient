@@ -45,7 +45,6 @@ namespace ScopeDSCClient
             longitude_ = longitude;
             database_ = database;
             stellariumConnection_ = stellariumConnection;
-            statusChangedHandlerDelegate_ = new Connection.StatusChangedHandler(StellariumStatusChangedHandlerAsync);
             lastObjects_ = lastObjects;
             settings_ = settings;
             InitializeComponent();
@@ -58,7 +57,6 @@ namespace ScopeDSCClient
         private double latitude_, longitude_;
         private List<ScopeDSCClient.ObjDatabaseEntry> database_;
         private StellariumServer.Connection stellariumConnection_;
-        private Connection.StatusChangedHandler statusChangedHandlerDelegate_;
         private SkyObjectPosCalc.SkyPosition[] lastObjects_;
         private LastSettings settings_;
         private SkyObjectPosCalc.SkyPosition object_;
@@ -116,8 +114,13 @@ namespace ScopeDSCClient
                 ScopeDSCClient.EnterNightMode(this);
 
             buttonLastObj.Enabled = (lastObjects_.Length != 0 && lastObjects_[0] != null);
-            buttonStellarium.Enabled = stellariumConnection_.IsConnected;
-            stellariumConnection_.StatusChanged += statusChangedHandlerDelegate_;
+            if (stellariumConnection_ == null)
+                buttonStellarium.Enabled = false;
+            else
+            {
+                buttonStellarium.Enabled = stellariumConnection_.IsConnected;
+                stellariumConnection_.StatusChanged += StellariumStatusChangedHandlerAsync;
+            }
 
             init_ = true;
             CalcAndOutputResults();
@@ -125,7 +128,8 @@ namespace ScopeDSCClient
 
         private void SkyObjectForm_FormClosing(object sender, FormClosingEventArgs e)
         {
-            stellariumConnection_.StatusChanged -= statusChangedHandlerDelegate_;
+            if (stellariumConnection_ != null)
+                stellariumConnection_.StatusChanged -= StellariumStatusChangedHandlerAsync;
         }
 
         public void StellariumStatusChangedHandlerAsync(bool connected)

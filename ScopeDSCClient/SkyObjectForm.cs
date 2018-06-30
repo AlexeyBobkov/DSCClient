@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Windows.Forms;
 using SkyObjectPosition;
+using StellariumServer;
 
 namespace ScopeDSCClient
 {
@@ -34,6 +35,7 @@ namespace ScopeDSCClient
                                 double latitude,
                                 double longitude,
                                 List<ScopeDSCClient.ObjDatabaseEntry> database,
+                                StellariumServer.Connection stellariumConnection,
                                 SkyObjectPosCalc.SkyPosition[] lastObjects,
                                 LastSettings settings)
         {
@@ -42,6 +44,8 @@ namespace ScopeDSCClient
             latitude_ = latitude;
             longitude_ = longitude;
             database_ = database;
+            stellariumConnection_ = stellariumConnection;
+            statusChangedHandlerDelegate_ = new Connection.StatusChangedHandler(StellariumStatusChangedHandlerAsync);
             lastObjects_ = lastObjects;
             settings_ = settings;
             InitializeComponent();
@@ -53,11 +57,15 @@ namespace ScopeDSCClient
         private ScopeDSCClient parent_;
         private double latitude_, longitude_;
         private List<ScopeDSCClient.ObjDatabaseEntry> database_;
-        SkyObjectPosCalc.SkyPosition[] lastObjects_;
+        private StellariumServer.Connection stellariumConnection_;
+        private Connection.StatusChangedHandler statusChangedHandlerDelegate_;
+        private SkyObjectPosCalc.SkyPosition[] lastObjects_;
         private LastSettings settings_;
         private SkyObjectPosCalc.SkyPosition object_;
+        private bool useStellarium_ = false;
 
         public SkyObjectPosCalc.SkyPosition Object { get { return object_; } }
+        public bool UseStellarium { get { return useStellarium_; } }
         public LastSettings Settings { get { return settings_; } }
 
         private void buttonFromList_Click(object sender, EventArgs e)
@@ -92,15 +100,42 @@ namespace ScopeDSCClient
             }
         }
 
+        private void buttonStellarium_Click(object sender, EventArgs e)
+        {
+            if (stellariumConnection_ != null && stellariumConnection_.IsConnected)
+            {
+                object_ = null;
+                useStellarium_ = true;
+                DialogResult = DialogResult.OK;
+            }
+        }
+
         private void SkyObjectForm_Load(object sender, EventArgs e)
         {
             if (nightMode_)
                 ScopeDSCClient.EnterNightMode(this);
 
             buttonLastObj.Enabled = (lastObjects_.Length != 0 && lastObjects_[0] != null);
+            buttonStellarium.Enabled = stellariumConnection_.IsConnected;
+            stellariumConnection_.StatusChanged += statusChangedHandlerDelegate_;
 
             init_ = true;
             CalcAndOutputResults();
+        }
+
+        private void SkyObjectForm_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            stellariumConnection_.StatusChanged -= statusChangedHandlerDelegate_;
+        }
+
+        public void StellariumStatusChangedHandlerAsync(bool connected)
+        {
+            this.BeginInvoke(new StellariumServer.Connection.StatusChangedHandler(this.StellariumStatusChangedHandler), new object[] { connected });
+        }
+
+        public void StellariumStatusChangedHandler(bool connected)
+        {
+            buttonStellarium.Enabled = connected;
         }
 
         private void CalcAndOutputResults()

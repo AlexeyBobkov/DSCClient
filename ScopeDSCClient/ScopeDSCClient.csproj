@@ -150,6 +150,10 @@
       <Project>{961233F7-9E95-4499-B1AB-69848D72ED40}</Project>
       <Name>SkyObjectPosition</Name>
     </ProjectReference>
+    <ProjectReference Include="..\StellariumServer\StellariumServer.csproj">
+      <Project>{08985FB6-4AF4-4937-8F6C-97DE85BF7E08}</Project>
+      <Name>StellariumServer</Name>
+    </ProjectReference>
     <ProjectReference Include="..\TouchscreenKeyboard\TouchscreenKeyboard.csproj">
       <Project>{94070B1D-6DE4-4D45-B2B9-5DA09D0E15C9}</Project>
       <Name>TouchscreenKeyboard</Name>

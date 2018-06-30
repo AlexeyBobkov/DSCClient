@@ -94,6 +94,47 @@ namespace ScopeDSCClient
         private ConnectionData connectionEqu_;
         private ConnectionData connectionGPS_;
 
+        // stellarium
+        private class StellariumReceiveHandler : StellariumServer.Connection.IReceiveHandler
+        {
+            public delegate void ReceiveDelegate(double dec, double ra);
+
+            public StellariumReceiveHandler(ScopeDSCClient parent, ReceiveDelegate dlg)
+            {
+                parent_ = parent;
+                dlg_ = dlg;
+            }
+
+            public void ReceivedGoto(double dec, double ra)
+            {
+                parent_.BeginInvoke(dlg_, new object[] { dec, ra });
+            }
+            public void Error(string errText)
+            {
+                parent_.BeginInvoke(dlg_, new object[] { 0, 0 });
+            }
+
+            private ScopeDSCClient parent_;
+            private ReceiveDelegate dlg_;
+        }
+        private StellariumServer.Connection stellariumConnection_;
+        private class StellariumObject : SkyObjectPosCalc.SkyPosition
+        {
+            public double Dec { get; set; }
+            public double Ra { get; set; }
+            public bool Connected { get; set; }
+
+            public StellariumObject() { Dec = Ra = 0; Connected = false; }
+            public override string Name { get { return Connected ? "Stellarium" : "Disconnected"; } }
+            public override void CalcEquatorial(double d, out double rg, out double dec, out double ra)
+            {
+                rg = 1;
+                dec = Dec;
+                ra = Ra;
+            }
+        }
+        private StellariumObject stellariumObj_ = new StellariumObject();
+
         // object databases
         public struct ObjDatabaseEntry
         {
@@ -434,9 +475,9 @@ namespace ScopeDSCClient
             textBoxAlignment.Text = s;
         }
 
-        private void SetScopePositionAndObjectText()
+        private void SetScopePositionAndObjectText(bool sendPositionToStellarium)
         {
-            if (!scopePosAndObjTextChanged_)
+            if (!scopePosAndObjTextChanged_ && !sendPositionToStellarium)
                 return;
             scopePosAndObjTextChanged_ = false;
 
@@ -470,6 +511,9 @@ namespace ScopeDSCClient
                 SkyObjectPosCalc.AzAlt2Equ(d, latitude_, longitude_, SkyObjectPosCalc.Rev(horz.Azm * Const.toDeg), SkyObjectPosCalc.Rev(horz.Alt * Const.toDeg), out dec, out ra);
                 s += "R.A.\t= " + ScopeDSCClient.PrintTime(ra) + " (" + ra.ToString("F5") + "\x00B0)" + Environment.NewLine;
                 s += "Dec.\t= " + ScopeDSCClient.PrintAngle(dec, true) + " (" + ScopeDSCClient.PrintDec(dec, "F5") + "\x00B0)" + Environment.NewLine;
+
+                if (stellariumConnection_.IsConnected && sendPositionToStellarium)
+                    stellariumConnection_.SendPosition(dec, ra);
             }
 
             s += Environment.NewLine;
@@ -508,6 +552,10 @@ namespace ScopeDSCClient
 
         private void UpdateUI()
         {
+            UpdateUI(false);
+        }
+        private void UpdateUI(bool sendPositionToStellarium)
+        {
             if (connectionAltAzm_ == null || connectionEqu_ == null)
             {
                 buttonAlign.Text = "Alignment (Connect to Scope First)";
@@ -541,7 +589,7 @@ namespace ScopeDSCClient
             }
             SetPositionText();
             SetConnectionAndAlignmentText();
-            SetScopePositionAndObjectText();
+            SetScopePositionAndObjectText(sendPositionToStellarium);
             SetObjectNameLabelText();
         }
 
@@ -680,6 +728,8 @@ namespace ScopeDSCClient
         public ScopeDSCClient()
         {
             InitializeComponent();
+            stellariumConnection_ = new StellariumServer.Connection(System.Net.IPAddress.Parse("127.0.0.1"), 8001, new StellariumReceiveHandler(this, StellariumReceivedGoto));
+            stellariumConnection_.StatusChanged += new StellariumServer.Connection.StatusChangedHandler(StellariumStatusChangedHandlerAsync);
         }
 
         public static bool ParseSignedValue(string text, out double val)
@@ -879,11 +929,11 @@ namespace ScopeDSCClient
 
         private void buttonSelectObject_Click(object sender, EventArgs e)
         {
-            SkyObjectForm form = new SkyObjectForm(this, nightMode_, latitude_, longitude_, database_, lastObjects_, lastObjSettings_);
+            SkyObjectForm form = new SkyObjectForm(this, nightMode_, latitude_, longitude_, database_, stellariumConnection_, lastObjects_, lastObjSettings_);
             if (form.ShowDialog() != DialogResult.OK)
                 return;
 
-            object_ = form.Object;
+            object_ = form.UseStellarium ? stellariumObj_ : form.Object;
             if (object_ != null)
                 AddLastObject(object_);
             lastObjSettings_ = form.Settings;
@@ -970,6 +1020,7 @@ namespace ScopeDSCClient
         private void timer1_Tick(object sender, EventArgs e)
         {
             ++timerCnt_;
+            bool sendPositionToStellarium = false;
             switch (timerCnt_ & 0x07)
             {
             case 0:
@@ -986,9 +1037,10 @@ namespace ScopeDSCClient
             case 5:
             case 7:
                 SendCommand(connectionAltAzm_, 'y', 4, this.ReceiveAltAzmPosition);
+                sendPositionToStellarium = true;
                 break;
             }
-            UpdateUI();
+            UpdateUI(sendPositionToStellarium);
         }
 
         private void AdjustFontSize()
@@ -1255,6 +1307,7 @@ namespace ScopeDSCClient
         private void ScopeDSCClient_FormClosing(object sender, FormClosingEventArgs e)
         {
             CloseAllConnections();
+            stellariumConnection_.Close();
             //settings_.Save();
         }
 
@@ -1291,6 +1344,22 @@ namespace ScopeDSCClient
         private void buttonStop_Click(object sender, EventArgs e)
         {
             SendScopeMotionCommand('0');
+        }
+
+        public void StellariumStatusChangedHandlerAsync(bool connected)
+        {
+            this.BeginInvoke(new StellariumServer.Connection.StatusChangedHandler(this.StellariumStatusChangedHandler), new object[] { connected });
+        }
+
+        public void StellariumStatusChangedHandler(bool connected)
+        {
+            stellariumObj_.Connected = connected;
+        }
+
+        public void StellariumReceivedGoto(double dec, double ra)
+        {
+            stellariumObj_.Dec = dec;
+            stellariumObj_.Ra = ra;
         }
     }
 

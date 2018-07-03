@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -32,14 +29,8 @@ namespace StellariumServer
         public event StatusChangedHandler StatusChanged;
         public bool IsConnected { get { return connected_; } }
 
-        public bool SendPosition(double dec, double ra)
+        public void SendPosition(double dec, double ra)
         {
-            lock (lockThis_)
-            {
-                if (sendData_ != null)
-                    return false;
-            }
-
             UInt32 uRA = (UInt32)(ra * 0x100000000 / 360.0);
             Int32 iDec = (Int32)(dec * 0x40000000 / 90.0);
             
@@ -59,7 +50,7 @@ namespace StellariumServer
                 sendData_ = data;
             }
             evt_.Set(); // wake up thread
-            return true;
+            return;
         }
 
         public void Close()
@@ -105,8 +96,7 @@ namespace StellariumServer
 
         private void ThreadProc()
         {
-            if (StatusChanged != null)
-                StatusChanged(false);
+            SetStatusChanged(false);
 
             TcpListener myList = new TcpListener(addr_, port_);
             myList.Start();
@@ -129,7 +119,7 @@ namespace StellariumServer
 
                     IAsyncResult sendResult = null, receiveResult = null;
                     byte[] receivedData = new byte[20];
-                    int bytesRead = 0;
+                    int bytesReceived = 0;
                     while (!exitThread_ && SocketConnected(s))
                     {
                         // send
@@ -156,19 +146,19 @@ namespace StellariumServer
                         // receive
                         if (receiveResult != null && receiveResult.IsCompleted)
                         {
-                            bytesRead += s.EndReceive(receiveResult);
+                            bytesReceived += s.EndReceive(receiveResult);
                             receiveResult = null;
 
-                            if (bytesRead >= receivedData.Length)
+                            if (bytesReceived >= receivedData.Length)
                             {
                                 UInt32 uRA = receivedData[12] + (((UInt32)receivedData[13]) << 8) + (((UInt32)receivedData[14]) << 16) + (((UInt32)receivedData[15]) << 24);
                                 Int32 uDec = (Int32)(receivedData[16] + (((UInt32)receivedData[17]) << 8) + (((UInt32)receivedData[18]) << 16) + (((UInt32)receivedData[19]) << 24));
                                 handler_.ReceivedGoto((double)uDec * 90.0 / 0x40000000, (double)uRA * 360.0 / 0x100000000);
-                                bytesRead = 0;
+                                bytesReceived = 0;
                             }
                         }
                         if (receiveResult == null)
-                            receiveResult = s.BeginReceive(receivedData, bytesRead, receivedData.Length - bytesRead, SocketFlags.None, null, null);
+                            receiveResult = s.BeginReceive(receivedData, bytesReceived, receivedData.Length - bytesReceived, SocketFlags.None, null, null);
 
                         if (exitThread_)
                             break;

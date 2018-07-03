@@ -56,6 +56,7 @@
             this.buttonTrackStars = new System.Windows.Forms.Button();
             this.buttonOptions = new System.Windows.Forms.Button();
             this.buttonStop = new System.Windows.Forms.Button();
+            this.buttonStellariumConnect = new System.Windows.Forms.Button();
             this.textBoxPosition = new System.Windows.Forms.TextBox();
             this.timer1 = new System.Windows.Forms.Timer(this.components);
             this.tableLayoutPanel1.SuspendLayout();
@@ -331,6 +332,7 @@
             this.tableLayoutPanel6.Controls.Add(this.tableLayoutPanel9, 1, 0);
             this.tableLayoutPanel6.Controls.Add(this.buttonOptions, 1, 2);
             this.tableLayoutPanel6.Controls.Add(this.buttonStop, 1, 1);
+            this.tableLayoutPanel6.Controls.Add(this.buttonStellariumConnect, 1, 4);
             this.tableLayoutPanel6.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tableLayoutPanel6.Location = new System.Drawing.Point(803, 4);
             this.tableLayoutPanel6.Margin = new System.Windows.Forms.Padding(5, 4, 5, 4);
@@ -475,6 +477,19 @@
             this.buttonStop.UseVisualStyleBackColor = true;
             this.buttonStop.Click += new System.EventHandler(this.buttonStop_Click);
             // 
+            // buttonStellariumConnect
+            // 
+            this.buttonStellariumConnect.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+                        | System.Windows.Forms.AnchorStyles.Left)
+                        | System.Windows.Forms.AnchorStyles.Right)));
+            this.buttonStellariumConnect.Location = new System.Drawing.Point(23, 362);
+            this.buttonStellariumConnect.Name = "buttonStellariumConnect";
+            this.buttonStellariumConnect.Size = new System.Drawing.Size(286, 47);
+            this.buttonStellariumConnect.TabIndex = 3;
+            this.buttonStellariumConnect.Text = "Stellarium: Disconnected\r\n(Press to Connect)";
+            this.buttonStellariumConnect.UseVisualStyleBackColor = true;
+            this.buttonStellariumConnect.Click += new System.EventHandler(this.buttonStellariumConnect_Click);
+            // 
             // textBoxPosition
             // 
             this.textBoxPosition.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
@@ -554,6 +569,7 @@
         private System.Windows.Forms.Button buttonTrackMoon;
         private System.Windows.Forms.Button buttonTrackStars;
         private System.Windows.Forms.Button buttonStop;
+        private System.Windows.Forms.Button buttonStellariumConnect;
     }
 }
 

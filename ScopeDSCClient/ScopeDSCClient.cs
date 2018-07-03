@@ -1319,12 +1319,14 @@ namespace ScopeDSCClient
 
         private void OpenStellariumConnection(int port)
         {
+            buttonStellariumConnect.Text = "Stellarium: Connecting..." + Environment.NewLine + "(Press to Diconnect)";
             stellariumConnection_ = new StellariumServer.Connection(System.Net.IPAddress.Any, port, new StellariumReceiveHandler(this, StellariumReceivedGoto));
             stellariumConnection_.StatusChanged += StellariumStatusChangedHandlerAsync;
         }
 
         private void CloseStellariumConnection()
         {
+            buttonStellariumConnect.Text = "Stellarium: Disconnected" + Environment.NewLine + "(Press to Connect)";
             if (stellariumConnection_ != null)
             {
                 stellariumConnection_.StatusChanged -= StellariumStatusChangedHandlerAsync;
@@ -1382,6 +1384,10 @@ namespace ScopeDSCClient
 
         public void StellariumStatusChangedHandler(bool connected)
         {
+            if(connected)
+                buttonStellariumConnect.Text = "Stellarium: Connected" + Environment.NewLine + "(Press to Disconnect)";
+            else
+                buttonStellariumConnect.Text = "Stellarium: Connecting..." + Environment.NewLine + "(Press to Disconnect)";
             stellariumObj_.Connected = connected;
             ObjectChanged();
             UpdateUI(true);
@@ -1391,6 +1397,14 @@ namespace ScopeDSCClient
         {
             stellariumObj_.Dec = dec;
             stellariumObj_.Ra = ra;
+        }
+
+        private void buttonStellariumConnect_Click(object sender, EventArgs e)
+        {
+            if (stellariumConnection_ != null)
+                CloseStellariumConnection();
+            else
+                OpenStellariumConnection(settings_.TcpPort);
         }
     }
 

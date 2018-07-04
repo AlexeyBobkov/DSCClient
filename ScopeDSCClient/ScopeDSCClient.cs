@@ -33,6 +33,8 @@ namespace ScopeDSCClient
         private int baudRate_ = 115200;
         private double latitude_, longitude_;
         private bool showNearestAzmRotation_ = false;
+        private bool connectToStellarium_ = false;
+        private int stellariumTcpPort_ = 8001;
         private SkyObjectForm.LastSettings lastObjSettings_ = SkyObjectForm.LastSettings.Default;
         private AlignmentForm.LastSettings lastAlignmentObjSettings_ = AlignmentForm.LastSettings.Default;
 
@@ -95,27 +97,6 @@ namespace ScopeDSCClient
         private ConnectionData connectionGPS_;
 
         // stellarium
-        private class StellariumReceiveHandler : StellariumServer.Connection.IReceiveHandler
-        {
-            public delegate void ReceiveDelegate(double dec, double ra);
-
-            public StellariumReceiveHandler(ScopeDSCClient parent, ReceiveDelegate dlg)
-            {
-                parent_ = parent;
-                dlg_ = dlg;
-            }
-
-            public void ReceivedGoto(double dec, double ra)
-            {
-                parent_.BeginInvoke(dlg_, new object[] { dec, ra });
-            }
-            public void Error(string errText)
-            {
-            }
-
-            private ScopeDSCClient parent_;
-            private ReceiveDelegate dlg_;
-        }
         private StellariumServer.Connection stellariumConnection_;
         private class StellariumObject : SkyObjectPosCalc.SkyPosition
         {
@@ -853,9 +834,11 @@ namespace ScopeDSCClient
             latitude_ = settings_.Latitude;
             longitude_ = settings_.Longitude;
             showNearestAzmRotation_ = settings_.ShowNearestAzmRotation;
+            connectToStellarium_ = settings_.ConnectToStellarium;
+            stellariumTcpPort_ = settings_.TcpPort;
 
-            if (settings_.ConnectToStellarium)
-                OpenStellariumConnection(settings_.TcpPort);
+            if (connectToStellarium_)
+                OpenStellariumConnection(stellariumTcpPort_);
 
             // Everything is changed! (Yes, it's redundant.)
             //OptionsOrTimeChanged();
@@ -993,7 +976,7 @@ namespace ScopeDSCClient
 
         private void buttonOptions_Click(object sender, EventArgs e)
         {
-            OptionsForm form = new OptionsForm(nightMode_, showNearestAzmRotation_, settings_.ConnectToStellarium, settings_.TcpPort);
+            OptionsForm form = new OptionsForm(nightMode_, showNearestAzmRotation_, connectToStellarium_, stellariumTcpPort_);
             form.Latitude = latitude_;
             form.Longitude = longitude_;
             if (form.ShowDialog() != DialogResult.OK)
@@ -1016,7 +999,7 @@ namespace ScopeDSCClient
 
                 if (form.ConnectToStellarium)
                 {
-                    if (stellariumConnection_ != null && settings_.TcpPort != form.TcpPort)
+                    if (stellariumConnection_ != null && stellariumTcpPort_ != form.TcpPort)
                         CloseStellariumConnection();
                     if (stellariumConnection_ == null)
                         OpenStellariumConnection(form.TcpPort);
@@ -1024,8 +1007,8 @@ namespace ScopeDSCClient
                 else if (stellariumConnection_ != null)
                     CloseStellariumConnection();
 
-                settings_.ConnectToStellarium = form.ConnectToStellarium;
-                settings_.TcpPort = form.TcpPort;
+                settings_.ConnectToStellarium = connectToStellarium_ = form.ConnectToStellarium;
+                settings_.TcpPort = stellariumTcpPort_ = form.TcpPort;
             }
             UpdateUI();
         }
@@ -1320,8 +1303,9 @@ namespace ScopeDSCClient
         private void OpenStellariumConnection(int port)
         {
             buttonStellariumConnect.Text = "Stellarium: Connecting..." + Environment.NewLine + "(Press to Diconnect)";
-            stellariumConnection_ = new StellariumServer.Connection(System.Net.IPAddress.Any, port, new StellariumReceiveHandler(this, StellariumReceivedGoto));
+            stellariumConnection_ = new StellariumServer.Connection(System.Net.IPAddress.Any, port);
             stellariumConnection_.StatusChanged += StellariumStatusChangedHandlerAsync;
+            stellariumConnection_.ReceivedGoto += StellariumReceivedGoto;
         }
 
         private void CloseStellariumConnection()
@@ -1330,6 +1314,7 @@ namespace ScopeDSCClient
             if (stellariumConnection_ != null)
             {
                 stellariumConnection_.StatusChanged -= StellariumStatusChangedHandlerAsync;
+                stellariumConnection_.ReceivedGoto -= StellariumReceivedGoto;
                 stellariumConnection_.Close();
                 stellariumConnection_ = null;
             }
@@ -1393,6 +1378,11 @@ namespace ScopeDSCClient
             UpdateUI(true);
         }
 
+        public void StellariumReceivedGotoAsync(double dec, double ra)
+        {
+            this.BeginInvoke(new StellariumServer.Connection.ReceivedGotoHandler(this.StellariumReceivedGoto), new object[] { dec, ra });
+        }
+
         public void StellariumReceivedGoto(double dec, double ra)
         {
             stellariumObj_.Dec = dec;
@@ -1404,7 +1394,7 @@ namespace ScopeDSCClient
             if (stellariumConnection_ != null)
                 CloseStellariumConnection();
             else
-                OpenStellariumConnection(settings_.TcpPort);
+                OpenStellariumConnection(stellariumTcpPort_);
         }
     }
 

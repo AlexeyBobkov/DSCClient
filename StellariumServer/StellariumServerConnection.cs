@@ -7,28 +7,30 @@ namespace StellariumServer
 {
     public class Connection : IDisposable
     {
-        public interface IReceiveHandler
-        {
-            // All methods are called asynchronously. The interface implementation should
-            // provide thread synchronization if necessary.
-            void ReceivedGoto(double dec, double ra);
-            void Error(string errText);
-        };
-
-        public Connection(IPAddress addr, int port, IReceiveHandler handler)
+        public Connection(IPAddress addr, int port)
         {
             addr_ = addr;
             port_ = port;
-            handler_ = handler;
-
             thread_ = new Thread(this.ThreadProc);
             thread_.Start();
         }
 
-        public delegate void StatusChangedHandler(bool connected);
-        public event StatusChangedHandler StatusChanged;
+        // connection status
         public bool IsConnected { get { return connected_; } }
 
+        // connection status changed event
+        public delegate void StatusChangedHandler(bool connected);
+        public event StatusChangedHandler StatusChanged;
+
+        // error event
+        public delegate void ErrorHandler(string errText);
+        public event ErrorHandler Error;
+
+        // GoTo received from Stellarium event
+        public delegate void ReceivedGotoHandler(double dec, double ra);
+        public event ReceivedGotoHandler ReceivedGoto;
+
+        // Send position to Stellarium
         public void SendPosition(double dec, double ra)
         {
             UInt32 uRA = (UInt32)(ra * 0x100000000 / 360.0);
@@ -55,12 +57,17 @@ namespace StellariumServer
 
         public void Close()
         {
-            if (thread_ != null)
+            Thread thread = null;
+            lock (lockThis_)
+            {
+                thread = thread_;
+                thread_ = null;
+            }
+            if (thread != null)
             {
                 exitThread_ = true;
                 evt_.Set(); // wake up thread
-                evtStopped_.WaitOne();
-                thread_ = null;
+                thread.Join();
             }
         }
 
@@ -74,11 +81,9 @@ namespace StellariumServer
         private IPAddress addr_;
         private int port_;
         private bool connected_ = false;
-        private IReceiveHandler handler_;
         private byte[] sendData_;
         private System.Object lockThis_ = new System.Object();
         private AutoResetEvent evt_ = new AutoResetEvent(false);
-        private AutoResetEvent evtStopped_ = new AutoResetEvent(false);
         private bool exitThread_ = false;
         private Thread thread_;
 
@@ -92,6 +97,18 @@ namespace StellariumServer
             connected_ = connected;
             if (StatusChanged != null)
                 StatusChanged(connected);
+        }
+
+        private void SendReceivedGoto(double dec, double ra)
+        {
+            if (ReceivedGoto != null)
+                ReceivedGoto(dec, ra);
+        }
+
+        private void SendError(string errText)
+        {
+            if (Error != null)
+                Error(errText);
         }
 
         private void ThreadProc()
@@ -133,11 +150,8 @@ namespace StellariumServer
                             byte[] sendData = null;
                             lock (lockThis_)
                             {
-                                if (sendData_ != null)
-                                {
-                                    sendData = sendData_;
-                                    sendData_ = null;
-                                }
+                                sendData = sendData_;
+                                sendData_ = null;
                             }
                             if (sendData != null)
                                 sendResult = s.BeginSend(sendData, 0, sendData.Length, SocketFlags.None, null, null);
@@ -153,7 +167,7 @@ namespace StellariumServer
                             {
                                 UInt32 uRA = receivedData[12] + (((UInt32)receivedData[13]) << 8) + (((UInt32)receivedData[14]) << 16) + (((UInt32)receivedData[15]) << 24);
                                 Int32 uDec = (Int32)(receivedData[16] + (((UInt32)receivedData[17]) << 8) + (((UInt32)receivedData[18]) << 16) + (((UInt32)receivedData[19]) << 24));
-                                handler_.ReceivedGoto((double)uDec * 90.0 / 0x40000000, (double)uRA * 360.0 / 0x100000000);
+                                SendReceivedGoto((double)uDec * 90.0 / 0x40000000, (double)uRA * 360.0 / 0x100000000);
                                 bytesReceived = 0;
                             }
                         }
@@ -171,7 +185,7 @@ namespace StellariumServer
                 }
                 catch (Exception e)
                 {
-                    handler_.Error(e.Message);
+                    SendError(e.Message);
                 }
                 if (s != null)
                 {
@@ -181,7 +195,6 @@ namespace StellariumServer
                 SetStatusChanged(false);
             }
             myList.Stop();
-            evtStopped_.Set();
         }
     }
 }

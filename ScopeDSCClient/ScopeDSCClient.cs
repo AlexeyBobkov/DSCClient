@@ -35,6 +35,7 @@ namespace ScopeDSCClient
         private bool showNearestAzmRotation_ = false;
         private bool connectToStellarium_ = false;
         private int stellariumTcpPort_ = 8001;
+        private bool oppositeHorzPositioningDir_ = false;
         private SkyObjectForm.LastSettings lastObjSettings_ = SkyObjectForm.LastSettings.Default;
         private AlignmentForm.LastSettings lastAlignmentObjSettings_ = AlignmentForm.LastSettings.Default;
 
@@ -342,14 +343,24 @@ namespace ScopeDSCClient
             return SkyObjectPosCalc.CalcTime(v.Year, v.Month, v.Day, v.Hour, v.Minute, v.Second, v.Millisecond);
         }
 
-        private static string PrintAzmAltDifference(double diffAzmDeg, double diffAltDeg)
+        private static string PrintAzmAltDifference(double diffAzmDeg, double diffAltDeg, bool oppositeAzmPositioningDir)
         {
             string s = "";
 
-            if (diffAzmDeg > 0)
-                s += "\u25ba";
-            else if (diffAzmDeg < 0)
-                s += "\u25c4";
+            if (oppositeAzmPositioningDir)
+            {
+                if (diffAzmDeg > 0)
+                    s += "\u25c4";
+                else if (diffAzmDeg < 0)
+                    s += "\u25ba";
+            }
+            else
+            {
+                if (diffAzmDeg > 0)
+                    s += "\u25ba";
+                else if (diffAzmDeg < 0)
+                    s += "\u25c4";
+            }
             s += ScopeDSCClient.PrintAngle(diffAzmDeg, true, false) + ", ";
 
             if (diffAltDeg > 0)
@@ -380,13 +391,13 @@ namespace ScopeDSCClient
                 PairA objScope = alignment_.Horz2Scope(new PairA(azm * Const.toRad, alt * Const.toRad), EquAngle);
 
                 if (!showNearestAzmRotation_)
-                    s += PrintAzmAltDifference(SkyObjectPosCalc.Rev(objScope.Azm * Const.toDeg) - AzmAngle * Const.toDeg, (objScope.Alt - AltAngle) * Const.toDeg);
+                    s += PrintAzmAltDifference(SkyObjectPosCalc.Rev(objScope.Azm * Const.toDeg) - AzmAngle * Const.toDeg, (objScope.Alt - AltAngle) * Const.toDeg, oppositeHorzPositioningDir_);
                 else
                 {
                     double azmd = SkyObjectPosCalc.Rev(objScope.Azm * Const.toDeg - AzmAngle * Const.toDeg);
                     if (azmd > 180)
                         azmd -= 360;
-                    s += PrintAzmAltDifference(azmd, (objScope.Alt - AltAngle) * Const.toDeg);
+                    s += PrintAzmAltDifference(azmd, (objScope.Alt - AltAngle) * Const.toDeg, oppositeHorzPositioningDir_);
                 }
             }
             
@@ -406,7 +417,7 @@ namespace ScopeDSCClient
             if (alignment == null)
                 return "";
             Vect3 equAxis = alignment.EquAxis;
-            return "Polar Axis Correction Needed: " + PrintAzmAltDifference(-equAxis.Azm * Const.toDeg, latitude - equAxis.Alt * Const.toDeg);
+            return "Polar Axis Correction Needed: " + PrintAzmAltDifference(-equAxis.Azm * Const.toDeg, latitude - equAxis.Alt * Const.toDeg, false);
         }
 
         private void SetConnectionAndAlignmentText()
@@ -836,6 +847,7 @@ namespace ScopeDSCClient
             showNearestAzmRotation_ = settings_.ShowNearestAzmRotation;
             connectToStellarium_ = settings_.ConnectToStellarium;
             stellariumTcpPort_ = settings_.TcpPort;
+            oppositeHorzPositioningDir_ = settings_.OppositeHorzPositioningDir;
 
             if (connectToStellarium_)
                 OpenStellariumConnection(stellariumTcpPort_);
@@ -976,7 +988,7 @@ namespace ScopeDSCClient
 
         private void buttonOptions_Click(object sender, EventArgs e)
         {
-            OptionsForm form = new OptionsForm(nightMode_, showNearestAzmRotation_, connectToStellarium_, stellariumTcpPort_);
+            OptionsForm form = new OptionsForm(nightMode_, showNearestAzmRotation_, connectToStellarium_, stellariumTcpPort_, oppositeHorzPositioningDir_);
             form.Latitude = latitude_;
             form.Longitude = longitude_;
             if (form.ShowDialog() != DialogResult.OK)
@@ -1006,6 +1018,9 @@ namespace ScopeDSCClient
                 }
                 else if (stellariumConnection_ != null)
                     CloseStellariumConnection();
+
+                if (form.OppositeHorzPositioningDir != oppositeHorzPositioningDir_)
+                    settings_.OppositeHorzPositioningDir = oppositeHorzPositioningDir_ = form.OppositeHorzPositioningDir;
 
                 settings_.ConnectToStellarium = connectToStellarium_ = form.ConnectToStellarium;
                 settings_.TcpPort = stellariumTcpPort_ = form.TcpPort;
@@ -1434,6 +1449,12 @@ namespace ScopeDSCClient
         {
             get { return profile_.GetValue(section_, "TcpPort", 8001); }
             set { profile_.SetValue(section_, "TcpPort", value); }
+        }
+
+        public bool OppositeHorzPositioningDir
+        {
+            get { return profile_.GetValue(section_, "OppositeHorzPositioningDir", false); }
+            set { profile_.SetValue(section_, "OppositeHorzPositioningDir", value); }
         }
 
         public AlignStar[] AlignmentStars

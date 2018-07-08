@@ -46,13 +46,15 @@ namespace ScopeDSCClient
         public bool ShowNearestAzmRotation = false;
         public bool ConnectToStellarium = false;
         public int TcpPort = 0;
-        
-        public OptionsForm(bool nightMode, bool showNearestAzmRotation, bool connectToStellarium, int tcpPort)
+        public bool OppositeHorzPositioningDir = false;
+
+        public OptionsForm(bool nightMode, bool showNearestAzmRotation, bool connectToStellarium, int tcpPort, bool oppositeHorzPositioningDir)
         {
             nightMode_ = nightMode;
             ShowNearestAzmRotation = showNearestAzmRotation;
             ConnectToStellarium = connectToStellarium;
             TcpPort = tcpPort;
+            OppositeHorzPositioningDir = oppositeHorzPositioningDir;
             InitializeComponent();
         }
 
@@ -86,6 +88,7 @@ namespace ScopeDSCClient
             labelStellariumTcpPort.Enabled = ConnectToStellarium;
             textBoxStellariumTCPPort.Enabled = ConnectToStellarium;
             textBoxStellariumTCPPort.Text = TcpPort.ToString();
+            checkBoxOppHorzPositionDirection.Checked = OppositeHorzPositioningDir;
 
             init_ = true;
         }
@@ -302,6 +305,13 @@ namespace ScopeDSCClient
             {
                 TcpPort = 0;
             }
+        }
+
+        private void checkBoxOppHorzPositionDirection_CheckedChanged(object sender, EventArgs e)
+        {
+            if (!init_)
+                return;
+            OppositeHorzPositioningDir = checkBoxOppHorzPositionDirection.Checked;
         }
     }
 }

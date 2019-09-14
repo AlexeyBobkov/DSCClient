@@ -11,11 +11,14 @@ namespace ScopeDSCClient
         /// The main entry point for the application.
         /// </summary>
         [STAThread]
-        static void Main()
+        static void Main(string[] args)
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new ScopeDSCClient());
+            if (args.Length > 0 && args[0] == "/goto")
+                Application.Run(new ScopeGotoClient());
+            else
+                Application.Run(new ScopeDSCClient());
         }
     }
 }

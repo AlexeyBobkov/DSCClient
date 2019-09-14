@@ -30,17 +30,15 @@ namespace ScopeDSCClient
             }
         }
 
-        public SkyObjectForm   (ScopeDSCClient parent,
-                                bool nightMode,
+        public SkyObjectForm   (bool nightMode,
                                 double latitude,
                                 double longitude,
-                                List<ScopeDSCClient.ObjDatabaseEntry> database,
+                                List<ClientCommonAPI.ObjDatabaseEntry> database,
                                 StellariumServer.Connection stellariumConnection,
                                 SkyObjectPosCalc.SkyPosition[] lastObjects,
                                 LastSettings settings)
         {
             nightMode_ = nightMode;
-            parent_ = parent;
             latitude_ = latitude;
             longitude_ = longitude;
             database_ = database;
@@ -53,9 +51,8 @@ namespace ScopeDSCClient
         // implementation
         private bool init_ = false;
         private bool nightMode_ = false;
-        private ScopeDSCClient parent_;
         private double latitude_, longitude_;
-        private List<ScopeDSCClient.ObjDatabaseEntry> database_;
+        private List<ClientCommonAPI.ObjDatabaseEntry> database_;
         private StellariumServer.Connection stellariumConnection_;
         private SkyObjectPosCalc.SkyPosition[] lastObjects_;
         private LastSettings settings_;
@@ -68,7 +65,7 @@ namespace ScopeDSCClient
 
         private void buttonFromList_Click(object sender, EventArgs e)
         {
-            ObjectFromListForm form = new ObjectFromListForm(parent_, nightMode_, latitude_, longitude_, database_, settings_.objListLastSettings_);
+            ObjectFromListForm form = new ObjectFromListForm(nightMode_, latitude_, longitude_, database_, settings_.objListLastSettings_);
             if (form.ShowDialog() == DialogResult.OK)
             {
                 object_ = form.Object;
@@ -79,7 +76,7 @@ namespace ScopeDSCClient
 
         private void buttonByCoordinates_Click(object sender, EventArgs e)
         {
-            ObjectFromCoordinatesForm form = new ObjectFromCoordinatesForm(parent_, nightMode_, latitude_, longitude_, settings_.objCoordSettings_);
+            ObjectFromCoordinatesForm form = new ObjectFromCoordinatesForm(nightMode_, latitude_, longitude_, settings_.objCoordSettings_);
             if (form.ShowDialog() == DialogResult.OK)
             {
                 object_ = form.Object;
@@ -90,7 +87,7 @@ namespace ScopeDSCClient
 
         private void buttonLastObj_Click(object sender, EventArgs e)
         {
-            ObjectLastSelectionForm form = new ObjectLastSelectionForm(parent_, nightMode_, latitude_, longitude_, lastObjects_);
+            ObjectLastSelectionForm form = new ObjectLastSelectionForm(nightMode_, latitude_, longitude_, lastObjects_);
             if (form.ShowDialog() == DialogResult.OK)
             {
                 object_ = form.Object;
@@ -111,7 +108,7 @@ namespace ScopeDSCClient
         private void SkyObjectForm_Load(object sender, EventArgs e)
         {
             if (nightMode_)
-                ScopeDSCClient.EnterNightMode(this);
+                ClientCommonAPI.EnterNightMode(this);
 
             buttonLastObj.Enabled = (lastObjects_.Length != 0 && lastObjects_[0] != null);
             if (stellariumConnection_ == null)

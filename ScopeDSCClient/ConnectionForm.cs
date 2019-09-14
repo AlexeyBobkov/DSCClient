@@ -36,7 +36,7 @@ namespace ScopeDSCClient
         private void ConnectionForm_Load(object sender, EventArgs e)
         {
             if (nightMode_)
-                ScopeDSCClient.EnterNightMode(this);
+                ClientCommonAPI.EnterNightMode(this);
 
             int i;
 

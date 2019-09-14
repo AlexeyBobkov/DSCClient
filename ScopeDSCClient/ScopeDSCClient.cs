@@ -73,7 +73,7 @@ namespace ScopeDSCClient
         private const byte CONNCAPS_EQU = 2;
         private const byte CONNCAPS_GPS = 4;
 
-        class ConnectionData
+        private class ConnectionData
         {
             public SerialConnection connection_;
             public bool swapAzmAltEncoders_;
@@ -117,82 +117,11 @@ namespace ScopeDSCClient
         private StellariumObject stellariumObj_ = new StellariumObject();
 
         // object databases
-        public struct ObjDatabaseEntry
-        {
-            public string name_;
-            public SkyObjectPosCalc.SkyPosition[] objects_;
-        };
-        List<ObjDatabaseEntry> database_ = new List<ObjDatabaseEntry>();
+        List<ClientCommonAPI.ObjDatabaseEntry> database_ = new List<ClientCommonAPI.ObjDatabaseEntry>();
 
         private delegate void TimeoutDelegate(SerialConnection connection);
         private delegate void SetConnectionDelegate(ConnectionData data);
         private delegate void ReceiveDelegate(byte[] data);
-
-        public static string PrintAngle(double a)
-        {
-            return PrintAngle(a, false);
-        }
-        public static string PrintAngle(double a, bool fSign)
-        {
-            return PrintAngle(a, fSign, true);
-        }
-        public static string PrintAngle(double a, bool fSign, bool fAddSeconds)
-        {
-            bool pos = (a >= 0);
-            a = Math.Abs(a);
-            double a_deg = Math.Floor(a);
-            double min = (a - a_deg) * 60;
-            if (!fAddSeconds)
-            {
-                min = Math.Round(min);
-                if (min == 60)
-                {
-                    min = 0;
-                    a_deg += 1;
-                }
-                return (pos ? (fSign ? "+" : "") : "-") + a_deg.ToString("F0") + "\x00B0" + min.ToString("F0") + "'";
-            }
-            else
-            {
-                double a_min = Math.Floor(min), sec = (min - a_min) * 60;
-                sec = Math.Round(sec*10)/10;
-                if (sec == 60)
-                {
-                    sec = 0;
-                    a_min += 1;
-                    if (a_min == 60)
-                    {
-                        a_min = 0;
-                        a_deg += 1;
-                    }
-                }
-                return (pos ? (fSign ? "+" : "") : "-") + a_deg.ToString("F0") + "\x00B0" + a_min.ToString("F0") + "'" + sec.ToString("F1") + "\"";
-            }
-        }
-        public static string PrintTime(double a)
-        {
-            bool pos = (a >= 0);
-            a = Math.Abs(a);
-
-            a /= 15.0;
-
-            double a_deg = Math.Floor(a);
-            double min = (a - a_deg) * 60, a_min = Math.Floor(min);
-            double sec = (min - a_min) * 60;
-            return (pos ? "" : "-") + a_deg.ToString("F0") + "h " + a_min.ToString("F0") + "min " + sec.ToString("F1") + "sec";
-        }
-        public static string PrintDec(double a, string fmt)
-        {
-            bool pos = (a > 0);
-            a = Math.Abs(a);
-            return (pos ? "+" : (a == 0) ? "" : "-") + a.ToString(fmt);
-        }
-        public static string PrintDec(double a)
-        {
-            bool pos = (a > 0);
-            a = Math.Abs(a);
-            return (pos ? "+" : (a == 0) ? "" : "-") + a.ToString();
-        }
 
         private class InitConnectionHandler : SerialConnection.IReceiveHandler
         {
@@ -270,58 +199,6 @@ namespace ScopeDSCClient
             fullScreen_ = false;
         }
 
-        // enumerate controls
-        private delegate void ControlFn(Control control, int cnt);
-        private static int EnumControls(Control control, ControlFn fn, int cnt)
-        {
-            if (fn != null)
-                fn(control, cnt);
-            cnt++;
-            for (int i = control.Controls.Count; --i >= 0; )
-                cnt = EnumControls(control.Controls[i], fn, cnt);
-            return cnt;
-        }
-
-        // set night mode on
-        private static void SetNightModeOnFn(Control control, int cnt)
-        {
-            Button bt = control as Button;
-            if (bt != null)
-            {
-                bt.ForeColor = Color.Red;
-                bt.BackColor = Color.Black;
-                bt.FlatStyle = FlatStyle.Flat;
-                bt.FlatAppearance.BorderColor = Color.Red;
-                bt.FlatAppearance.MouseDownBackColor = Color.Black;
-                bt.FlatAppearance.MouseOverBackColor = Color.Black;
-                return;
-            }
-
-            control.ForeColor = Color.Red;
-            control.BackColor = Color.Black;
-        }
-        private static void SetNightModeOffFn(Control control, int cnt)
-        {
-            TextBox tb = control as TextBox;
-            if (tb != null)
-            {
-                tb.ForeColor = Color.FromKnownColor(System.Drawing.KnownColor.WindowText);
-                tb.BackColor = Color.FromKnownColor(System.Drawing.KnownColor.Control);
-                return;
-            }
-            Button bt = control as Button;
-            if (bt != null)
-            {
-                bt.ForeColor = Color.FromKnownColor(System.Drawing.KnownColor.ControlText);
-                bt.BackColor = Color.FromKnownColor(System.Drawing.KnownColor.Control);
-                bt.FlatStyle = FlatStyle.Standard;
-                return;
-            }
-
-            control.ForeColor = Color.FromKnownColor(System.Drawing.KnownColor.ControlText);
-            control.BackColor = Color.FromKnownColor(System.Drawing.KnownColor.Control);
-        }
-
         public double AzmAngle
         {
             get { return (double)(azmPos_ + azmOffset_) * 2 * Math.PI / (azmRes_ != 0 ? (double)azmRes_ : 1); }
@@ -337,41 +214,16 @@ namespace ScopeDSCClient
             get { return (double)equPos_ * 2 * Math.PI / (equRes_ != 0 ? (double)equRes_ : 1) - Math.PI; }
         }
 
-        public static double CalcTime()
+        private class ScopePositions : ClientCommonAPI.IScopePositions
         {
-            DateTime v = DateTime.UtcNow;
-            return SkyObjectPosCalc.CalcTime(v.Year, v.Month, v.Day, v.Hour, v.Minute, v.Second, v.Millisecond);
+            public ScopePositions(ScopeDSCClient parent) { parent_ = parent; }
+            public double AzmAngle { get { return parent_.AzmAngle; } }
+            public double AltAngle { get { return parent_.AltAngle; } }
+            public double EquAngle { get { return parent_.EquAngle; } }
+
+            private ScopeDSCClient parent_;
         }
-
-        private static string PrintAzmAltDifference(double diffAzmDeg, double diffAltDeg, bool oppositeAzmPositioningDir)
-        {
-            string s = "";
-
-            if (oppositeAzmPositioningDir)
-            {
-                if (diffAzmDeg > 0)
-                    s += "\u25c4";
-                else if (diffAzmDeg < 0)
-                    s += "\u25ba";
-            }
-            else
-            {
-                if (diffAzmDeg > 0)
-                    s += "\u25ba";
-                else if (diffAzmDeg < 0)
-                    s += "\u25c4";
-            }
-            s += ScopeDSCClient.PrintAngle(diffAzmDeg, true, false) + ", ";
-
-            if (diffAltDeg > 0)
-                s += "\u25b2";
-            else if (diffAltDeg < 0)
-                s += "\u25bc";
-            s += ScopeDSCClient.PrintAngle(diffAltDeg, true, false);
-
-            return s;
-        }
-
+        
         private void SetPositionText()
         {
             if (!posTextChanged_)
@@ -385,39 +237,23 @@ namespace ScopeDSCClient
             }
             else
             {
-                double d = CalcTime();
+                double d = ClientCommonAPI.CalcTime();
                 double azm, alt;
                 object_.CalcAzimuthal(d, latitude_, longitude_, out azm, out alt);
                 PairA objScope = alignment_.Horz2Scope(new PairA(azm * Const.toRad, alt * Const.toRad), EquAngle);
 
                 if (!showNearestAzmRotation_)
-                    s += PrintAzmAltDifference(SkyObjectPosCalc.Rev(objScope.Azm * Const.toDeg) - AzmAngle * Const.toDeg, (objScope.Alt - AltAngle) * Const.toDeg, oppositeHorzPositioningDir_);
+                    s += ClientCommonAPI.PrintAzmAltDifference(SkyObjectPosCalc.Rev(objScope.Azm * Const.toDeg) - AzmAngle * Const.toDeg, (objScope.Alt - AltAngle) * Const.toDeg, oppositeHorzPositioningDir_);
                 else
                 {
                     double azmd = SkyObjectPosCalc.Rev(objScope.Azm * Const.toDeg - AzmAngle * Const.toDeg);
                     if (azmd > 180)
                         azmd -= 360;
-                    s += PrintAzmAltDifference(azmd, (objScope.Alt - AltAngle) * Const.toDeg, oppositeHorzPositioningDir_);
+                    s += ClientCommonAPI.PrintAzmAltDifference(azmd, (objScope.Alt - AltAngle) * Const.toDeg, oppositeHorzPositioningDir_);
                 }
             }
             
             textBoxPosition.Text = s;
-        }
-
-        public static bool IsEquAxisCorrectionNeeded(double latitude, Alignment alignment)
-        {
-            if (alignment == null)
-                return false;
-            Vect3 equAxis = alignment.EquAxis;
-            return (Math.Abs(-equAxis.Azm) > 0.0003 || Math.Abs(latitude * Const.toRad - equAxis.Alt) > 0.0003);
-        }
-
-        public static string AddEquAxisCorrectionText(double latitude, Alignment alignment)
-        {
-            if (alignment == null)
-                return "";
-            Vect3 equAxis = alignment.EquAxis;
-            return "Polar Axis Correction Needed: " + PrintAzmAltDifference(-equAxis.Azm * Const.toDeg, latitude - equAxis.Alt * Const.toDeg, false);
         }
 
         private void SetConnectionAndAlignmentText()
@@ -456,10 +292,10 @@ namespace ScopeDSCClient
                     s += "Alignment not valid";
                 s += Environment.NewLine;
                 s += alignment_.ToString();
-                if (IsEquAxisCorrectionNeeded(latitude_, alignment_))
+                if (ClientCommonAPI.IsEquAxisCorrectionNeeded(latitude_, alignment_))
                 {
                     s += Environment.NewLine;
-                    s += AddEquAxisCorrectionText(latitude_, alignment_);
+                    s += ClientCommonAPI.AddEquAxisCorrectionText(latitude_, alignment_);
                 }
             }
             
@@ -472,21 +308,21 @@ namespace ScopeDSCClient
                 return;
             scopePosAndObjTextChanged_ = false;
 
-            double d = CalcTime();
+            double d = ClientCommonAPI.CalcTime();
 
             string s = "";
             if (connectionAltAzm_ == null)
                 s += "Encoder Abs Positions Unknown" + Environment.NewLine;
             else
             {
-                s += "Encoder Abs Positions: Azm = " + PrintAngle(AzmAngle * Const.toDeg, false, false) + ", Alt = " + PrintAngle(AltAngle * Const.toDeg, false, false) + Environment.NewLine;
+                s += "Encoder Abs Positions: Azm = " + ClientCommonAPI.PrintAngle(AzmAngle * Const.toDeg, false, false) + ", Alt = " + ClientCommonAPI.PrintAngle(AltAngle * Const.toDeg, false, false) + Environment.NewLine;
                 s += "ErrCnt = " + errorCnt_ + Environment.NewLine;
             }
 
             if (connectionEqu_ == null)
                 s += "Equ Angle Unknown" + Environment.NewLine;
             else
-                s += "Equ Angle = " + PrintAngle(EquAngle * Const.toDeg) + Environment.NewLine;
+                s += "Equ Angle = " + ClientCommonAPI.PrintAngle(EquAngle * Const.toDeg) + Environment.NewLine;
 
             s += Environment.NewLine;
             if (connectionAltAzm_ == null || connectionEqu_ == null)
@@ -495,13 +331,13 @@ namespace ScopeDSCClient
             {
                 PairA horz = alignment_.Scope2Horz(new PairA(AzmAngle, AltAngle), EquAngle);
 
-                s += "Scope Position: Azm = " + PrintAngle(SkyObjectPosCalc.Rev(horz.Azm * Const.toDeg), false, false);
-                s += ", Alt = " + PrintAngle(SkyObjectPosCalc.Rev(horz.Alt * Const.toDeg), false, false) + Environment.NewLine;
+                s += "Scope Position: Azm = " + ClientCommonAPI.PrintAngle(SkyObjectPosCalc.Rev(horz.Azm * Const.toDeg), false, false);
+                s += ", Alt = " + ClientCommonAPI.PrintAngle(SkyObjectPosCalc.Rev(horz.Alt * Const.toDeg), false, false) + Environment.NewLine;
 
                 double dec, ra;
                 SkyObjectPosCalc.AzAlt2Equ(d, latitude_, longitude_, SkyObjectPosCalc.Rev(horz.Azm * Const.toDeg), SkyObjectPosCalc.Rev(horz.Alt * Const.toDeg), out dec, out ra);
-                s += "R.A.\t= " + ScopeDSCClient.PrintTime(ra) + " (" + ra.ToString("F5") + "\x00B0)" + Environment.NewLine;
-                s += "Dec.\t= " + ScopeDSCClient.PrintAngle(dec, true) + " (" + ScopeDSCClient.PrintDec(dec, "F5") + "\x00B0)" + Environment.NewLine;
+                s += "R.A.\t= " + ClientCommonAPI.PrintTime(ra) + " (" + ra.ToString("F5") + "\x00B0)" + Environment.NewLine;
+                s += "Dec.\t= " + ClientCommonAPI.PrintAngle(dec, true) + " (" + ClientCommonAPI.PrintDec(dec, "F5") + "\x00B0)" + Environment.NewLine;
 
                 if (sendPositionToStellarium && stellariumConnection_ != null && stellariumConnection_.IsConnected)
                     stellariumConnection_.SendPosition(dec, ra);
@@ -514,13 +350,13 @@ namespace ScopeDSCClient
             {
                 double azm, alt;
                 object_.CalcAzimuthal(d, latitude_, longitude_, out azm, out alt);
-                s += object_.Name + ": Azm = " + PrintAngle(azm, false, false);
-                s += ", Alt = " + PrintAngle(alt, false, false) + Environment.NewLine;
+                s += object_.Name + ": Azm = " + ClientCommonAPI.PrintAngle(azm, false, false);
+                s += ", Alt = " + ClientCommonAPI.PrintAngle(alt, false, false) + Environment.NewLine;
 
                 double dec, ra;
                 object_.CalcTopoRaDec(d, latitude_, longitude_, out dec, out ra);
-                s += "R.A.\t= " + ScopeDSCClient.PrintTime(ra) + " (" + ra.ToString("F5") + "\x00B0)" + Environment.NewLine;
-                s += "Dec.\t= " + ScopeDSCClient.PrintAngle(dec, true) + " (" + ScopeDSCClient.PrintDec(dec, "F5") + "\x00B0)" + Environment.NewLine;
+                s += "R.A.\t= " + ClientCommonAPI.PrintTime(ra) + " (" + ra.ToString("F5") + "\x00B0)" + Environment.NewLine;
+                s += "Dec.\t= " + ClientCommonAPI.PrintAngle(dec, true) + " (" + ClientCommonAPI.PrintDec(dec, "F5") + "\x00B0)" + Environment.NewLine;
 
                 /*
                 double azm, alt;
@@ -721,18 +557,6 @@ namespace ScopeDSCClient
             InitializeComponent();
         }
 
-        public static bool ParseSignedValue(string text, out double val)
-        {
-            val = Convert.ToDouble(text);
-            if (val > 0)
-                return true;
-            else if (val < 0)
-                return false;
-            else // val == 0
-                return (text[0] != '-');
-
-        }
-
         private static void LoadFromFile(string path, ref string name, ref SkyObjectPosCalc.SkyPosition[] obj)
         {
             List<SkyObjectPosCalc.SkyPosition> objects = new List<SkyObjectPosCalc.SkyPosition>();
@@ -773,7 +597,7 @@ namespace ScopeDSCClient
                                         throw new ApplicationException("Incorrect line: " + line);
 
                                     double ra;
-                                    bool positive = ParseSignedValue(parts[1], out ra);
+                                    bool positive = ClientCommonAPI.ParseSignedValue(parts[1], out ra);
                                     if (parts[2].Length > 0)
                                     {
                                         if (positive)
@@ -783,7 +607,7 @@ namespace ScopeDSCClient
                                     }
 
                                     double dec;
-                                    positive = ParseSignedValue(parts[3], out dec);
+                                    positive = ClientCommonAPI.ParseSignedValue(parts[3], out dec);
                                     if (parts[4].Length > 0)
                                     {
                                         if (positive)
@@ -814,7 +638,7 @@ namespace ScopeDSCClient
             string name = "Unknown";
             LoadFromFile(path, ref name, ref objects);
             if(objects != null && objects.Length > 0)
-                database_.Add(new ObjDatabaseEntry() { name_ = name, objects_ = objects });
+                database_.Add(new ClientCommonAPI.ObjDatabaseEntry() { name_ = name, objects_ = objects });
         }
 
         private void AddLastObject(SkyObjectPosCalc.SkyPosition obj)
@@ -866,9 +690,9 @@ namespace ScopeDSCClient
             LoadAlignment();
 
             // load standard objects
-            database_.Add(new ObjDatabaseEntry() { name_ = "Solar System Object", objects_ = SkyObjectPosCalc.sunSystemObjects });
-            database_.Add(new ObjDatabaseEntry() { name_ = "Star", objects_ = SkyObjectPosCalc.stars });
-            database_.Add(new ObjDatabaseEntry() { name_ = "Messier Object", objects_ = SkyObjectPosCalc.messier });
+            database_.Add(new ClientCommonAPI.ObjDatabaseEntry() { name_ = "Solar System Object", objects_ = SkyObjectPosCalc.sunSystemObjects });
+            database_.Add(new ClientCommonAPI.ObjDatabaseEntry() { name_ = "Star", objects_ = SkyObjectPosCalc.stars });
+            database_.Add(new ClientCommonAPI.ObjDatabaseEntry() { name_ = "Messier Object", objects_ = SkyObjectPosCalc.messier });
             
             // load database files
             string startupPath = Application.StartupPath + @"\";
@@ -888,13 +712,13 @@ namespace ScopeDSCClient
         {
             if (nightMode_)
             {
-                EnumControls(this, new ControlFn(SetNightModeOffFn), 0);
+                ClientCommonAPI.ExitNightMode(this);
                 buttonNightMode.Text = "Night &Mode";
                 nightMode_ = false;
             }
             else
             {
-                EnumControls(this, new ControlFn(SetNightModeOnFn), 0);
+                ClientCommonAPI.EnterNightMode(this);
                 buttonNightMode.Text = "Day &Mode";
                 nightMode_ = true;
             }
@@ -910,7 +734,7 @@ namespace ScopeDSCClient
 
         private void buttonAlign_Click(object sender, EventArgs e)
         {
-            AlignmentForm form = new AlignmentForm(this, nightMode_, latitude_, longitude_, lastAlignmentObjSettings_, alignment_);
+            AlignmentForm form = new AlignmentForm(new ScopePositions(this), nightMode_, latitude_, longitude_, lastAlignmentObjSettings_, alignment_);
             if (form.ShowDialog() != DialogResult.OK)
                 return;
 
@@ -924,7 +748,7 @@ namespace ScopeDSCClient
 
         private void buttonSelectObject_Click(object sender, EventArgs e)
         {
-            SkyObjectForm form = new SkyObjectForm(this, nightMode_, latitude_, longitude_, database_, stellariumConnection_, lastObjects_, lastObjSettings_);
+            SkyObjectForm form = new SkyObjectForm(nightMode_, latitude_, longitude_, database_, stellariumConnection_, lastObjects_, lastObjSettings_);
             if (form.ShowDialog() != DialogResult.OK)
                 return;
 
@@ -1081,11 +905,6 @@ namespace ScopeDSCClient
                 return true;
             }
             return base.ProcessCmdKey(ref msg, keyData);
-        }
-
-        public static void EnterNightMode(Control control)
-        {
-            EnumControls(control, new ControlFn(SetNightModeOnFn), 0);
         }
 
         private void SerialError(SerialConnection connection)

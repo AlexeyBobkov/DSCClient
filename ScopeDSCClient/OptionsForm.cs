@@ -63,7 +63,7 @@ namespace ScopeDSCClient
             Location = new Point(0, 0); 
 
             if (nightMode_)
-                ScopeDSCClient.EnterNightMode(this);
+                ClientCommonAPI.EnterNightMode(this);
 
             textBoxLatDegWidth_ = textBoxLatDeg.Width;
             textBoxLonDegWidth_ = textBoxLonDeg.Width;
@@ -73,7 +73,7 @@ namespace ScopeDSCClient
             for (int i = 0; i < locations_.Length; ++i)
             {
                 //comboBoxLocation.Items.Add(locations_[i].name_ + " (" + locations_[i].latitude_ + "," + locations_[i].longitude_ + ")");
-                comboBoxLocation.Items.Add(locations_[i].name_ + " (" + ScopeDSCClient.PrintAngle(locations_[i].latitude_) + ", " + ScopeDSCClient.PrintAngle(locations_[i].longitude_) + ")");
+                comboBoxLocation.Items.Add(locations_[i].name_ + " (" + ClientCommonAPI.PrintAngle(locations_[i].latitude_) + ", " + ClientCommonAPI.PrintAngle(locations_[i].longitude_) + ")");
                 if (Latitude == locations_[i].latitude_ && Longitude == locations_[i].longitude_)
                     idx = i + 1;
             }
@@ -173,7 +173,7 @@ namespace ScopeDSCClient
                         sec = 59.9;
 
                     double deg;
-                    if (ScopeDSCClient.ParseSignedValue(tbD.Text, out deg))
+                    if (ClientCommonAPI.ParseSignedValue(tbD.Text, out deg))
                         deg += (min + sec / 60.0) / 60.0;
                     else
                         deg -= (min + sec / 60.0) / 60.0;

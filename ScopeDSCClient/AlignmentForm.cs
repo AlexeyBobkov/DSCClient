@@ -20,10 +20,10 @@ namespace ScopeDSCClient
             public static LastSettings Default { get { return new LastSettings { objTypeIdx_ = 0, objIdx_ = 0 }; } }
         }
 
-        public AlignmentForm(ScopeDSCClient parent, bool nightMode, double latitude, double longitude, LastSettings settings, DSCAlignment alignment)
+        public AlignmentForm(ClientCommonAPI.IScopePositions angles, bool nightMode, double latitude, double longitude, LastSettings settings, DSCAlignment alignment)
         {
             nightMode_ = nightMode;
-            parent_ = parent;
+            angles_ = angles;
             latitude_ = latitude;
             longitude_ = longitude;
             settings_ = settings;
@@ -40,7 +40,7 @@ namespace ScopeDSCClient
         // implementation
         private bool init_ = false;
         private bool nightMode_ = false;
-        private ScopeDSCClient parent_;
+        private ClientCommonAPI.IScopePositions angles_;
         private double latitude_, longitude_;
         private LastSettings settings_;
         private DSCAlignment alignment_;
@@ -48,7 +48,7 @@ namespace ScopeDSCClient
         private void AlignmentForm_Load(object sender, EventArgs e)
         {
             if (nightMode_)
-                ScopeDSCClient.EnterNightMode(this);
+                ClientCommonAPI.EnterNightMode(this);
 
             comboBoxType.Items.AddRange(new object[]
                 {
@@ -101,23 +101,23 @@ namespace ScopeDSCClient
 
             string s = "";
 
-            double d = ScopeDSCClient.CalcTime();
+            double d = ClientCommonAPI.CalcTime();
             SkyObjectPosCalc.SkyPosition obj = GetObject();
             s += obj.Name + ":" + Environment.NewLine;
 
             double dec, ra;
             obj.CalcTopoRaDec(d, latitude_, longitude_, out dec, out ra);
-            s += "R.A.\t= " + ScopeDSCClient.PrintTime(ra) + " (" + ra.ToString("F5") + "\x00B0)" + Environment.NewLine;
-            s += "Dec.\t= " + ScopeDSCClient.PrintAngle(dec, true) + " (" + ScopeDSCClient.PrintDec(dec, "F5") + "\x00B0)" + Environment.NewLine;
+            s += "R.A.\t= " + ClientCommonAPI.PrintTime(ra) + " (" + ra.ToString("F5") + "\x00B0)" + Environment.NewLine;
+            s += "Dec.\t= " + ClientCommonAPI.PrintAngle(dec, true) + " (" + ClientCommonAPI.PrintDec(dec, "F5") + "\x00B0)" + Environment.NewLine;
             
             double azm, alt;
             obj.CalcAzimuthal(d, latitude_, longitude_, out azm, out alt);
-            s += "Azm.\t= " + ScopeDSCClient.PrintAngle(azm) + " (" + azm.ToString("F5") + "\x00B0)" + Environment.NewLine;
-            s += "Alt.\t= " + ScopeDSCClient.PrintAngle(alt) + " (" + alt.ToString("F5") + "\x00B0)" + Environment.NewLine;
+            s += "Azm.\t= " + ClientCommonAPI.PrintAngle(azm) + " (" + azm.ToString("F5") + "\x00B0)" + Environment.NewLine;
+            s += "Alt.\t= " + ClientCommonAPI.PrintAngle(alt) + " (" + alt.ToString("F5") + "\x00B0)" + Environment.NewLine;
             s += Environment.NewLine;
 
             buttonAddObject.Enabled = (alt > 0);
-            buttonCorrectPolarAxis.Enabled = ScopeDSCClient.IsEquAxisCorrectionNeeded(latitude_, alignment_);
+            buttonCorrectPolarAxis.Enabled = ClientCommonAPI.IsEquAxisCorrectionNeeded(latitude_, alignment_);
 
             if (alignment_.IsAligned)
                 s += "Alignment valid";
@@ -126,8 +126,8 @@ namespace ScopeDSCClient
             s += Environment.NewLine;
             s += alignment_.ToString(true);
 
-            if (ScopeDSCClient.IsEquAxisCorrectionNeeded(latitude_, alignment_))
-                s += Environment.NewLine + ScopeDSCClient.AddEquAxisCorrectionText(latitude_, alignment_);
+            if (ClientCommonAPI.IsEquAxisCorrectionNeeded(latitude_, alignment_))
+                s += Environment.NewLine + ClientCommonAPI.AddEquAxisCorrectionText(latitude_, alignment_);
 
             textBoxResults.Text = s;
         }
@@ -192,7 +192,7 @@ namespace ScopeDSCClient
             if (!init_)
                 return;
 
-            double d = ScopeDSCClient.CalcTime();
+            double d = ClientCommonAPI.CalcTime();
             SkyObjectPosCalc.SkyPosition obj = GetObject();
 
             double azm, alt;
@@ -201,7 +201,7 @@ namespace ScopeDSCClient
             try
             {
                 DSCAlignment alignmentNew = (DSCAlignment)alignment_.Clone();
-                alignmentNew.AddStar(new AlignStar(obj.Name, new Vect3(azm * Const.toRad, alt * Const.toRad), new PairA(parent_.AzmAngle, parent_.AltAngle), parent_.EquAngle));
+                alignmentNew.AddStar(new AlignStar(obj.Name, new Vect3(azm * Const.toRad, alt * Const.toRad), new PairA(angles_.AzmAngle, angles_.AltAngle), angles_.EquAngle));
                 alignmentNew.ForceAlignment();
                 alignment_ = alignmentNew;
             }
@@ -299,7 +299,7 @@ namespace ScopeDSCClient
         {
             if (!alignment_.IsAligned)
                 return;
-            double d = ScopeDSCClient.CalcTime();
+            double d = ClientCommonAPI.CalcTime();
             SkyObjectPosCalc.SkyPosition obj = GetObject();
 
             double azm, alt;
@@ -307,7 +307,7 @@ namespace ScopeDSCClient
 
             try
             {
-                alignment_.CorrectOffsets(new AlignStar(obj.Name, new Vect3(azm * Const.toRad, alt * Const.toRad), new PairA(parent_.AzmAngle, parent_.AltAngle), parent_.EquAngle));
+                alignment_.CorrectOffsets(new AlignStar(obj.Name, new Vect3(azm * Const.toRad, alt * Const.toRad), new PairA(angles_.AzmAngle, angles_.AltAngle), angles_.EquAngle));
             }
             catch (Exception ex)
             {

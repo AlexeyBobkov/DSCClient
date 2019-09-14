@@ -54,6 +54,7 @@
     <Compile Include="AlignmentForm.Designer.cs">
       <DependentUpon>AlignmentForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="ClientCommonAPI.cs" />
     <Compile Include="ObjectFromCoordinatesForm.cs">
       <SubType>Form</SubType>
     </Compile>

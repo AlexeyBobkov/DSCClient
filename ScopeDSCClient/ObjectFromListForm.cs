@@ -18,12 +18,11 @@ namespace ScopeDSCClient
             public static LastSettings Default { get { return new LastSettings { objTypeIdx_ = 0, objIdx_ = 0 }; } }
         }
 
-        public ObjectFromListForm(ScopeDSCClient parent, bool nightMode, double latitude, double longitude, List<ScopeDSCClient.ObjDatabaseEntry> database, LastSettings settings)
+        public ObjectFromListForm(bool nightMode, double latitude, double longitude, List<ClientCommonAPI.ObjDatabaseEntry> database, LastSettings settings)
         {
             System.Diagnostics.Debug.Assert(database != null);
 
             nightMode_ = nightMode;
-            parent_ = parent;
             latitude_ = latitude;
             longitude_ = longitude;
             database_ = database;
@@ -37,16 +36,15 @@ namespace ScopeDSCClient
         // implementation
         private bool init_ = false;
         private bool nightMode_ = false;
-        private ScopeDSCClient parent_;
         private double latitude_, longitude_;
-        private List<ScopeDSCClient.ObjDatabaseEntry> database_;
+        private List<ClientCommonAPI.ObjDatabaseEntry> database_;
         private LastSettings settings_;
         private SkyObjectPosCalc.SkyPosition object_;
 
         private void ObjectFromListForm_Load(object sender, EventArgs e)
         {
             if (nightMode_)
-                ScopeDSCClient.EnterNightMode(this);
+                ClientCommonAPI.EnterNightMode(this);
 
             foreach (var entry in database_)
                 comboBoxType.Items.Add(entry.name_);
@@ -91,19 +89,19 @@ namespace ScopeDSCClient
 
             string s = "";
 
-            double d = ScopeDSCClient.CalcTime();
+            double d = ClientCommonAPI.CalcTime();
             object_ = GetObject();
             s += object_.Name + ":" + Environment.NewLine;
 
             double dec, ra;
             object_.CalcTopoRaDec(d, latitude_, longitude_, out dec, out ra);
-            s += "R.A.\t= " + ScopeDSCClient.PrintTime(ra) + " (" + ra.ToString("F5") + "\x00B0)" + Environment.NewLine;
-            s += "Dec.\t= " + ScopeDSCClient.PrintAngle(dec, true) + " (" + ScopeDSCClient.PrintDec(dec, "F5") + "\x00B0)" + Environment.NewLine;
+            s += "R.A.\t= " + ClientCommonAPI.PrintTime(ra) + " (" + ra.ToString("F5") + "\x00B0)" + Environment.NewLine;
+            s += "Dec.\t= " + ClientCommonAPI.PrintAngle(dec, true) + " (" + ClientCommonAPI.PrintDec(dec, "F5") + "\x00B0)" + Environment.NewLine;
 
             double azm, alt;
             object_.CalcAzimuthal(d, latitude_, longitude_, out azm, out alt);
-            s += "Azm.\t= " + ScopeDSCClient.PrintAngle(azm) + " (" + azm.ToString("F5") + "\x00B0)" + Environment.NewLine;
-            s += "Alt.\t= " + ScopeDSCClient.PrintAngle(alt) + " (" + alt.ToString("F5") + "\x00B0)" + Environment.NewLine;
+            s += "Azm.\t= " + ClientCommonAPI.PrintAngle(azm) + " (" + azm.ToString("F5") + "\x00B0)" + Environment.NewLine;
+            s += "Alt.\t= " + ClientCommonAPI.PrintAngle(alt) + " (" + alt.ToString("F5") + "\x00B0)" + Environment.NewLine;
 
             buttonOK.Enabled = (alt > 0);
 

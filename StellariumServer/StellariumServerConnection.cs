@@ -9,8 +9,9 @@ namespace StellariumServer
     {
         public Connection(IPAddress addr, int port)
         {
-            addr_ = addr;
-            port_ = port;
+            myList_ = new TcpListener(addr, port);
+            myList_.Start();
+
             thread_ = new Thread(this.ThreadProc);
             thread_.Start();
         }
@@ -19,7 +20,7 @@ namespace StellariumServer
         public bool IsConnected { get { return connected_; } }
 
         // connection status changed event
-        public delegate void StatusChangedHandler(bool connected);
+        public delegate void StatusChangedHandler();
         public event StatusChangedHandler StatusChanged;
 
         // error event
@@ -69,6 +70,14 @@ namespace StellariumServer
                 evt_.Set(); // wake up thread
                 thread.Join();
             }
+            TcpListener myList = null;
+            lock (lockThis_)
+            {
+                myList = myList_;
+                myList_ = null;
+            }
+            if (myList != null)
+                myList.Stop();
         }
 
         public void Dispose()
@@ -78,8 +87,7 @@ namespace StellariumServer
 
 
         // implementation
-        private IPAddress addr_;
-        private int port_;
+        private TcpListener myList_;
         private bool connected_ = false;
         private byte[] sendData_;
         private System.Object lockThis_ = new System.Object();
@@ -96,7 +104,7 @@ namespace StellariumServer
         {
             connected_ = connected;
             if (StatusChanged != null)
-                StatusChanged(connected);
+                StatusChanged();
         }
 
         private void SendReceivedGoto(double dec, double ra)
@@ -114,9 +122,6 @@ namespace StellariumServer
         private void ThreadProc()
         {
             SetStatusChanged(false);
-
-            TcpListener myList = new TcpListener(addr_, port_);
-            myList.Start();
             while (!exitThread_)
             {
                 Socket s = null;
@@ -124,13 +129,13 @@ namespace StellariumServer
                 {
                     // wait connection and connect
                     {
-                        IAsyncResult connectResult = myList.BeginAcceptSocket(null, null);
+                        IAsyncResult connectResult = myList_.BeginAcceptSocket(null, null);
                         WaitHandle[] waitObjs = new WaitHandle[] { connectResult.AsyncWaitHandle, evt_ };
                         while (!connectResult.IsCompleted && !exitThread_)
                             WaitHandle.WaitAny(waitObjs);
                         if (exitThread_)
                             break;
-                        s = myList.EndAcceptSocket(connectResult);
+                        s = myList_.EndAcceptSocket(connectResult);
                         SetStatusChanged(true);
                     }
 
@@ -194,7 +199,6 @@ namespace StellariumServer
                 }
                 SetStatusChanged(false);
             }
-            myList.Stop();
         }
     }
 }

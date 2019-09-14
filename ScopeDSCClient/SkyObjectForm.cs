@@ -132,14 +132,14 @@ namespace ScopeDSCClient
                 stellariumConnection_.StatusChanged -= StellariumStatusChangedHandlerAsync;
         }
 
-        public void StellariumStatusChangedHandlerAsync(bool connected)
+        public void StellariumStatusChangedHandlerAsync()
         {
-            this.BeginInvoke(new StellariumServer.Connection.StatusChangedHandler(this.StellariumStatusChangedHandler), new object[] { connected });
+            this.BeginInvoke(new StellariumServer.Connection.StatusChangedHandler(this.StellariumStatusChangedHandler));
         }
 
-        public void StellariumStatusChangedHandler(bool connected)
+        public void StellariumStatusChangedHandler()
         {
-            buttonStellarium.Enabled = connected;
+            buttonStellarium.Enabled = stellariumConnection_.IsConnected;
         }
 
         private void CalcAndOutputResults()

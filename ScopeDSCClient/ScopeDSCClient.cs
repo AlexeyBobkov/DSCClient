@@ -1377,13 +1377,14 @@ namespace ScopeDSCClient
             SendScopeMotionCommand('0');
         }
 
-        public void StellariumStatusChangedHandlerAsync(bool connected)
+        public void StellariumStatusChangedHandlerAsync()
         {
-            this.BeginInvoke(new StellariumServer.Connection.StatusChangedHandler(this.StellariumStatusChangedHandler), new object[] { connected });
+            this.BeginInvoke(new StellariumServer.Connection.StatusChangedHandler(this.StellariumStatusChangedHandler));
         }
 
-        public void StellariumStatusChangedHandler(bool connected)
+        public void StellariumStatusChangedHandler()
         {
+            bool connected = stellariumConnection_.IsConnected;
             if(connected)
                 buttonStellariumConnect.Text = "Stellarium: Connected" + Environment.NewLine + "(Press to Disconnect)";
             else

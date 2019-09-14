@@ -56,7 +56,7 @@ namespace ScopeDSCClient
         // alignment data
         private DSCAlignment alignment_;
         private AlignmentConnectionData alignmentConnectionAltAzm_;
-        private AlignmentConnectionData alignmentConnectionEqu_;
+        private AlignmentConnectionData alignmentConnectionGoTo_;
 
         private const int LAST_OBJ_COUNT = 10;
         private SkyObjectPosCalc.SkyPosition object_;
@@ -345,13 +345,6 @@ namespace ScopeDSCClient
                 object_.CalcTopoRaDec(d, latitude_, longitude_, out dec, out ra);
                 s += "R.A.\t= " + ClientCommonAPI.PrintTime(ra) + " (" + ra.ToString("F5") + "\x00B0)" + Environment.NewLine;
                 s += "Dec.\t= " + ClientCommonAPI.PrintAngle(dec, true) + " (" + ClientCommonAPI.PrintDec(dec, "F5") + "\x00B0)" + Environment.NewLine;
-
-                /*
-                double azm, alt;
-                object_.CalcAzimuthal(d, latitude_, longitude_, out azm, out alt);
-                s += "Azm.\t= " + ScopeDSCClient.PrintAngle(azm) + " (" + azm.ToString("F5") + "\x00B0)" + Environment.NewLine;
-                s += "Alt.\t= " + ScopeDSCClient.PrintAngle(alt) + " (" + alt.ToString("F5") + "\x00B0)";
-                 * */
             }
 
             textBoxObject.Text = s;
@@ -384,22 +377,22 @@ namespace ScopeDSCClient
 
             if (connectionGoto_ == null)
             {
-                buttonTrackStars.Enabled = false;
-                buttonTrackMoon.Enabled = false;
-                buttonTrackSun.Enabled = false;
-                buttonRewind.Enabled = false;
-                buttonGoToCenter.Enabled = false;
-                buttonFastFwd.Enabled = false;
+                buttonTrackGoTo.Enabled = false;
+                buttonTrackUp.Enabled = false;
+                //checkBoxTrackAuto.Enabled = false;
+                buttonTrackLeft.Enabled = false;
+                buttonTrackDown.Enabled = false;
+                buttonTrackRight.Enabled = false;
                 buttonStop.Enabled = false;
             }
             else
             {
-                buttonTrackStars.Enabled = true;
-                buttonTrackMoon.Enabled = true;
-                buttonTrackSun.Enabled = true;
-                buttonRewind.Enabled = true;
-                buttonGoToCenter.Enabled = true;
-                buttonFastFwd.Enabled = true;
+                buttonTrackGoTo.Enabled = true;
+                buttonTrackUp.Enabled = true;
+                checkBoxTrackAuto.Enabled = true;
+                buttonTrackLeft.Enabled = true;
+                buttonTrackDown.Enabled = true;
+                buttonTrackRight.Enabled = true;
                 buttonStop.Enabled = true;
             }
             SetPositionText();
@@ -487,7 +480,7 @@ namespace ScopeDSCClient
                     if (connectionAltAzm_ != null && connectionAltAzm_.connection_ != null)
                         settings_.AlignmentConnectionAltAzm = alignmentConnectionAltAzm_ = new AlignmentConnectionData(connectionAltAzm_.connection_.PortName, connectionAltAzm_.sessionId_);
                     if (connectionGoto_ != null && connectionGoto_.connection_ != null)
-                        settings_.AlignmentConnectionGoto = alignmentConnectionEqu_ = new AlignmentConnectionData(connectionGoto_.connection_.PortName, connectionGoto_.sessionId_);
+                        settings_.AlignmentConnectionGoto = alignmentConnectionGoTo_ = new AlignmentConnectionData(connectionGoto_.connection_.PortName, connectionGoto_.sessionId_);
                 }
             }
         }
@@ -508,7 +501,7 @@ namespace ScopeDSCClient
                     alignment_.ForceAlignment();
 
                     alignmentConnectionAltAzm_ = settings_.AlignmentConnectionAltAzm;
-                    alignmentConnectionEqu_ = settings_.AlignmentConnectionGoto;
+                    alignmentConnectionGoTo_ = settings_.AlignmentConnectionGoto;
                 }
             }
             catch (Exception)
@@ -1108,39 +1101,39 @@ namespace ScopeDSCClient
             //settings_.Save();
         }
 
-        private void buttonTrackStars_Click(object sender, EventArgs e)
+        private void buttonTrackGoto_Click(object sender, EventArgs e)
         {
-            SendScopeMotionCommand('1');
+            //SendScopeMotionCommand('1');
         }
 
-        private void buttonTrackMoon_Click(object sender, EventArgs e)
+        private void buttonTrackUp_Click(object sender, EventArgs e)
         {
-            SendScopeMotionCommand('2');
+            //SendScopeMotionCommand('2');
         }
 
-        private void buttonTrackSun_Click(object sender, EventArgs e)
+        private void checkBoxTrackAuto_CheckedChanged(object sender, EventArgs e)
         {
-            SendScopeMotionCommand('3');
+
         }
 
-        private void buttonRewind_Click(object sender, EventArgs e)
+        private void buttonTrackLeft_Click(object sender, EventArgs e)
         {
-            SendScopeMotionCommand('*');
+            //SendScopeMotionCommand('*');
         }
 
-        private void buttonGoToCenter_Click(object sender, EventArgs e)
+        private void buttonTrackDown_Click(object sender, EventArgs e)
         {
-            SendScopeMotionCommand('8');
+            //SendScopeMotionCommand('8');
         }
 
-        private void buttonFastFwd_Click(object sender, EventArgs e)
+        private void buttonTrackRight_Click(object sender, EventArgs e)
         {
-            SendScopeMotionCommand('#');
+            //SendScopeMotionCommand('#');
         }
 
         private void buttonStop_Click(object sender, EventArgs e)
         {
-            SendScopeMotionCommand('0');
+            //SendScopeMotionCommand('0');
         }
 
         public void StellariumStatusChangedHandlerAsync()

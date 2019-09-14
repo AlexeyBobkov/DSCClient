@@ -189,6 +189,19 @@ namespace ScopeDSCClient
                 return;
             }
 
+            CheckBox cb = control as CheckBox;
+            if (cb != null)
+            {
+                cb.ForeColor = Color.Red;
+                cb.BackColor = Color.Black;
+                cb.FlatStyle = FlatStyle.Flat;
+                cb.FlatAppearance.BorderColor = Color.Red;
+                cb.FlatAppearance.CheckedBackColor = Color.FromArgb(80, 0, 0);
+                cb.FlatAppearance.MouseDownBackColor = Color.Black;
+                cb.FlatAppearance.MouseOverBackColor = Color.Black;
+                return;
+            }
+
             control.ForeColor = Color.Red;
             control.BackColor = Color.Black;
         }
@@ -207,6 +220,14 @@ namespace ScopeDSCClient
                 bt.ForeColor = Color.FromKnownColor(System.Drawing.KnownColor.ControlText);
                 bt.BackColor = Color.FromKnownColor(System.Drawing.KnownColor.Control);
                 bt.FlatStyle = FlatStyle.Standard;
+                return;
+            }
+            CheckBox cb = control as CheckBox;
+            if (cb != null)
+            {
+                //cb.ForeColor = Color.FromKnownColor(System.Drawing.KnownColor.ControlText);
+                //cb.BackColor = Color.FromKnownColor(System.Drawing.KnownColor.Control);
+                cb.FlatStyle = FlatStyle.System;
                 return;
             }
 

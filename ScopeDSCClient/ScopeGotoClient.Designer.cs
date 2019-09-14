@@ -48,12 +48,12 @@
             this.buttonConnection = new System.Windows.Forms.Button();
             this.tableLayoutPanel6 = new System.Windows.Forms.TableLayoutPanel();
             this.tableLayoutPanel9 = new System.Windows.Forms.TableLayoutPanel();
-            this.buttonFastFwd = new System.Windows.Forms.Button();
-            this.buttonGoToCenter = new System.Windows.Forms.Button();
-            this.buttonRewind = new System.Windows.Forms.Button();
-            this.buttonTrackSun = new System.Windows.Forms.Button();
-            this.buttonTrackMoon = new System.Windows.Forms.Button();
-            this.buttonTrackStars = new System.Windows.Forms.Button();
+            this.buttonTrackRight = new System.Windows.Forms.Button();
+            this.buttonTrackDown = new System.Windows.Forms.Button();
+            this.buttonTrackLeft = new System.Windows.Forms.Button();
+            this.buttonTrackUp = new System.Windows.Forms.Button();
+            this.buttonTrackGoTo = new System.Windows.Forms.Button();
+            this.checkBoxTrackAuto = new System.Windows.Forms.CheckBox();
             this.buttonOptions = new System.Windows.Forms.Button();
             this.buttonStop = new System.Windows.Forms.Button();
             this.buttonStellariumConnect = new System.Windows.Forms.Button();
@@ -224,7 +224,7 @@
             this.label3.Location = new System.Drawing.Point(458, 5);
             this.label3.Name = "label3";
             this.label3.Size = new System.Drawing.Size(270, 18);
-            this.label3.TabIndex = 3;
+            this.label3.TabIndex = 2;
             this.label3.Text = "Scope Position and Current Object";
             // 
             // textBoxAlignment
@@ -251,7 +251,7 @@
             this.textBoxObject.Name = "textBoxObject";
             this.textBoxObject.ReadOnly = true;
             this.textBoxObject.Size = new System.Drawing.Size(384, 282);
-            this.textBoxObject.TabIndex = 4;
+            this.textBoxObject.TabIndex = 3;
             // 
             // tableLayoutPanel8
             // 
@@ -295,7 +295,7 @@
             this.tableLayoutPanel7.RowCount = 1;
             this.tableLayoutPanel7.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
             this.tableLayoutPanel7.Size = new System.Drawing.Size(384, 90);
-            this.tableLayoutPanel7.TabIndex = 2;
+            this.tableLayoutPanel7.TabIndex = 4;
             // 
             // buttonAlign
             // 
@@ -305,7 +305,7 @@
             this.buttonAlign.Location = new System.Drawing.Point(197, 3);
             this.buttonAlign.Name = "buttonAlign";
             this.buttonAlign.Size = new System.Drawing.Size(184, 84);
-            this.buttonAlign.TabIndex = 1;
+            this.buttonAlign.TabIndex = 0;
             this.buttonAlign.Text = "&Align";
             this.buttonAlign.UseVisualStyleBackColor = true;
             this.buttonAlign.Click += new System.EventHandler(this.buttonAlign_Click);
@@ -318,7 +318,7 @@
             this.buttonConnection.Location = new System.Drawing.Point(3, 3);
             this.buttonConnection.Name = "buttonConnection";
             this.buttonConnection.Size = new System.Drawing.Size(183, 84);
-            this.buttonConnection.TabIndex = 0;
+            this.buttonConnection.TabIndex = 1;
             this.buttonConnection.Text = "&Connection";
             this.buttonConnection.UseVisualStyleBackColor = true;
             this.buttonConnection.Click += new System.EventHandler(this.buttonConnection_Click);
@@ -344,7 +344,7 @@
             this.tableLayoutPanel6.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 12.5F));
             this.tableLayoutPanel6.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 12.5F));
             this.tableLayoutPanel6.Size = new System.Drawing.Size(332, 412);
-            this.tableLayoutPanel6.TabIndex = 1;
+            this.tableLayoutPanel6.TabIndex = 0;
             // 
             // tableLayoutPanel9
             // 
@@ -352,12 +352,12 @@
             this.tableLayoutPanel9.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 33.33333F));
             this.tableLayoutPanel9.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 33.33333F));
             this.tableLayoutPanel9.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 33.33333F));
-            this.tableLayoutPanel9.Controls.Add(this.buttonFastFwd, 2, 1);
-            this.tableLayoutPanel9.Controls.Add(this.buttonGoToCenter, 1, 1);
-            this.tableLayoutPanel9.Controls.Add(this.buttonRewind, 0, 1);
-            this.tableLayoutPanel9.Controls.Add(this.buttonTrackSun, 2, 0);
-            this.tableLayoutPanel9.Controls.Add(this.buttonTrackMoon, 1, 0);
-            this.tableLayoutPanel9.Controls.Add(this.buttonTrackStars, 0, 0);
+            this.tableLayoutPanel9.Controls.Add(this.buttonTrackRight, 2, 1);
+            this.tableLayoutPanel9.Controls.Add(this.buttonTrackDown, 1, 1);
+            this.tableLayoutPanel9.Controls.Add(this.buttonTrackLeft, 0, 1);
+            this.tableLayoutPanel9.Controls.Add(this.buttonTrackUp, 1, 0);
+            this.tableLayoutPanel9.Controls.Add(this.buttonTrackGoTo, 0, 0);
+            this.tableLayoutPanel9.Controls.Add(this.checkBoxTrackAuto, 2, 0);
             this.tableLayoutPanel9.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tableLayoutPanel9.Location = new System.Drawing.Point(23, 3);
             this.tableLayoutPanel9.Name = "tableLayoutPanel9";
@@ -367,89 +367,93 @@
             this.tableLayoutPanel9.Size = new System.Drawing.Size(286, 200);
             this.tableLayoutPanel9.TabIndex = 0;
             // 
-            // buttonFastFwd
+            // buttonTrackRight
             // 
-            this.buttonFastFwd.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+            this.buttonTrackRight.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
                         | System.Windows.Forms.AnchorStyles.Left)
                         | System.Windows.Forms.AnchorStyles.Right)));
-            this.buttonFastFwd.Font = new System.Drawing.Font("Microsoft Sans Serif", 20.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.buttonFastFwd.Location = new System.Drawing.Point(193, 103);
-            this.buttonFastFwd.Name = "buttonFastFwd";
-            this.buttonFastFwd.Size = new System.Drawing.Size(90, 94);
-            this.buttonFastFwd.TabIndex = 5;
-            this.buttonFastFwd.Text = "►►▌";
-            this.buttonFastFwd.UseVisualStyleBackColor = true;
-            this.buttonFastFwd.Click += new System.EventHandler(this.buttonFastFwd_Click);
+            this.buttonTrackRight.Font = new System.Drawing.Font("Microsoft Sans Serif", 27.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+            this.buttonTrackRight.Location = new System.Drawing.Point(193, 103);
+            this.buttonTrackRight.Name = "buttonTrackRight";
+            this.buttonTrackRight.Size = new System.Drawing.Size(90, 94);
+            this.buttonTrackRight.TabIndex = 0;
+            this.buttonTrackRight.Text = "⮞";
+            this.buttonTrackRight.UseVisualStyleBackColor = true;
+            this.buttonTrackRight.Click += new System.EventHandler(this.buttonTrackRight_Click);
             // 
-            // buttonGoToCenter
+            // buttonTrackDown
             // 
-            this.buttonGoToCenter.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+            this.buttonTrackDown.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
                         | System.Windows.Forms.AnchorStyles.Left)
                         | System.Windows.Forms.AnchorStyles.Right)));
-            this.buttonGoToCenter.Font = new System.Drawing.Font("Microsoft Sans Serif", 20.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.buttonGoToCenter.Location = new System.Drawing.Point(98, 103);
-            this.buttonGoToCenter.Name = "buttonGoToCenter";
-            this.buttonGoToCenter.Size = new System.Drawing.Size(89, 94);
-            this.buttonGoToCenter.TabIndex = 4;
-            this.buttonGoToCenter.Text = "►◄";
-            this.buttonGoToCenter.UseVisualStyleBackColor = true;
-            this.buttonGoToCenter.Click += new System.EventHandler(this.buttonGoToCenter_Click);
+            this.buttonTrackDown.Font = new System.Drawing.Font("Microsoft Sans Serif", 27.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+            this.buttonTrackDown.Location = new System.Drawing.Point(98, 103);
+            this.buttonTrackDown.Name = "buttonTrackDown";
+            this.buttonTrackDown.Size = new System.Drawing.Size(89, 94);
+            this.buttonTrackDown.TabIndex = 5;
+            this.buttonTrackDown.Text = "⮟";
+            this.buttonTrackDown.UseVisualStyleBackColor = true;
+            this.buttonTrackDown.Click += new System.EventHandler(this.buttonTrackDown_Click);
             // 
-            // buttonRewind
+            // buttonTrackLeft
             // 
-            this.buttonRewind.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+            this.buttonTrackLeft.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
                         | System.Windows.Forms.AnchorStyles.Left)
                         | System.Windows.Forms.AnchorStyles.Right)));
-            this.buttonRewind.Font = new System.Drawing.Font("Microsoft Sans Serif", 20.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.buttonRewind.Location = new System.Drawing.Point(3, 103);
-            this.buttonRewind.Name = "buttonRewind";
-            this.buttonRewind.Size = new System.Drawing.Size(89, 94);
-            this.buttonRewind.TabIndex = 3;
-            this.buttonRewind.Text = "▐◄◄";
-            this.buttonRewind.UseVisualStyleBackColor = true;
-            this.buttonRewind.Click += new System.EventHandler(this.buttonRewind_Click);
+            this.buttonTrackLeft.Font = new System.Drawing.Font("Microsoft Sans Serif", 27.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+            this.buttonTrackLeft.Location = new System.Drawing.Point(3, 103);
+            this.buttonTrackLeft.Name = "buttonTrackLeft";
+            this.buttonTrackLeft.Size = new System.Drawing.Size(89, 94);
+            this.buttonTrackLeft.TabIndex = 4;
+            this.buttonTrackLeft.Text = "⮜";
+            this.buttonTrackLeft.UseVisualStyleBackColor = true;
+            this.buttonTrackLeft.Click += new System.EventHandler(this.buttonTrackLeft_Click);
             // 
-            // buttonTrackSun
+            // buttonTrackUp
             // 
-            this.buttonTrackSun.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+            this.buttonTrackUp.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
                         | System.Windows.Forms.AnchorStyles.Left)
                         | System.Windows.Forms.AnchorStyles.Right)));
-            this.buttonTrackSun.Font = new System.Drawing.Font("Microsoft Sans Serif", 27.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.buttonTrackSun.Location = new System.Drawing.Point(193, 3);
-            this.buttonTrackSun.Name = "buttonTrackSun";
-            this.buttonTrackSun.Size = new System.Drawing.Size(90, 94);
-            this.buttonTrackSun.TabIndex = 2;
-            this.buttonTrackSun.Text = "☼";
-            this.buttonTrackSun.UseVisualStyleBackColor = true;
-            this.buttonTrackSun.Click += new System.EventHandler(this.buttonTrackSun_Click);
+            this.buttonTrackUp.Font = new System.Drawing.Font("Microsoft Sans Serif", 27.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+            this.buttonTrackUp.Location = new System.Drawing.Point(98, 3);
+            this.buttonTrackUp.Name = "buttonTrackUp";
+            this.buttonTrackUp.Size = new System.Drawing.Size(89, 94);
+            this.buttonTrackUp.TabIndex = 2;
+            this.buttonTrackUp.Text = "⮝";
+            this.buttonTrackUp.UseVisualStyleBackColor = true;
+            this.buttonTrackUp.Click += new System.EventHandler(this.buttonTrackUp_Click);
             // 
-            // buttonTrackMoon
+            // buttonTrackGoTo
             // 
-            this.buttonTrackMoon.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+            this.buttonTrackGoTo.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
                         | System.Windows.Forms.AnchorStyles.Left)
                         | System.Windows.Forms.AnchorStyles.Right)));
-            this.buttonTrackMoon.Font = new System.Drawing.Font("Microsoft Sans Serif", 27.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.buttonTrackMoon.Location = new System.Drawing.Point(98, 3);
-            this.buttonTrackMoon.Name = "buttonTrackMoon";
-            this.buttonTrackMoon.Size = new System.Drawing.Size(89, 94);
-            this.buttonTrackMoon.TabIndex = 1;
-            this.buttonTrackMoon.Text = "☽";
-            this.buttonTrackMoon.UseVisualStyleBackColor = true;
-            this.buttonTrackMoon.Click += new System.EventHandler(this.buttonTrackMoon_Click);
+            this.buttonTrackGoTo.Font = new System.Drawing.Font("Microsoft Sans Serif", 48F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+            this.buttonTrackGoTo.Location = new System.Drawing.Point(3, 3);
+            this.buttonTrackGoTo.Name = "buttonTrackGoTo";
+            this.buttonTrackGoTo.Size = new System.Drawing.Size(89, 94);
+            this.buttonTrackGoTo.TabIndex = 1;
+            this.buttonTrackGoTo.Text = "⌖";
+            this.buttonTrackGoTo.UseVisualStyleBackColor = true;
+            this.buttonTrackGoTo.Click += new System.EventHandler(this.buttonTrackGoto_Click);
             // 
-            // buttonTrackStars
+            // checkBoxTrackAuto
             // 
-            this.buttonTrackStars.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+            this.checkBoxTrackAuto.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
                         | System.Windows.Forms.AnchorStyles.Left)
                         | System.Windows.Forms.AnchorStyles.Right)));
-            this.buttonTrackStars.Font = new System.Drawing.Font("Microsoft Sans Serif", 27.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.buttonTrackStars.Location = new System.Drawing.Point(3, 3);
-            this.buttonTrackStars.Name = "buttonTrackStars";
-            this.buttonTrackStars.Size = new System.Drawing.Size(89, 94);
-            this.buttonTrackStars.TabIndex = 0;
-            this.buttonTrackStars.Text = "★";
-            this.buttonTrackStars.UseVisualStyleBackColor = true;
-            this.buttonTrackStars.Click += new System.EventHandler(this.buttonTrackStars_Click);
+            this.checkBoxTrackAuto.Appearance = System.Windows.Forms.Appearance.Button;
+            this.checkBoxTrackAuto.AutoSize = true;
+            this.checkBoxTrackAuto.FlatStyle = System.Windows.Forms.FlatStyle.System;
+            this.checkBoxTrackAuto.Font = new System.Drawing.Font("Microsoft Sans Serif", 27.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+            this.checkBoxTrackAuto.Location = new System.Drawing.Point(193, 3);
+            this.checkBoxTrackAuto.Name = "checkBoxTrackAuto";
+            this.checkBoxTrackAuto.Size = new System.Drawing.Size(90, 94);
+            this.checkBoxTrackAuto.TabIndex = 3;
+            this.checkBoxTrackAuto.Text = "🔭";
+            this.checkBoxTrackAuto.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.checkBoxTrackAuto.UseVisualStyleBackColor = true;
+            this.checkBoxTrackAuto.CheckedChanged += new System.EventHandler(this.checkBoxTrackAuto_CheckedChanged);
             // 
             // buttonOptions
             // 
@@ -534,6 +538,7 @@
             this.tableLayoutPanel7.ResumeLayout(false);
             this.tableLayoutPanel6.ResumeLayout(false);
             this.tableLayoutPanel9.ResumeLayout(false);
+            this.tableLayoutPanel9.PerformLayout();
             this.ResumeLayout(false);
 
         }
@@ -562,14 +567,14 @@
         private System.Windows.Forms.Button buttonConnection;
         private System.Windows.Forms.TableLayoutPanel tableLayoutPanel7;
         private System.Windows.Forms.TableLayoutPanel tableLayoutPanel9;
-        private System.Windows.Forms.Button buttonFastFwd;
-        private System.Windows.Forms.Button buttonGoToCenter;
-        private System.Windows.Forms.Button buttonRewind;
-        private System.Windows.Forms.Button buttonTrackSun;
-        private System.Windows.Forms.Button buttonTrackMoon;
-        private System.Windows.Forms.Button buttonTrackStars;
+        private System.Windows.Forms.Button buttonTrackRight;
+        private System.Windows.Forms.Button buttonTrackDown;
+        private System.Windows.Forms.Button buttonTrackLeft;
+        private System.Windows.Forms.Button buttonTrackUp;
+        private System.Windows.Forms.Button buttonTrackGoTo;
         private System.Windows.Forms.Button buttonStop;
         private System.Windows.Forms.Button buttonStellariumConnect;
+        private System.Windows.Forms.CheckBox checkBoxTrackAuto;
     }
 }
 

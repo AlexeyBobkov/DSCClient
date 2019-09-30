@@ -435,7 +435,7 @@
             this.buttonTrackGoTo.TabIndex = 1;
             this.buttonTrackGoTo.Text = "⌖";
             this.buttonTrackGoTo.UseVisualStyleBackColor = true;
-            this.buttonTrackGoTo.Click += new System.EventHandler(this.buttonTrackGoto_Click);
+            this.buttonTrackGoTo.Click += new System.EventHandler(this.buttonTrackGoTo_Click);
             // 
             // checkBoxTrackAuto
             // 

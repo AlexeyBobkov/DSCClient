@@ -24,7 +24,6 @@ namespace ScopeDSCClient
         private int azmRes_, altRes_;
         private int azmPos_, altPos_;
         private bool positionsValid_ = false;
-        private int azmOffset_ = 0, altOffset_ = 0;
         private int iInitWidth_ = 1200, iInitHeight_ = 675;
         private float positionFontSize_ = (float)96;
         private float objectFontSize_ = (float)36;
@@ -55,12 +54,23 @@ namespace ScopeDSCClient
 
         // alignment data
         private DSCAlignment alignment_;
-        private AlignmentConnectionData alignmentConnectionAltAzm_;
         private AlignmentConnectionData alignmentConnectionGoTo_;
 
-        private const int LAST_OBJ_COUNT = 10;
-        private SkyObjectPosCalc.SkyPosition object_;
-        private SkyObjectPosCalc.SkyPosition[] lastObjects_ = new SkyObjectPosCalc.SkyPosition[LAST_OBJ_COUNT];
+        // state
+        private const int LAST_OBJ_COUNT = 20;
+        private SkyObjectPosCalc.SkyPosition selectedObject_;
+        private SkyObjectPosCalc.SkyPosition trackedObject_;
+        private double trackedOffsetRA_, trackedOffsetDec_;
+        private bool switchOn_ = false;
+        private bool allowAutoTrack_ = false;
+        private SkyObjectPosCalc.SkyPosition[] lastSelectedObjects_ = new SkyObjectPosCalc.SkyPosition[LAST_OBJ_COUNT];
+
+        // time sync
+        private Int32 controllerTs_;
+        private DateTime thisTs_;       // UTC time
+        private ClientCommonAPI.Timeout tmoSendPos_ = new ClientCommonAPI.Timeout(3500);
+        private int nextPosTimeSec_ = 4;
+        private double arrowMoveSpeed_ = 1 / 30.0;  // degree
 
         private bool posTextChanged_ = true;
         private bool connectionAndAlignTextChanged_ = true;
@@ -68,9 +78,16 @@ namespace ScopeDSCClient
         private bool objectNameChanged_ = true;
 
         // connection capabilities flags
-        private const byte CONNCAPS_ALTAZM = 1;
         private const byte CONNCAPS_GPS = 4;
         private const byte CONNCAPS_GOTO = 8;
+
+        // state bits
+        private const byte STATE_ALT_RUNNING = 1;
+        private const byte STATE_AZM_RUNNING = 2;
+        private const byte STATE_SWITCH_ON = 4;
+
+        private const byte A_ALT = 0;   // command for alt adapter
+        private const byte A_AZM = 1;   // command for azm adapter
 
         private class ConnectionData
         {
@@ -92,8 +109,7 @@ namespace ScopeDSCClient
         private List<ConnectionData> connectionList_ = new List<ConnectionData>();
 
         // specific connections (everyone points to an object in the connection list)
-        private ConnectionData connectionAltAzm_;
-        private ConnectionData connectionGoto_;
+        private ConnectionData connectionGoTo_;
         private ConnectionData connectionGPS_;
 
         // stellarium
@@ -140,11 +156,8 @@ namespace ScopeDSCClient
             {
                 connectionData_.sessionId_ = data[1];
 
-                if ((data[0] & CONNCAPS_ALTAZM) != 0)
-                    parent_.BeginInvoke(new SetConnectionDelegate(parent_.SetAltAzmConnection), new object[] { connectionData_ });
-
                 if ((data[0] & CONNCAPS_GOTO) != 0)
-                    parent_.BeginInvoke(new SetConnectionDelegate(parent_.SetGotoConnection), new object[] { connectionData_ });
+                    parent_.BeginInvoke(new SetConnectionDelegate(parent_.SetGoToConnection), new object[] { connectionData_ });
 
                 if ((data[0] & CONNCAPS_GPS) != 0)
                     parent_.BeginInvoke(new SetConnectionDelegate(parent_.SetGPSConnection), new object[] { connectionData_ });
@@ -156,17 +169,20 @@ namespace ScopeDSCClient
 
         private class BaseConnectionHandler : SerialConnection.IReceiveHandler
         {
-            public BaseConnectionHandler(ScopeGotoClient parent, ReceiveDelegate receiveDelegate, SerialConnection connection)
+            public BaseConnectionHandler(ScopeGotoClient parent, ReceiveDelegate receiveDelegate, TimeoutDelegate timeoutDelegate, SerialConnection connection)
             {
                 parent_ = parent;
                 receiveDelegate_ = receiveDelegate;
+                timeoutDelegate_ = timeoutDelegate;
                 connection_ = connection;
             }
 
+            public BaseConnectionHandler(ScopeGotoClient parent, ReceiveDelegate receiveDelegate, SerialConnection connection)
+                : this(parent, receiveDelegate, parent.SerialError, connection) {}
+
             public void Error()
             {
-                TimeoutDelegate d = new TimeoutDelegate(parent_.SerialError);
-                parent_.BeginInvoke(d, new object[] {connection_});
+                parent_.BeginInvoke(timeoutDelegate_, new object[] { connection_ });
             }
 
             public void Received(byte[] data)
@@ -176,6 +192,7 @@ namespace ScopeDSCClient
 
             private ScopeGotoClient parent_;
             private ReceiveDelegate receiveDelegate_;
+            private TimeoutDelegate timeoutDelegate_;
             private SerialConnection connection_;
         }
 
@@ -200,18 +217,27 @@ namespace ScopeDSCClient
 
         public double AzmAngle
         {
-            get { return (double)(azmPos_ + azmOffset_) * 2 * Math.PI / (azmRes_ != 0 ? (double)azmRes_ : 1); }
+            get { return (double)(azmPos_) * 2 * Math.PI / (azmRes_ != 0 ? (double)azmRes_ : 1); }
+        }
+
+        public double AzmAngleLimited
+        {
+            get
+            {
+                int res = azmRes_ > 0 ? azmRes_ : 1;
+                return (double)(azmPos_ >= 0 ? (azmPos_ % res) : res - 1 - ((-azmPos_ - 1) % res)) * 2 * Math.PI / res;
+            }
         }
 
         public double AltAngle
         {
-            get { return (double)(altPos_ + altOffset_) * 2 * Math.PI / (altRes_ != 0 ? (double)altRes_ : 1); }
+            get { return (double)(altPos_) * 2 * Math.PI / (altRes_ != 0 ? (double)altRes_ : 1); }
         }
 
         private class ScopePositions : ClientCommonAPI.IScopePositions
         {
             public ScopePositions(ScopeGotoClient parent) { parent_ = parent; }
-            public double AzmAngle { get { return parent_.AzmAngle; } }
+            public double AzmAngle { get { return parent_.AzmAngleLimited; } }
             public double AltAngle { get { return parent_.AltAngle; } }
             public double EquAngle { get { return 0; } }
 
@@ -225,7 +251,7 @@ namespace ScopeDSCClient
             posTextChanged_ = false;
             
             string s = "";
-            if (connectionAltAzm_ == null || alignment_ == null || !alignment_.IsAligned || object_ == null)
+            if (connectionGoTo_ == null || alignment_ == null || !alignment_.IsAligned || selectedObject_ == null)
             {
                 s += "--, --";
             }
@@ -233,7 +259,7 @@ namespace ScopeDSCClient
             {
                 double d = ClientCommonAPI.CalcTime();
                 double azm, alt;
-                object_.CalcAzimuthal(d, latitude_, longitude_, out azm, out alt);
+                selectedObject_.CalcAzimuthal(d, latitude_, longitude_, out azm, out alt);
                 PairA objScope = alignment_.Horz2Scope(new PairA(azm * Const.toRad, alt * Const.toRad), 0);
 
                 if (!showNearestAzmRotation_)
@@ -258,16 +284,10 @@ namespace ScopeDSCClient
 
             string s = "";
 
-            if (connectionAltAzm_ == null)
-                s += "Alt-Azm not Connected";
-            else
-                s += "Alt-Azm Connected to " + connectionAltAzm_.connection_.PortName + " at " + connectionAltAzm_.connection_.BaudRate;
-            s += Environment.NewLine;
-
-            if (connectionGoto_ == null)
+            if (connectionGoTo_ == null)
                 s += "GoTo not Connected";
             else
-                s += "GoTo Connected to " + connectionGoto_.connection_.PortName + " at " + connectionGoto_.connection_.BaudRate;
+                s += "GoTo Connected to " + connectionGoTo_.connection_.PortName + " at " + connectionGoTo_.connection_.BaudRate;
             s += Environment.NewLine;
 
             if (connectionGPS_ == null)
@@ -305,46 +325,69 @@ namespace ScopeDSCClient
             double d = ClientCommonAPI.CalcTime();
 
             string s = "";
-            if (connectionAltAzm_ == null)
+            if (connectionGoTo_ == null)
                 s += "Encoder Abs Positions Unknown" + Environment.NewLine;
             else
             {
                 s += "Encoder Abs Positions: Azm = " + ClientCommonAPI.PrintAngle(AzmAngle * Const.toDeg, false, false) + ", Alt = " + ClientCommonAPI.PrintAngle(AltAngle * Const.toDeg, false, false) + Environment.NewLine;
             }
+            if (!switchOn_)
+                s += "TELESCOPE SWITCH OFF" + Environment.NewLine;
 
             s += Environment.NewLine;
-            if (connectionAltAzm_ == null)
-                s += "Scope Position Unknown";
-            else if (alignment_ != null && alignment_.IsAligned)
-            {
-                PairA horz = alignment_.Scope2Horz(new PairA(AzmAngle, AltAngle), 0);
-
-                s += "Scope Position: Azm = " + ClientCommonAPI.PrintAngle(SkyObjectPosCalc.Rev(horz.Azm * Const.toDeg), false, false);
-                s += ", Alt = " + ClientCommonAPI.PrintAngle(SkyObjectPosCalc.Rev(horz.Alt * Const.toDeg), false, false) + Environment.NewLine;
-
-                double dec, ra;
-                SkyObjectPosCalc.AzAlt2Equ(d, latitude_, longitude_, SkyObjectPosCalc.Rev(horz.Azm * Const.toDeg), SkyObjectPosCalc.Rev(horz.Alt * Const.toDeg), out dec, out ra);
-                s += "R.A.\t= " + ClientCommonAPI.PrintTime(ra) + " (" + ra.ToString("F5") + "\x00B0)" + Environment.NewLine;
-                s += "Dec.\t= " + ClientCommonAPI.PrintAngle(dec, true) + " (" + ClientCommonAPI.PrintDec(dec, "F5") + "\x00B0)" + Environment.NewLine;
-
-                if (sendPositionToStellarium && stellariumConnection_ != null && stellariumConnection_.IsConnected)
-                    stellariumConnection_.SendPosition(dec, ra);
-            }
-
-            s += Environment.NewLine;
-            if (object_ == null)
-                s += "No Object Selected";
+            if (selectedObject_ == null)
+                s += "No Object Selected" + Environment.NewLine;
             else
             {
                 double azm, alt;
-                object_.CalcAzimuthal(d, latitude_, longitude_, out azm, out alt);
-                s += object_.Name + ": Azm = " + ClientCommonAPI.PrintAngle(azm, false, false);
+                selectedObject_.CalcAzimuthal(d, latitude_, longitude_, out azm, out alt);
+                s += selectedObject_.Name + ": Azm = " + ClientCommonAPI.PrintAngle(azm, false, false);
                 s += ", Alt = " + ClientCommonAPI.PrintAngle(alt, false, false) + Environment.NewLine;
 
                 double dec, ra;
-                object_.CalcTopoRaDec(d, latitude_, longitude_, out dec, out ra);
+                selectedObject_.CalcTopoRaDec(d, latitude_, longitude_, out dec, out ra);
                 s += "R.A.\t= " + ClientCommonAPI.PrintTime(ra) + " (" + ra.ToString("F5") + "\x00B0)" + Environment.NewLine;
                 s += "Dec.\t= " + ClientCommonAPI.PrintAngle(dec, true) + " (" + ClientCommonAPI.PrintDec(dec, "F5") + "\x00B0)" + Environment.NewLine;
+            }
+
+            s += Environment.NewLine;
+            if (trackedObject_ == null)
+            {
+                s += "No Object Tracked" + Environment.NewLine;
+                s += Environment.NewLine;
+                if (connectionGoTo_ == null)
+                    s += "Scope Position Unknown" + Environment.NewLine;
+                else if (alignment_ != null && alignment_.IsAligned)
+                {
+                    PairA horz = alignment_.Scope2Horz(new PairA(AzmAngle, AltAngle), 0);
+
+                    s += "Scope Position: Azm = " + ClientCommonAPI.PrintAngle(SkyObjectPosCalc.Rev(horz.Azm * Const.toDeg), false, false);
+                    s += ", Alt = " + ClientCommonAPI.PrintAngle(SkyObjectPosCalc.Rev(horz.Alt * Const.toDeg), false, false) + Environment.NewLine;
+
+                    double dec, ra;
+                    SkyObjectPosCalc.AzAlt2Equ(d, latitude_, longitude_, SkyObjectPosCalc.Rev(horz.Azm * Const.toDeg), SkyObjectPosCalc.Rev(horz.Alt * Const.toDeg), out dec, out ra);
+                    s += "R.A.\t= " + ClientCommonAPI.PrintTime(ra) + " (" + ra.ToString("F5") + "\x00B0)" + Environment.NewLine;
+                    s += "Dec.\t= " + ClientCommonAPI.PrintAngle(dec, true) + " (" + ClientCommonAPI.PrintDec(dec, "F5") + "\x00B0)" + Environment.NewLine;
+
+                    if (sendPositionToStellarium && stellariumConnection_ != null && stellariumConnection_.IsConnected)
+                        stellariumConnection_.SendPosition(dec, ra);
+                }
+            }
+            else if (trackedObject_ != selectedObject_)
+            {
+                double azm, alt;
+                trackedObject_.CalcAzimuthal(d, latitude_, longitude_, out azm, out alt);
+                s += trackedObject_.Name + ": Azm = " + ClientCommonAPI.PrintAngle(azm, false, false);
+                s += ", Alt = " + ClientCommonAPI.PrintAngle(alt, false, false) + Environment.NewLine;
+
+                double dec, ra;
+                trackedObject_.CalcTopoRaDec(d, latitude_, longitude_, out dec, out ra);
+                s += "R.A.\t= " + ClientCommonAPI.PrintTime(ra) + " (" + ra.ToString("F5") + "\x00B0)" + Environment.NewLine;
+                s += "Dec.\t= " + ClientCommonAPI.PrintAngle(dec, true) + " (" + ClientCommonAPI.PrintDec(dec, "F5") + "\x00B0)" + Environment.NewLine;
+            }
+            else
+            {
+                s += "Tracking: " + trackedObject_.Name + Environment.NewLine;
             }
 
             textBoxObject.Text = s;
@@ -355,7 +398,7 @@ namespace ScopeDSCClient
             if (!objectNameChanged_)
                 return;
             objectNameChanged_ = false;
-            objectNameLabel.Text = (object_ != null) ? object_.Name : "";
+            objectNameLabel.Text = (selectedObject_ != null) ? selectedObject_.Name : "";
         }
 
         private void UpdateUI()
@@ -364,7 +407,9 @@ namespace ScopeDSCClient
         }
         private void UpdateUI(bool sendPositionToStellarium)
         {
-            if (connectionAltAzm_ == null)
+            checkBoxTrackAuto.Enabled = true;
+
+            if (connectionGoTo_ == null)
             {
                 buttonAlign.Text = "Alignment (Connect to Scope First)";
                 buttonAlign.Enabled = false;
@@ -375,26 +420,37 @@ namespace ScopeDSCClient
                 buttonAlign.Enabled = true;
             }
 
-            if (connectionGoto_ == null)
+            if (connectionGoTo_ == null || alignment_ == null || !switchOn_)
             {
                 buttonTrackGoTo.Enabled = false;
-                buttonTrackUp.Enabled = false;
-                //checkBoxTrackAuto.Enabled = false;
-                buttonTrackLeft.Enabled = false;
-                buttonTrackDown.Enabled = false;
-                buttonTrackRight.Enabled = false;
                 buttonStop.Enabled = false;
             }
             else
             {
-                buttonTrackGoTo.Enabled = true;
+                buttonTrackGoTo.Enabled = (selectedObject_ != null);
+                buttonStop.Enabled = true;
+                if (trackedObject_ != null)
+                    buttonStop.Text = "\u25a0"; //"\u23F9";
+                else
+                    buttonStop.Text = "\u25B6";
+            }
+
+            // arrows
+            if (trackedObject_ != null)
+            {
                 buttonTrackUp.Enabled = true;
-                checkBoxTrackAuto.Enabled = true;
                 buttonTrackLeft.Enabled = true;
                 buttonTrackDown.Enabled = true;
                 buttonTrackRight.Enabled = true;
-                buttonStop.Enabled = true;
             }
+            else
+            {
+                buttonTrackUp.Enabled = false;
+                buttonTrackLeft.Enabled = false;
+                buttonTrackDown.Enabled = false;
+                buttonTrackRight.Enabled = false;
+            }
+
             SetPositionText();
             SetConnectionAndAlignmentText();
             SetScopePositionAndObjectText(sendPositionToStellarium);
@@ -412,29 +468,38 @@ namespace ScopeDSCClient
             AlignmentChanged();
         }
 
-        private void ConnectionChangedAltAzm()
+        private void ConnectionChangedGoTo()
         {
             posTextChanged_ = true;
             connectionAndAlignTextChanged_ = true;
             scopePosAndObjTextChanged_ = true;
 
             if (alignment_ != null &&
-                connectionAltAzm_ != null &&
-                connectionAltAzm_.connection_ != null &&
-                (connectionAltAzm_.connection_.PortName != alignmentConnectionAltAzm_.PortName ||
-                 connectionAltAzm_.sessionId_ != alignmentConnectionAltAzm_.SessionId))
+                connectionGoTo_ != null &&
+                connectionGoTo_.connection_ != null &&
+                (connectionGoTo_.connection_.PortName != alignmentConnectionGoTo_.PortName ||
+                 connectionGoTo_.sessionId_ != alignmentConnectionGoTo_.SessionId))
             {
                 alignment_ = null;
                 SaveAlignment();
                 AlignmentChanged();
             }
-        }
 
-        private void ConnectionChangedGoto()
-        {
-            posTextChanged_ = true;
-            connectionAndAlignTextChanged_ = true;
-            scopePosAndObjTextChanged_ = true;
+            if (connectionGoTo_ == null)
+            {
+                if (switchOn_)
+                {
+                    switchOn_ = false;
+                    SwitchChanged();
+                }
+                if (trackedObject_ != null)
+                {
+                    trackedObject_ = null;
+                    TrackedObjectChanged();
+                    // As there is no connection, it doesn't make sense to stop motors.
+                }
+            }
+            allowAutoTrack_ = false;
         }
 
         private void ConnectionChangedGPS()
@@ -446,6 +511,7 @@ namespace ScopeDSCClient
         {
             posTextChanged_ = true;
             connectionAndAlignTextChanged_ = true;
+            allowAutoTrack_ = false;
         }
 
         private void ObjectChanged()
@@ -458,6 +524,16 @@ namespace ScopeDSCClient
         private void ScopePosChanged()
         {
             posTextChanged_ = true;
+            scopePosAndObjTextChanged_ = true;
+        }
+
+        private void SwitchChanged()
+        {
+            scopePosAndObjTextChanged_ = true;
+        }
+
+        private void TrackedObjectChanged()
+        {
             scopePosAndObjTextChanged_ = true;
         }
 
@@ -477,10 +553,8 @@ namespace ScopeDSCClient
                 {
                     settings_.AlignmentStars = alignment_.Stars;
                     settings_.AlignmentEquAxis = alignment_.EquAxis;
-                    if (connectionAltAzm_ != null && connectionAltAzm_.connection_ != null)
-                        settings_.AlignmentConnectionAltAzm = alignmentConnectionAltAzm_ = new AlignmentConnectionData(connectionAltAzm_.connection_.PortName, connectionAltAzm_.sessionId_);
-                    if (connectionGoto_ != null && connectionGoto_.connection_ != null)
-                        settings_.AlignmentConnectionGoto = alignmentConnectionGoTo_ = new AlignmentConnectionData(connectionGoto_.connection_.PortName, connectionGoto_.sessionId_);
+                    if (connectionGoTo_ != null && connectionGoTo_.connection_ != null)
+                        settings_.AlignmentConnectionGoTo = alignmentConnectionGoTo_ = new AlignmentConnectionData(connectionGoTo_.connection_.PortName, connectionGoTo_.sessionId_);
                 }
             }
         }
@@ -500,8 +574,7 @@ namespace ScopeDSCClient
 
                     alignment_.ForceAlignment();
 
-                    alignmentConnectionAltAzm_ = settings_.AlignmentConnectionAltAzm;
-                    alignmentConnectionGoTo_ = settings_.AlignmentConnectionGoto;
+                    alignmentConnectionGoTo_ = settings_.AlignmentConnectionGoTo;
                 }
             }
             catch (Exception)
@@ -605,20 +678,20 @@ namespace ScopeDSCClient
 
         private void AddLastObject(SkyObjectPosCalc.SkyPosition obj)
         {
-            for (int i = lastObjects_.Length; --i >= 0; )
+            for (int i = lastSelectedObjects_.Length; --i >= 0; )
             {
-                if (lastObjects_[i] != null && obj.Name == lastObjects_[i].Name)
+                if (lastSelectedObjects_[i] != null && obj.Name == lastSelectedObjects_[i].Name)
                 {
                     // move to first position
-                    lastObjects_[i] = lastObjects_[0];
-                    lastObjects_[0] = obj;
+                    lastSelectedObjects_[i] = lastSelectedObjects_[0];
+                    lastSelectedObjects_[0] = obj;
                     return;
                 }
             }
                 
-            for (int i = lastObjects_.Length; --i >= 1; )
-                lastObjects_[i] = lastObjects_[i - 1];
-            lastObjects_[0] = obj;
+            for (int i = lastSelectedObjects_.Length; --i >= 1; )
+                lastSelectedObjects_[i] = lastSelectedObjects_[i - 1];
+            lastSelectedObjects_[0] = obj;
         }
 
         private void ScopeGotoClient_Load(object sender, EventArgs e)
@@ -638,10 +711,11 @@ namespace ScopeDSCClient
             if (connectToStellarium_)
                 OpenStellariumConnection(stellariumTcpPort_);
 
+            checkBoxTrackAuto.Checked = settings_.AutoTrack;
+
             // Everything is changed! (Yes, it's redundant.)
             //OptionsOrTimeChanged();
-            ConnectionChangedAltAzm();
-            ConnectionChangedGoto();
+            ConnectionChangedGoTo();
             ConnectionChangedGPS();
             ObjectChanged();
             ScopePosChanged();
@@ -709,13 +783,13 @@ namespace ScopeDSCClient
 
         private void buttonSelectObject_Click(object sender, EventArgs e)
         {
-            SkyObjectForm form = new SkyObjectForm(nightMode_, latitude_, longitude_, database_, stellariumConnection_, lastObjects_, lastObjSettings_);
+            SkyObjectForm form = new SkyObjectForm(nightMode_, latitude_, longitude_, database_, stellariumConnection_, lastSelectedObjects_, lastObjSettings_);
             if (form.ShowDialog() != DialogResult.OK)
                 return;
 
-            object_ = form.UseStellarium ? stellariumObj_ : form.Object;
-            if (object_ != null)
-                AddLastObject(object_);
+            selectedObject_ = form.UseStellarium ? stellariumObj_ : form.Object;
+            if (selectedObject_ != null)
+                AddLastObject(selectedObject_);
             lastObjSettings_ = form.Settings;
             ObjectChanged();
             UpdateUI();
@@ -821,21 +895,25 @@ namespace ScopeDSCClient
             {
             case 0:
             case 4:
-                //SendCommand(connectionGoto_, 'e', 2, this.ReceiveEquPosition);
+                SendCommand(connectionGoTo_, 'R', 13, this.ReceiveStatus);
                 break;
             case 2:
             case 6:
-                //SendCommand(connectionAltAzm_, 'p', 1, this.ReceiveErrorCnt);
+                SendCommand(connectionGoTo_, 'R', 13, this.ReceiveStatus);
                 TimeChanged();
                 break;
             case 1:
             case 3:
             case 5:
             case 7:
-                SendCommand(connectionAltAzm_, 'y', 4, this.ReceiveAltAzmPosition);
+                //SendCommand(connectionGoTo_, 'y', 4, this.ReceiveAltAzmPosition);
                 sendPositionToStellarium = true;
                 break;
             }
+
+            if (trackedObject_ != null && tmoSendPos_.CheckExpired())
+                SendNextPositions();
+            
             UpdateUI(sendPositionToStellarium);
         }
 
@@ -874,47 +952,24 @@ namespace ScopeDSCClient
             UpdateUI();
         }
 
-        private void SetAltAzmConnection(ConnectionData data)
+        private void SetGoToConnection(ConnectionData data)
         {
-            if (connectionAltAzm_ != null)
+            if (connectionGoTo_ != null)
             {
-                if (connectionAltAzm_.connection_ == data.connection_)
+                if (connectionGoTo_.connection_ == data.connection_)
                     return;
 
-                if (connectionAltAzm_ != connectionGoto_ && connectionAltAzm_ != connectionGPS_)
-                    CloseConnection(connectionAltAzm_.connection_);
+                if (connectionGoTo_ != connectionGPS_)
+                    CloseConnection(connectionGoTo_.connection_);
             }
 
-            connectionAltAzm_ = data;
-            if (swapAzmAltEncoders_ != data.swapAzmAltEncoders_)
-            {
-                int tmp = azmOffset_;
-                azmOffset_ = altOffset_;
-                altOffset_ = tmp;
-            }
+            connectionGoTo_ = data;
             swapAzmAltEncoders_ = data.swapAzmAltEncoders_;
 
-            //SendCommand(connectionAltAzm_, new byte[] { (byte)'z', (byte)(10000 & 0xff), (byte)(10000 / 256), (byte)(10000 & 0xff), (byte)(10000 / 256) }, 1, this.ReceiveAcknowlage);
-            SendCommand(connectionAltAzm_, 'h', 4, this.ReceiveAltAzmResolution);
+            SendCommand(connectionGoTo_, 'h', 4, this.ReceiveAltAzmResolution);
+            SendCommand(connectionGoTo_, 'R', 13, this.ReceiveStatus);
 
-            ConnectionChangedAltAzm();
-            UpdateUI();
-        }
-        private void SetGotoConnection(ConnectionData data)
-        {
-            if (connectionGoto_ != null)
-            {
-                if (connectionGoto_.connection_ == data.connection_)
-                    return;
-
-                if (connectionGoto_ != connectionAltAzm_ && connectionGoto_ != connectionGPS_)
-                    CloseConnection(connectionGoto_.connection_);
-            }
-
-            connectionGoto_ = data;
-            //SendCommand(connectionGoto_, 'q', 2, this.ReceiveEquResolution);
-
-            ConnectionChangedGoto();
+            ConnectionChangedGoTo();
             UpdateUI();
         }
         private void SetGPSConnection(ConnectionData data)
@@ -924,7 +979,7 @@ namespace ScopeDSCClient
                 if (connectionGPS_.connection_ == data.connection_)
                     return;
 
-                if (connectionGPS_ != connectionAltAzm_ && connectionGPS_ != connectionGoto_)
+                if (connectionGPS_ != connectionGoTo_)
                     CloseConnection(connectionGPS_.connection_);
             }
 
@@ -946,8 +1001,185 @@ namespace ScopeDSCClient
                 connectionData.connection_.SendReceiveRequest(cmd, receiveCnt, new BaseConnectionHandler(this, receiveDelegate, connectionData.connection_));
         }
 
-        private void SendScopeMotionCommand(char cmd) { SendCommand(connectionGoto_, cmd, 1, ReceiveDummy); }
+        private void SendCommand(ConnectionData connectionData, byte[] cmd, int receiveCnt, ReceiveDelegate receiveDelegate, TimeoutDelegate timeoutDelegate)
+        {
+            if (connectionData != null && connectionData.connection_ != null)
+                connectionData.connection_.SendReceiveRequest(cmd, receiveCnt, new BaseConnectionHandler(this, receiveDelegate, timeoutDelegate, connectionData.connection_));
+        }
 
+        private void SendScopeMotionCommand(char cmd) { SendCommand(connectionGoTo_, cmd, 1, ReceiveDummy); }
+
+        private void SendStopMotorCommand(byte dst)
+        {
+            SendCommand(connectionGoTo_, new byte[] { (byte)'T', dst }, 1, ReceiveAcknowlage);
+        }
+
+        private void SendSetNextPosCommand(Int32 sp, Int32 ts, byte dst)
+        {
+            if (connectionGoTo_ != null)
+                SendCommand(connectionGoTo_, new byte[] { (byte)'N',
+                                                          dst,
+                                                          (byte)sp,
+                                                          (byte)(sp >> 8),
+                                                          (byte)(sp >> 16),
+                                                          (byte)(sp >> 24),
+                                                          (byte)ts,
+                                                          (byte)(ts >> 8),
+                                                          (byte)(ts >> 16),
+                                                          (byte)(ts >> 24)}, 8, ReceiveNextPosCommand);
+        }
+        
+        private bool altStartSent_, azmStartSent_;
+        private void StartMotors()
+        {
+            if (connectionGoTo_ != null && connectionGoTo_.connection_ != null)
+            {
+                Int32 speed = 0;
+                SendCommand(connectionGoTo_, new byte[] { (byte)'S',
+                                                          A_ALT,
+                                                          (byte)speed,
+                                                          (byte)(speed >> 8),
+                                                          (byte)(speed >> 16),
+                                                          (byte)(speed >> 24)}, 8, ReceiveAltStart, TimeoutAltStart);
+                SendCommand(connectionGoTo_, new byte[] { (byte)'S',
+                                                          A_AZM,
+                                                          (byte)speed,
+                                                          (byte)(speed >> 8),
+                                                          (byte)(speed >> 16),
+                                                          (byte)(speed >> 24)}, 8, ReceiveAzmStart, TimeoutAzmStart);
+                altStartSent_ = azmStartSent_ = true;
+            }
+        }
+        private void ReceiveAltStart(byte[] data)
+        {
+            altStartSent_ = false;
+        }
+        private void TimeoutAltStart(SerialConnection connection)
+        {
+            altStartSent_ = false;
+            SerialError(connection);
+        }
+        private void ReceiveAzmStart(byte[] data)
+        {
+            azmStartSent_ = false;
+            tmoSendPos_.Restart();
+            SendNextPositions();
+        }
+        private void TimeoutAzmStart(SerialConnection connection)
+        {
+            azmStartSent_ = false;
+            SerialError(connection);
+        }
+
+        private void SendNextPositions()
+        {
+            if (trackedObject_ != null && alignment_ != null)
+            {
+                // next timestamp
+                DateTime nextThisTs = DateTime.UtcNow + new TimeSpan(0, 0, nextPosTimeSec_);
+
+                // calculate next positions
+                double d = ClientCommonAPI.CalcTime(nextThisTs);
+
+                double azm, alt;
+                //trackedObject_.CalcAzimuthal(d, latitude_, longitude_, out azm, out alt);
+                {
+                    double dec, ra;
+                    trackedObject_.CalcTopoRaDec(d, latitude_, longitude_, out dec, out ra);
+                    SkyObjectPosCalc.Equ2AzAlt(d, latitude_, longitude_, dec + trackedOffsetDec_, ra + trackedOffsetRA_, out azm, out alt);
+                }
+                PairA objScope = alignment_.Horz2Scope(new PairA(azm * Const.toRad, alt * Const.toRad), 0);
+
+                // azimuth difference, in degree
+                double azmd = SkyObjectPosCalc.Rev(objScope.Azm * Const.toDeg - AzmAngle * Const.toDeg);
+                if (azmd > 180)
+                    azmd -= 360;
+
+                // altitude difference, in degree
+                double altd = (objScope.Alt - AltAngle) * Const.toDeg;
+
+                // next positions
+                Int32 nextAzmPos = azmPos_ + (int)(azmd * azmRes_ / 360.0);
+                Int32 nextAltPos = altPos_ + (int)(altd * altRes_ / 360.0);
+
+                // next timestamp
+                Int32 nextTs = controllerTs_ + (Int32)(nextThisTs - thisTs_).TotalMilliseconds;
+
+                // send positions
+                SendSetNextPosCommand(nextAltPos, nextTs, A_ALT);
+                SendSetNextPosCommand(nextAzmPos, nextTs, A_AZM);
+            }
+        }
+        private void ReceiveNextPosCommand(byte[] data)
+        {
+        }
+
+        private void StartTracking()
+        {
+            if (trackedObject_ == null && alignment_ != null && connectionGoTo_ != null && switchOn_)
+            {
+                // get current telescope position
+                PairA horz = alignment_.Scope2Horz(new PairA(AzmAngle, AltAngle), 0);
+                double dec, ra;
+                SkyObjectPosCalc.AzAlt2Equ(ClientCommonAPI.CalcTime(), latitude_, longitude_,
+                                            SkyObjectPosCalc.Rev(horz.Azm * Const.toDeg), SkyObjectPosCalc.Rev(horz.Alt * Const.toDeg), out dec, out ra);
+                
+                // select object to track
+                //if (selectedObject_ != null)
+                //{
+                //}
+                //else
+                {
+                    trackedObject_ = new SkyObjectPosCalc.StarPosition("Tracking", ra / 15.0, dec);
+                    trackedOffsetRA_ = trackedOffsetDec_ = 0;
+                    StartMotors();
+                }
+                TrackedObjectChanged();
+            }
+        }
+
+        private void StopTracking()
+        {
+            if (trackedObject_ != null)
+            {
+                SendStopMotorCommand(A_ALT);
+                SendStopMotorCommand(A_AZM);
+                trackedObject_ = null;
+                TrackedObjectChanged();
+            }
+        }
+
+        private void OffsetTrackingObject(double offsetAzm, double offsetAlt)
+        {
+            if (trackedObject_ != null)
+            {
+                // get current telescope position
+                PairA horz = alignment_.Scope2Horz(new PairA(AzmAngle, AltAngle), 0);
+                double dec, ra;
+                SkyObjectPosCalc.AzAlt2Equ(ClientCommonAPI.CalcTime(), latitude_, longitude_,
+                                            SkyObjectPosCalc.Rev(horz.Azm * Const.toDeg), SkyObjectPosCalc.Rev(horz.Alt * Const.toDeg), out dec, out ra);
+                horz = alignment_.Scope2Horz(new PairA(AzmAngle + offsetAzm * Const.toRad, AltAngle + offsetAlt * Const.toRad), 0);
+                double shiftedDec, shiftedRA;
+                SkyObjectPosCalc.AzAlt2Equ(ClientCommonAPI.CalcTime(), latitude_, longitude_,
+                                            SkyObjectPosCalc.Rev(horz.Azm * Const.toDeg), SkyObjectPosCalc.Rev(horz.Alt * Const.toDeg), out shiftedDec, out shiftedRA);
+
+                trackedOffsetDec_ += shiftedDec - dec;
+                trackedOffsetRA_ += shiftedRA - ra;
+
+                tmoSendPos_.Restart();
+                SendNextPositions();
+                TrackedObjectChanged();
+            }
+        }
+        
+        private Int32 GetInt32(byte[] data, int offset)
+        {
+            return (Int32)((((UInt32)data[offset+3]) << 24) +
+                           (((UInt32)data[offset+2]) << 16) +
+                           (((UInt32)data[offset+1]) << 8) +
+                             (UInt32)(data[offset]));
+        }
+        
         private void ReceiveAcknowlage(byte[] data)
         {
         }
@@ -965,50 +1197,71 @@ namespace ScopeDSCClient
             }
         }
 
-        private void ReceiveAltAzmPosition(byte[] data)
+        private void ReceiveStatus(byte[] data)
         {
-            int azmPos, altPos;
+            // sync time
+            controllerTs_ = GetInt32(data, 0);
+            thisTs_ = DateTime.UtcNow;
+
+            // store telescope position
+            Int32 altPos, azmPos;
             if (swapAzmAltEncoders_)
             {
-                azmPos = (UInt16)((((UInt16)data[1]) << 8) + data[0]);
-                altPos = (UInt16)((((UInt16)data[3]) << 8) + data[2]);
+                altPos = GetInt32(data, 8);
+                azmPos = GetInt32(data, 4);
             }
             else
             {
-                altPos = (UInt16)((((UInt16)data[1]) << 8) + data[0]);
-                azmPos = (UInt16)((((UInt16)data[3]) << 8) + data[2]);
+                altPos = GetInt32(data, 4);
+                azmPos = GetInt32(data, 8);
             }
-            /*
-            if (!positionsValid_)
-            {
-                //azmOffset_ = azmRes_ / 2 - azmPos;
-                //altOffset_ = altRes_ / 2 - altPos;
-            }
-            else
-            {
-                if (azmRes_ > 0)
-                {
-                    int diff = azmPos - azmPos_;
-                    if (diff > azmRes_ / 2)
-                        azmOffset_ -= azmRes_;
-                    else if (diff < -azmRes_ / 2)
-                        azmOffset_ += azmRes_;
-                }
-                if (altRes_ > 0)
-                {
-                    int diff = altPos - altPos_;
-                    if (diff > altRes_ / 2)
-                        altOffset_ -= altRes_;
-                    else if (diff < -altRes_ / 2)
-                        altOffset_ += altRes_;
-                }
-            }
-            */
             if (azmPos_ != azmPos || altPos_ != altPos || !positionsValid_)
                 ScopePosChanged();
             azmPos_ = azmPos;
             altPos_ = altPos;
             positionsValid_ = true;
+
+            byte state = data[12];
+
+            bool oldSwitchOn = switchOn_;
+            switchOn_ = (state & STATE_SWITCH_ON) != 0;
+            if (switchOn_)
+            {
+                if (!altStartSent_ && !azmStartSent_)
+                {
+                    bool altOn = (state & STATE_ALT_RUNNING) != 0, azmOn = (state & STATE_AZM_RUNNING) != 0;
+                    if (!altOn || !azmOn)
+                    {
+                        if (altOn)
+                            SendStopMotorCommand(A_ALT);
+                        if (azmOn)
+                            SendStopMotorCommand(A_AZM);
+                        if (trackedObject_ != null)
+                        {
+                            trackedObject_ = null;
+                            TrackedObjectChanged();
+                        }
+                    }
+                }
+                if (!oldSwitchOn)
+                {
+                    if (checkBoxTrackAuto.Checked && allowAutoTrack_)
+                        StartTracking();
+                    SwitchChanged();
+                }
+            }
+            else
+            {
+                if (oldSwitchOn)
+                    SwitchChanged();
+                if (trackedObject_ != null)
+                {
+                    trackedObject_ = null;
+                    TrackedObjectChanged();
+                    // As switch is off, motors are stopped by themselves
+                }
+            }
+            UpdateUI();
         }
 
         private void ReceiveDummy(byte[] data)
@@ -1020,16 +1273,10 @@ namespace ScopeDSCClient
             if (connection == null)
                 return;
 
-            if (connectionAltAzm_ != null && connectionAltAzm_.connection_ == connection)
+            if (connectionGoTo_ != null && connectionGoTo_.connection_ == connection)
             {
-                connectionAltAzm_ = null;
-                ConnectionChangedAltAzm();
-            }
-
-            if (connectionGoto_ != null && connectionGoto_.connection_ == connection)
-            {
-                connectionGoto_ = null;
-                ConnectionChangedGoto();
+                connectionGoTo_ = null;
+                ConnectionChangedGoTo();
             }
 
             if (connectionGPS_ != null && connectionGPS_.connection_ == connection)
@@ -1050,16 +1297,10 @@ namespace ScopeDSCClient
 
         private void CloseAllConnections()
         {
-            if (connectionAltAzm_ != null)
+            if (connectionGoTo_ != null)
             {
-                connectionAltAzm_ = null;
-                ConnectionChangedAltAzm();
-            }
-
-            if (connectionGoto_ != null)
-            {
-                connectionGoto_ = null;
-                ConnectionChangedGoto();
+                connectionGoTo_ = null;
+                ConnectionChangedGoTo();
             }
 
             if (connectionGPS_ != null)
@@ -1101,39 +1342,70 @@ namespace ScopeDSCClient
             //settings_.Save();
         }
 
-        private void buttonTrackGoto_Click(object sender, EventArgs e)
+        private void buttonTrackGoTo_Click(object sender, EventArgs e)
         {
-            //SendScopeMotionCommand('1');
+            if (alignment_ != null && connectionGoTo_ != null && switchOn_)
+            {
+                if (selectedObject_ == null)
+                    StartTracking();
+                else
+                {
+                    SkyObjectPosCalc.SkyPosition prevTrackedObj = trackedObject_;
+                    trackedObject_ = selectedObject_;
+                    trackedOffsetRA_ = trackedOffsetDec_ = 0;
+                    if (prevTrackedObj == null)
+                        StartMotors();
+                    else
+                    {
+                        tmoSendPos_.Restart();
+                        SendNextPositions();
+                    }
+                    TrackedObjectChanged();
+                }
+            }
         }
 
         private void buttonTrackUp_Click(object sender, EventArgs e)
         {
-            //SendScopeMotionCommand('2');
+            OffsetTrackingObject(0, -arrowMoveSpeed_);
         }
 
         private void checkBoxTrackAuto_CheckedChanged(object sender, EventArgs e)
         {
-
+            if (checkBoxTrackAuto.Checked)
+            {
+                StartTracking();
+                allowAutoTrack_ = true;
+                UpdateUI();
+            }
+            settings_.AutoTrack = checkBoxTrackAuto.Checked;
         }
 
         private void buttonTrackLeft_Click(object sender, EventArgs e)
         {
-            //SendScopeMotionCommand('*');
+            OffsetTrackingObject(-arrowMoveSpeed_, 0);
         }
 
         private void buttonTrackDown_Click(object sender, EventArgs e)
         {
-            //SendScopeMotionCommand('8');
+            OffsetTrackingObject(0, -arrowMoveSpeed_);
         }
 
         private void buttonTrackRight_Click(object sender, EventArgs e)
         {
-            //SendScopeMotionCommand('#');
+            OffsetTrackingObject(arrowMoveSpeed_, 0);
         }
 
         private void buttonStop_Click(object sender, EventArgs e)
         {
-            //SendScopeMotionCommand('0');
+            if (trackedObject_ == null)
+            {
+                StartTracking();
+                allowAutoTrack_ = true;
+            }
+            else
+                StopTracking();
+            UpdateUI();
         }
 
         public void StellariumStatusChangedHandlerAsync()
@@ -1229,16 +1501,16 @@ namespace ScopeDSCClient
             set { profile_.SetValue(section_, "AlignmentEquAxis", value); }
         }
 
-        public ScopeGotoClient.AlignmentConnectionData AlignmentConnectionAltAzm
+        public ScopeGotoClient.AlignmentConnectionData AlignmentConnectionGoTo
         {
-            get { return (ScopeGotoClient.AlignmentConnectionData)profile_.GetValue(section_, "AlignmentConnectionAltAzm", new ScopeGotoClient.AlignmentConnectionData()); }
-            set { profile_.SetValue(section_, "AlignmentConnectionAltAzm", value); }
+            get { return (ScopeGotoClient.AlignmentConnectionData)profile_.GetValue(section_, "AlignmentConnectionGoTo", new ScopeGotoClient.AlignmentConnectionData()); }
+            set { profile_.SetValue(section_, "AlignmentConnectionGoTo", value); }
         }
 
-        public ScopeGotoClient.AlignmentConnectionData AlignmentConnectionGoto
+        public bool AutoTrack
         {
-            get { return (ScopeGotoClient.AlignmentConnectionData)profile_.GetValue(section_, "AlignmentConnectionGoto", new ScopeGotoClient.AlignmentConnectionData()); }
-            set { profile_.SetValue(section_, "AlignmentConnectionGoto", value); }
+            get { return profile_.GetValue(section_, "AutoTrack", false); }
+            set { profile_.SetValue(section_, "AutoTrack", value); }
         }
 
         /*
@@ -1260,7 +1532,7 @@ namespace ScopeDSCClient
             return profile_.Buffer();
         }
 
-        private const string section_ = "entries";
+        private const string section_ = "entriesGoTo";
         private XmlProfile profile_ = new XmlProfile();
     }
 }

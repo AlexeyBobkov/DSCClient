@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Windows.Forms;
 using System.Drawing;
+using System.Data;
 using SkyObjectPosition;
 using DSCCalculations;
 
@@ -22,6 +23,32 @@ namespace ScopeDSCClient
             public SkyObjectPosCalc.SkyPosition[] objects_;
         };
 
+        // timeout class
+        public class Timeout
+        {
+            private DateTime start_;
+            private int timeoutInMS_;
+
+            public Timeout(int timeoutInMS)
+            {
+                timeoutInMS_ = timeoutInMS;
+                Restart();
+            }
+
+            public void Restart() { start_ = DateTime.Now; }
+
+            public bool CheckExpired() { return CheckExpired(true); }
+            public bool CheckExpired(bool restart)
+            {
+                DateTime now = DateTime.Now;
+                if ((now - start_).TotalMilliseconds < timeoutInMS_)
+                    return false;
+                if (restart)
+                    start_ = now;
+                return true;
+            }
+        }
+        
         public static void EnterNightMode(Control control)
         {
             EnumControls(control, SetNightModeOnFn, 0);
@@ -34,8 +61,12 @@ namespace ScopeDSCClient
 
         public static double CalcTime()
         {
-            DateTime v = DateTime.UtcNow;
-            return SkyObjectPosCalc.CalcTime(v.Year, v.Month, v.Day, v.Hour, v.Minute, v.Second, v.Millisecond);
+            return CalcTime(DateTime.UtcNow);
+        }
+
+        public static double CalcTime(DateTime timeUtc)
+        {
+            return SkyObjectPosCalc.CalcTime(timeUtc.Year, timeUtc.Month, timeUtc.Day, timeUtc.Hour, timeUtc.Minute, timeUtc.Second, timeUtc.Millisecond);
         }
 
         public static string PrintAngle(double a)

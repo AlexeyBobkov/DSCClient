@@ -33,6 +33,7 @@
             this.buttonCancel = new System.Windows.Forms.Button();
             this.buttonLastObj = new System.Windows.Forms.Button();
             this.buttonStellarium = new System.Windows.Forms.Button();
+            this.buttonUnselect = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // buttonFromList
@@ -40,7 +41,7 @@
             this.buttonFromList.Location = new System.Drawing.Point(62, 30);
             this.buttonFromList.Margin = new System.Windows.Forms.Padding(4);
             this.buttonFromList.Name = "buttonFromList";
-            this.buttonFromList.Size = new System.Drawing.Size(531, 105);
+            this.buttonFromList.Size = new System.Drawing.Size(277, 105);
             this.buttonFromList.TabIndex = 0;
             this.buttonFromList.Text = "From List";
             this.buttonFromList.UseVisualStyleBackColor = true;
@@ -48,10 +49,10 @@
             // 
             // buttonByCoordinates
             // 
-            this.buttonByCoordinates.Location = new System.Drawing.Point(62, 155);
+            this.buttonByCoordinates.Location = new System.Drawing.Point(364, 30);
             this.buttonByCoordinates.Margin = new System.Windows.Forms.Padding(4);
             this.buttonByCoordinates.Name = "buttonByCoordinates";
-            this.buttonByCoordinates.Size = new System.Drawing.Size(531, 105);
+            this.buttonByCoordinates.Size = new System.Drawing.Size(277, 105);
             this.buttonByCoordinates.TabIndex = 1;
             this.buttonByCoordinates.Text = "By Coordinates";
             this.buttonByCoordinates.UseVisualStyleBackColor = true;
@@ -60,20 +61,20 @@
             // buttonCancel
             // 
             this.buttonCancel.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.buttonCancel.Location = new System.Drawing.Point(62, 569);
+            this.buttonCancel.Location = new System.Drawing.Point(364, 357);
             this.buttonCancel.Margin = new System.Windows.Forms.Padding(4);
             this.buttonCancel.Name = "buttonCancel";
-            this.buttonCancel.Size = new System.Drawing.Size(531, 88);
+            this.buttonCancel.Size = new System.Drawing.Size(277, 105);
             this.buttonCancel.TabIndex = 4;
             this.buttonCancel.Text = "Cancel";
             this.buttonCancel.UseVisualStyleBackColor = true;
             // 
             // buttonLastObj
             // 
-            this.buttonLastObj.Location = new System.Drawing.Point(62, 405);
+            this.buttonLastObj.Location = new System.Drawing.Point(364, 168);
             this.buttonLastObj.Margin = new System.Windows.Forms.Padding(4);
             this.buttonLastObj.Name = "buttonLastObj";
-            this.buttonLastObj.Size = new System.Drawing.Size(531, 105);
+            this.buttonLastObj.Size = new System.Drawing.Size(277, 105);
             this.buttonLastObj.TabIndex = 3;
             this.buttonLastObj.Text = "Recent Objects";
             this.buttonLastObj.UseVisualStyleBackColor = true;
@@ -81,20 +82,32 @@
             // 
             // buttonStellarium
             // 
-            this.buttonStellarium.Location = new System.Drawing.Point(62, 280);
+            this.buttonStellarium.Location = new System.Drawing.Point(62, 168);
             this.buttonStellarium.Margin = new System.Windows.Forms.Padding(4);
             this.buttonStellarium.Name = "buttonStellarium";
-            this.buttonStellarium.Size = new System.Drawing.Size(531, 105);
+            this.buttonStellarium.Size = new System.Drawing.Size(277, 105);
             this.buttonStellarium.TabIndex = 2;
             this.buttonStellarium.Text = "Stellarium";
             this.buttonStellarium.UseVisualStyleBackColor = true;
             this.buttonStellarium.Click += new System.EventHandler(this.buttonStellarium_Click);
             // 
+            // buttonUnselect
+            // 
+            this.buttonUnselect.Location = new System.Drawing.Point(62, 357);
+            this.buttonUnselect.Margin = new System.Windows.Forms.Padding(4);
+            this.buttonUnselect.Name = "buttonUnselect";
+            this.buttonUnselect.Size = new System.Drawing.Size(277, 105);
+            this.buttonUnselect.TabIndex = 5;
+            this.buttonUnselect.Text = "Unselect Object";
+            this.buttonUnselect.UseVisualStyleBackColor = true;
+            this.buttonUnselect.Click += new System.EventHandler(this.buttonUnselect_Click);
+            // 
             // SkyObjectForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(14F, 29F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(652, 688);
+            this.ClientSize = new System.Drawing.Size(712, 503);
+            this.Controls.Add(this.buttonUnselect);
             this.Controls.Add(this.buttonStellarium);
             this.Controls.Add(this.buttonLastObj);
             this.Controls.Add(this.buttonCancel);
@@ -117,5 +130,6 @@
         private System.Windows.Forms.Button buttonCancel;
         private System.Windows.Forms.Button buttonLastObj;
         private System.Windows.Forms.Button buttonStellarium;
+        private System.Windows.Forms.Button buttonUnselect;
     }
 }

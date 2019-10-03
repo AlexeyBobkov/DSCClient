@@ -60,7 +60,7 @@ namespace ScopeDSCClient
         private const int LAST_OBJ_COUNT = 20;
         private SkyObjectPosCalc.SkyPosition selectedObject_;
         private SkyObjectPosCalc.SkyPosition trackedObject_;
-        private double trackedOffsetRA_, trackedOffsetDec_;
+        private double trackedOffsetRa_, trackedOffsetDec_;
         private bool switchOn_ = false;
         private bool allowAutoTrack_ = false;
         private SkyObjectPosCalc.SkyPosition[] lastSelectedObjects_ = new SkyObjectPosCalc.SkyPosition[LAST_OBJ_COUNT];
@@ -114,22 +114,7 @@ namespace ScopeDSCClient
 
         // stellarium
         private StellariumServer.Connection stellariumConnection_;
-        private class StellariumObject : SkyObjectPosCalc.SkyPosition
-        {
-            public double Dec { get; set; }
-            public double Ra { get; set; }
-            public bool Connected { get; set; }
-
-            public StellariumObject() { Dec = Ra = 0; Connected = false; }
-            public override string Name { get { return Connected ? "Stellarium" : "Disconnected"; } }
-            public override void CalcEquatorial(double d, out double rg, out double dec, out double ra)
-            {
-                rg = 1;
-                dec = Dec;
-                ra = Ra;
-            }
-        }
-        private StellariumObject stellariumObj_ = new StellariumObject();
+        private ClientCommonAPI.StellariumObject stellariumObj_ = new ClientCommonAPI.StellariumObject();
 
         // object databases
         List<ClientCommonAPI.ObjDatabaseEntry> database_ = new List<ClientCommonAPI.ObjDatabaseEntry>();
@@ -377,7 +362,11 @@ namespace ScopeDSCClient
             {
                 double azm, alt;
                 trackedObject_.CalcAzimuthal(d, latitude_, longitude_, out azm, out alt);
-                s += trackedObject_.Name + ": Azm = " + ClientCommonAPI.PrintAngle(azm, false, false);
+                s += "Tracking " + trackedObject_.Name;
+                s += " (dec += " + ClientCommonAPI.PrintAngle(trackedOffsetDec_, false, false);
+                s += ", ra += " + ClientCommonAPI.PrintAngle(trackedOffsetRa_, false, false) + ")";
+                s += Environment.NewLine;
+                s += "Azm = " + ClientCommonAPI.PrintAngle(azm, false, false);
                 s += ", Alt = " + ClientCommonAPI.PrintAngle(alt, false, false) + Environment.NewLine;
 
                 double dec, ra;
@@ -387,7 +376,10 @@ namespace ScopeDSCClient
             }
             else
             {
-                s += "Tracking: " + trackedObject_.Name + Environment.NewLine;
+                s += "Tracking: " + trackedObject_.Name;
+                s += " (dec += " + ClientCommonAPI.PrintAngle(trackedOffsetDec_, false, false);
+                s += ", ra += " + ClientCommonAPI.PrintAngle(trackedOffsetRa_, false, false) + ")";
+                s += Environment.NewLine;
             }
 
             textBoxObject.Text = s;
@@ -1086,7 +1078,7 @@ namespace ScopeDSCClient
                 {
                     double dec, ra;
                     trackedObject_.CalcTopoRaDec(d, latitude_, longitude_, out dec, out ra);
-                    SkyObjectPosCalc.Equ2AzAlt(d, latitude_, longitude_, dec + trackedOffsetDec_, ra + trackedOffsetRA_, out azm, out alt);
+                    SkyObjectPosCalc.Equ2AzAlt(d, latitude_, longitude_, dec + trackedOffsetDec_, ra + trackedOffsetRa_, out azm, out alt);
                 }
                 PairA objScope = alignment_.Horz2Scope(new PairA(azm * Const.toRad, alt * Const.toRad), 0);
 
@@ -1099,11 +1091,11 @@ namespace ScopeDSCClient
                 double altd = (objScope.Alt - AltAngle) * Const.toDeg;
 
                 // next positions
-                Int32 nextAzmPos = azmPos_ + (int)(azmd * azmRes_ / 360.0);
-                Int32 nextAltPos = altPos_ + (int)(altd * altRes_ / 360.0);
+                Int32 nextAzmPos = azmPos_ + Convert.ToInt32(azmd * azmRes_ / 360.0);
+                Int32 nextAltPos = altPos_ + Convert.ToInt32(altd * altRes_ / 360.0);
 
                 // next timestamp
-                Int32 nextTs = controllerTs_ + (Int32)(nextThisTs - thisTs_).TotalMilliseconds;
+                Int32 nextTs = controllerTs_ + Convert.ToInt32((nextThisTs - thisTs_).TotalMilliseconds);
 
                 // send positions
                 SendSetNextPosCommand(nextAltPos, nextTs, A_ALT);
@@ -1114,26 +1106,41 @@ namespace ScopeDSCClient
         {
         }
 
+        private const double maxSelDiff_ = 1.0;
         private void StartTracking()
         {
             if (trackedObject_ == null && alignment_ != null && connectionGoTo_ != null && switchOn_)
             {
                 // get current telescope position
                 PairA horz = alignment_.Scope2Horz(new PairA(AzmAngle, AltAngle), 0);
-                double dec, ra;
+                double scopeDec, scopeRa;
                 SkyObjectPosCalc.AzAlt2Equ(ClientCommonAPI.CalcTime(), latitude_, longitude_,
-                                            SkyObjectPosCalc.Rev(horz.Azm * Const.toDeg), SkyObjectPosCalc.Rev(horz.Alt * Const.toDeg), out dec, out ra);
+                                            SkyObjectPosCalc.Rev(horz.Azm * Const.toDeg), SkyObjectPosCalc.Rev(horz.Alt * Const.toDeg), out scopeDec, out scopeRa);
                 
                 // select object to track
-                //if (selectedObject_ != null)
-                //{
-                //}
-                //else
+                if (selectedObject_ != null)
                 {
-                    trackedObject_ = new SkyObjectPosCalc.StarPosition("Tracking", ra / 15.0, dec);
-                    trackedOffsetRA_ = trackedOffsetDec_ = 0;
-                    StartMotors();
+                    double selDec, selRa;
+                    selectedObject_.CalcTopoRaDec(ClientCommonAPI.CalcTime(), latitude_, longitude_, out selDec, out selRa);
+                    double diffDec = SkyObjectPosCalc.Rev(scopeDec - selDec);
+                    if (diffDec > 180)
+                        diffDec -= 360;
+                    double diffRa = SkyObjectPosCalc.Rev(scopeRa - selRa);
+                    if (diffRa > 180)
+                        diffRa -= 360;
+                    if (diffDec < maxSelDiff_ && diffDec > -maxSelDiff_ && diffRa < maxSelDiff_ && diffRa > -maxSelDiff_)
+                    {
+                        trackedObject_ = selectedObject_;
+                        trackedOffsetDec_ = diffDec;
+                        trackedOffsetRa_ = diffRa;
+                    }
                 }
+                if (trackedObject_ == null)
+                {
+                    trackedObject_ = new SkyObjectPosCalc.StarPosition("Tracking", scopeRa / 15.0, scopeDec, false);
+                    trackedOffsetRa_ = trackedOffsetDec_ = 0;
+                }
+                StartMotors();
                 TrackedObjectChanged();
             }
         }
@@ -1159,12 +1166,12 @@ namespace ScopeDSCClient
                 SkyObjectPosCalc.AzAlt2Equ(ClientCommonAPI.CalcTime(), latitude_, longitude_,
                                             SkyObjectPosCalc.Rev(horz.Azm * Const.toDeg), SkyObjectPosCalc.Rev(horz.Alt * Const.toDeg), out dec, out ra);
                 horz = alignment_.Scope2Horz(new PairA(AzmAngle + offsetAzm * Const.toRad, AltAngle + offsetAlt * Const.toRad), 0);
-                double shiftedDec, shiftedRA;
+                double shiftedDec, shiftedRa;
                 SkyObjectPosCalc.AzAlt2Equ(ClientCommonAPI.CalcTime(), latitude_, longitude_,
-                                            SkyObjectPosCalc.Rev(horz.Azm * Const.toDeg), SkyObjectPosCalc.Rev(horz.Alt * Const.toDeg), out shiftedDec, out shiftedRA);
+                                            SkyObjectPosCalc.Rev(horz.Azm * Const.toDeg), SkyObjectPosCalc.Rev(horz.Alt * Const.toDeg), out shiftedDec, out shiftedRa);
 
                 trackedOffsetDec_ += shiftedDec - dec;
-                trackedOffsetRA_ += shiftedRA - ra;
+                trackedOffsetRa_ += shiftedRa - ra;
 
                 tmoSendPos_.Restart();
                 SendNextPositions();
@@ -1347,12 +1354,15 @@ namespace ScopeDSCClient
             if (alignment_ != null && connectionGoTo_ != null && switchOn_)
             {
                 if (selectedObject_ == null)
+                {
                     StartTracking();
+                    allowAutoTrack_ = true;
+                }
                 else
                 {
                     SkyObjectPosCalc.SkyPosition prevTrackedObj = trackedObject_;
                     trackedObject_ = selectedObject_;
-                    trackedOffsetRA_ = trackedOffsetDec_ = 0;
+                    trackedOffsetRa_ = trackedOffsetDec_ = 0;
                     if (prevTrackedObj == null)
                         StartMotors();
                     else
@@ -1367,7 +1377,7 @@ namespace ScopeDSCClient
 
         private void buttonTrackUp_Click(object sender, EventArgs e)
         {
-            OffsetTrackingObject(0, -arrowMoveSpeed_);
+            OffsetTrackingObject(0, arrowMoveSpeed_);
         }
 
         private void checkBoxTrackAuto_CheckedChanged(object sender, EventArgs e)

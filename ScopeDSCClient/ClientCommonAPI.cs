@@ -48,7 +48,23 @@ namespace ScopeDSCClient
                 return true;
             }
         }
-        
+
+        public class StellariumObject : SkyObjectPosCalc.SkyPosition
+        {
+            public double Dec { get; set; }
+            public double Ra { get; set; }
+            public bool Connected { get; set; }
+
+            public StellariumObject() { Dec = Ra = 0; Connected = false; }
+            public override string Name { get { return Connected ? "Stellarium" : "Disconnected"; } }
+            public override void CalcEquatorial(double d, out double rg, out double dec, out double ra)
+            {
+                rg = 1;
+                dec = Dec;
+                ra = Ra;
+            }
+        }
+
         public static void EnterNightMode(Control control)
         {
             EnumControls(control, SetNightModeOnFn, 0);

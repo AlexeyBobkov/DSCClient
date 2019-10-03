@@ -105,6 +105,13 @@ namespace ScopeDSCClient
             }
         }
 
+        private void buttonUnselect_Click(object sender, EventArgs e)
+        {
+            object_ = null;
+            useStellarium_ = false;
+            DialogResult = DialogResult.OK;
+        }
+
         private void SkyObjectForm_Load(object sender, EventArgs e)
         {
             if (nightMode_)

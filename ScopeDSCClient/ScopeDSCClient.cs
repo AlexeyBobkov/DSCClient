@@ -99,22 +99,7 @@ namespace ScopeDSCClient
 
         // stellarium
         private StellariumServer.Connection stellariumConnection_;
-        private class StellariumObject : SkyObjectPosCalc.SkyPosition
-        {
-            public double Dec { get; set; }
-            public double Ra { get; set; }
-            public bool Connected { get; set; }
-
-            public StellariumObject() { Dec = Ra = 0; Connected = false; }
-            public override string Name { get { return Connected ? "Stellarium" : "Disconnected"; } }
-            public override void CalcEquatorial(double d, out double rg, out double dec, out double ra)
-            {
-                rg = 1;
-                dec = Dec;
-                ra = Ra;
-            }
-        }
-        private StellariumObject stellariumObj_ = new StellariumObject();
+        private ClientCommonAPI.StellariumObject stellariumObj_ = new ClientCommonAPI.StellariumObject();
 
         // object databases
         List<ClientCommonAPI.ObjDatabaseEntry> database_ = new List<ClientCommonAPI.ObjDatabaseEntry>();

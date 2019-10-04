@@ -503,7 +503,20 @@ namespace ScopeDSCClient
         {
             posTextChanged_ = true;
             connectionAndAlignTextChanged_ = true;
-            allowAutoTrack_ = false;
+
+            if (alignment_ == null)
+            {
+                if (switchOn_)
+                {
+                    switchOn_ = false;
+                    SwitchChanged();
+                }
+                if (trackedObject_ != null && connectionGoTo_ != null)
+                    StopTracking();
+                allowAutoTrack_ = false;
+            }
+            else if (connectionGoTo_ != null && switchOn_ && trackedObject_ != null)
+                SetTrackedObject();     // correct, according to new alignment
         }
 
         private void ObjectChanged()
@@ -1107,16 +1120,16 @@ namespace ScopeDSCClient
         }
 
         private const double maxSelDiff_ = 1.0;
-        private void StartTracking()
+        private void SetTrackedObject()
         {
-            if (trackedObject_ == null && alignment_ != null && connectionGoTo_ != null && switchOn_)
+            if (alignment_ != null && connectionGoTo_ != null && switchOn_)
             {
                 // get current telescope position
                 PairA horz = alignment_.Scope2Horz(new PairA(AzmAngle, AltAngle), 0);
                 double scopeDec, scopeRa;
                 SkyObjectPosCalc.AzAlt2Equ(ClientCommonAPI.CalcTime(), latitude_, longitude_,
                                             SkyObjectPosCalc.Rev(horz.Azm * Const.toDeg), SkyObjectPosCalc.Rev(horz.Alt * Const.toDeg), out scopeDec, out scopeRa);
-                
+
                 // select object to track
                 if (selectedObject_ != null)
                 {
@@ -1140,8 +1153,15 @@ namespace ScopeDSCClient
                     trackedObject_ = new SkyObjectPosCalc.StarPosition("Tracking", scopeRa / 15.0, scopeDec, false);
                     trackedOffsetRa_ = trackedOffsetDec_ = 0;
                 }
-                StartMotors();
                 TrackedObjectChanged();
+            }
+        }
+        private void StartTracking()
+        {
+            if (trackedObject_ == null && alignment_ != null && connectionGoTo_ != null && switchOn_)
+            {
+                SetTrackedObject();
+                StartMotors();
             }
         }
 
@@ -1234,28 +1254,21 @@ namespace ScopeDSCClient
             switchOn_ = (state & STATE_SWITCH_ON) != 0;
             if (switchOn_)
             {
-                if (!altStartSent_ && !azmStartSent_)
-                {
-                    bool altOn = (state & STATE_ALT_RUNNING) != 0, azmOn = (state & STATE_AZM_RUNNING) != 0;
-                    if (!altOn || !azmOn)
-                    {
-                        if (altOn)
-                            SendStopMotorCommand(A_ALT);
-                        if (azmOn)
-                            SendStopMotorCommand(A_AZM);
-                        if (trackedObject_ != null)
-                        {
-                            trackedObject_ = null;
-                            TrackedObjectChanged();
-                        }
-                    }
-                }
                 if (!oldSwitchOn)
-                {
-                    if (checkBoxTrackAuto.Checked && allowAutoTrack_)
-                        StartTracking();
                     SwitchChanged();
+
+                bool altOn = (state & STATE_ALT_RUNNING) != 0, azmOn = (state & STATE_AZM_RUNNING) != 0;
+                if (trackedObject_ != null && !altStartSent_ && !azmStartSent_ && (!altOn || !azmOn))
+                {
+                    if (altOn)
+                        SendStopMotorCommand(A_ALT);
+                    if (azmOn)
+                        SendStopMotorCommand(A_AZM);
+                    trackedObject_ = null;
+                    TrackedObjectChanged();
                 }
+                else if (!oldSwitchOn && checkBoxTrackAuto.Checked && allowAutoTrack_)
+                    StartTracking();
             }
             else
             {
@@ -1356,7 +1369,6 @@ namespace ScopeDSCClient
                 if (selectedObject_ == null)
                 {
                     StartTracking();
-                    allowAutoTrack_ = true;
                 }
                 else
                 {
@@ -1372,6 +1384,7 @@ namespace ScopeDSCClient
                     }
                     TrackedObjectChanged();
                 }
+                allowAutoTrack_ = true;
             }
         }
 
@@ -1414,7 +1427,10 @@ namespace ScopeDSCClient
                 allowAutoTrack_ = true;
             }
             else
+            {
                 StopTracking();
+                allowAutoTrack_ = false;
+            }
             UpdateUI();
         }
 

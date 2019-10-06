@@ -44,7 +44,7 @@
             this.buttonCorrectPolarAxis = new System.Windows.Forms.Button();
             this.buttonSaveAlignment = new System.Windows.Forms.Button();
             this.buttonLoadAlignment = new System.Windows.Forms.Button();
-            this.buttonCorrectOffsets = new System.Windows.Forms.Button();
+            this.buttonRevalidate = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // comboBoxObj
@@ -213,21 +213,21 @@
             // 
             // buttonCorrectOffsets
             // 
-            this.buttonCorrectOffsets.Location = new System.Drawing.Point(692, 121);
-            this.buttonCorrectOffsets.Margin = new System.Windows.Forms.Padding(4);
-            this.buttonCorrectOffsets.Name = "buttonCorrectOffsets";
-            this.buttonCorrectOffsets.Size = new System.Drawing.Size(205, 137);
-            this.buttonCorrectOffsets.TabIndex = 6;
-            this.buttonCorrectOffsets.Text = "Correct Offsets";
-            this.buttonCorrectOffsets.UseVisualStyleBackColor = true;
-            this.buttonCorrectOffsets.Click += new System.EventHandler(this.buttonCorrectOffsets_Click);
+            this.buttonRevalidate.Location = new System.Drawing.Point(692, 121);
+            this.buttonRevalidate.Margin = new System.Windows.Forms.Padding(4);
+            this.buttonRevalidate.Name = "buttonCorrectOffsets";
+            this.buttonRevalidate.Size = new System.Drawing.Size(205, 137);
+            this.buttonRevalidate.TabIndex = 6;
+            this.buttonRevalidate.Text = "Revalidate";
+            this.buttonRevalidate.UseVisualStyleBackColor = true;
+            this.buttonRevalidate.Click += new System.EventHandler(this.buttonRevalidate_Click);
             // 
             // AlignmentForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(15F, 29F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1167, 771);
-            this.Controls.Add(this.buttonCorrectOffsets);
+            this.Controls.Add(this.buttonRevalidate);
             this.Controls.Add(this.buttonSaveAlignment);
             this.Controls.Add(this.buttonLoadAlignment);
             this.Controls.Add(this.buttonCorrectPolarAxis);
@@ -269,6 +269,6 @@
         private System.Windows.Forms.Button buttonCorrectPolarAxis;
         private System.Windows.Forms.Button buttonSaveAlignment;
         private System.Windows.Forms.Button buttonLoadAlignment;
-        private System.Windows.Forms.Button buttonCorrectOffsets;
+        private System.Windows.Forms.Button buttonRevalidate;
     }
 }

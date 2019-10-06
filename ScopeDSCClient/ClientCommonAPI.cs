@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Windows.Forms;
 using System.Drawing;
 using System.Data;
@@ -65,6 +66,109 @@ namespace ScopeDSCClient
             }
         }
 
+        public static void LoadSkyObjectsFromFile(string path, ref string name, ref SkyObjectPosCalc.SkyPosition[] obj)
+        {
+            List<SkyObjectPosCalc.SkyPosition> objects = new List<SkyObjectPosCalc.SkyPosition>();
+            try
+            {
+                using (System.IO.StreamReader sr = new System.IO.StreamReader(path))
+                {
+                    name = sr.ReadLine();
+                    if (name == null)
+                        return;
+
+                    string type = sr.ReadLine();
+                    if (type == null)
+                        return;
+
+                    switch (type.ToUpper())
+                    {
+                        case "N_RH_D":
+                            {
+                                string line;
+                                while ((line = sr.ReadLine()) != null)
+                                {
+                                    string[] parts = line.Split(',');
+                                    if (parts.Length < 3)
+                                        throw new ApplicationException("Incorrect line: " + line);
+                                    objects.Add(new SkyObjectPosCalc.StarPosition(parts[0], Convert.ToDouble(parts[1]), Convert.ToDouble(parts[2])));
+                                }
+                                break;
+                            }
+
+                        case "N_RH_RM_DD_DM":
+                            {
+                                string line;
+                                while ((line = sr.ReadLine()) != null)
+                                {
+                                    string[] parts = line.Split(',');
+                                    if (parts.Length < 5)
+                                        throw new ApplicationException("Incorrect line: " + line);
+
+                                    double ra;
+                                    bool positive = ParseSignedValue(parts[1], out ra);
+                                    if (parts[2].Length > 0)
+                                    {
+                                        if (positive)
+                                            ra += Convert.ToDouble(parts[2]) / 60;
+                                        else
+                                            ra -= Convert.ToDouble(parts[2]) / 60;
+                                    }
+
+                                    double dec;
+                                    positive = ParseSignedValue(parts[3], out dec);
+                                    if (parts[4].Length > 0)
+                                    {
+                                        if (positive)
+                                            dec += Convert.ToDouble(parts[4]) / 60;
+                                        else
+                                            dec -= Convert.ToDouble(parts[4]) / 60;
+                                    }
+
+                                    objects.Add(new SkyObjectPosCalc.StarPosition(parts[0], ra, dec));
+                                }
+                                break;
+                            }
+
+                        default:
+                            throw new Exception("Unknown format: " + type);
+                    }
+                }
+            }
+            catch (Exception)
+            {
+            }
+            obj = objects.Count > 0 ? objects.ToArray() : null;
+        }
+
+        public static void AddToDatabase(string path, ref List<ObjDatabaseEntry> database)
+        {
+            SkyObjectPosCalc.SkyPosition[] objects = null;
+            string name = "Unknown";
+            LoadSkyObjectsFromFile(path, ref name, ref objects);
+            if (objects != null && objects.Length > 0)
+                database.Add(new ClientCommonAPI.ObjDatabaseEntry() { name_ = name, objects_ = objects });
+        }
+
+        public static void BuildObjectDatabase(ref List<ObjDatabaseEntry> database)
+        {
+            database.Add(new ClientCommonAPI.ObjDatabaseEntry() { name_ = "Solar System Object", objects_ = SkyObjectPosCalc.sunSystemObjects });
+            database.Add(new ClientCommonAPI.ObjDatabaseEntry() { name_ = "Star", objects_ = SkyObjectPosCalc.stars });
+            database.Add(new ClientCommonAPI.ObjDatabaseEntry() { name_ = "Messier Object", objects_ = SkyObjectPosCalc.messier });
+
+            string startupPath = Application.StartupPath + @"\";
+            AddToDatabase(startupPath + "Objects0.csv", ref database);
+            AddToDatabase(startupPath + "Objects1.csv", ref database);
+            AddToDatabase(startupPath + "Objects2.csv", ref database);
+            AddToDatabase(startupPath + "Objects3.csv", ref database);
+            AddToDatabase(startupPath + "Objects4.csv", ref database);
+            AddToDatabase(startupPath + "Objects5.csv", ref database);
+            AddToDatabase(startupPath + "Objects6.csv", ref database);
+            AddToDatabase(startupPath + "Objects7.csv", ref database);
+            AddToDatabase(startupPath + "Objects8.csv", ref database);
+            AddToDatabase(startupPath + "Objects9.csv", ref database);
+        }
+        
         public static void EnterNightMode(Control control)
         {
             EnumControls(control, SetNightModeOnFn, 0);
@@ -180,13 +284,13 @@ namespace ScopeDSCClient
                 else if (diffAzmDeg < 0)
                     s += "\u25c4";
             }
-            s += ClientCommonAPI.PrintAngle(diffAzmDeg, true, false) + ", ";
+            s += PrintAngle(diffAzmDeg, true, false) + ", ";
 
             if (diffAltDeg > 0)
                 s += "\u25b2";
             else if (diffAltDeg < 0)
                 s += "\u25bc";
-            s += ClientCommonAPI.PrintAngle(diffAltDeg, true, false);
+            s += PrintAngle(diffAltDeg, true, false);
 
             return s;
         }

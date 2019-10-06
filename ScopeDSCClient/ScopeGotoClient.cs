@@ -597,90 +597,6 @@ namespace ScopeDSCClient
             InitializeComponent();
         }
 
-        private static void LoadFromFile(string path, ref string name, ref SkyObjectPosCalc.SkyPosition[] obj)
-        {
-            List<SkyObjectPosCalc.SkyPosition> objects = new List<SkyObjectPosCalc.SkyPosition>();
-            try
-            {
-                using (System.IO.StreamReader sr = new System.IO.StreamReader(path))
-                {
-                    name = sr.ReadLine();
-                    if (name == null)
-                        return;
-
-                    string type = sr.ReadLine();
-                    if (type == null)
-                        return;
-
-                    switch (type.ToUpper())
-                    {
-                        case "N_RH_D":
-                            {
-                                string line;
-                                while ((line = sr.ReadLine()) != null)
-                                {
-                                    string[] parts = line.Split(',');
-                                    if (parts.Length < 3)
-                                        throw new ApplicationException("Incorrect line: " + line);
-                                    objects.Add(new SkyObjectPosCalc.StarPosition(parts[0], Convert.ToDouble(parts[1]), Convert.ToDouble(parts[2])));
-                                }
-                                break;
-                            }
-
-                        case "N_RH_RM_DD_DM":
-                            {
-                                string line;
-                                while ((line = sr.ReadLine()) != null)
-                                {
-                                    string[] parts = line.Split(',');
-                                    if (parts.Length < 5)
-                                        throw new ApplicationException("Incorrect line: " + line);
-
-                                    double ra;
-                                    bool positive = ClientCommonAPI.ParseSignedValue(parts[1], out ra);
-                                    if (parts[2].Length > 0)
-                                    {
-                                        if (positive)
-                                            ra += Convert.ToDouble(parts[2]) / 60;
-                                        else
-                                            ra -= Convert.ToDouble(parts[2]) / 60;
-                                    }
-
-                                    double dec;
-                                    positive = ClientCommonAPI.ParseSignedValue(parts[3], out dec);
-                                    if (parts[4].Length > 0)
-                                    {
-                                        if (positive)
-                                            dec += Convert.ToDouble(parts[4]) / 60;
-                                        else
-                                            dec -= Convert.ToDouble(parts[4]) / 60;
-                                    }
-
-                                    objects.Add(new SkyObjectPosCalc.StarPosition(parts[0], ra, dec));
-                                }
-                                break;
-                            }
-
-                        default:
-                            throw new Exception("Unknown format: " + type);
-                    }
-                }
-            }
-            catch (Exception)
-            {
-            }
-            obj = objects.Count > 0 ? objects.ToArray() : null;
-        }
-
-        private void AddToDatabase(string path)
-        {
-            SkyObjectPosCalc.SkyPosition[] objects = null;
-            string name = "Unknown";
-            LoadFromFile(path, ref name, ref objects);
-            if(objects != null && objects.Length > 0)
-                database_.Add(new ClientCommonAPI.ObjDatabaseEntry() { name_ = name, objects_ = objects });
-        }
-
         private void AddLastObject(SkyObjectPosCalc.SkyPosition obj)
         {
             for (int i = lastSelectedObjects_.Length; --i >= 0; )
@@ -728,24 +644,7 @@ namespace ScopeDSCClient
             UpdateUI();
 
             LoadAlignment();
-
-            // load standard objects
-            database_.Add(new ClientCommonAPI.ObjDatabaseEntry() { name_ = "Solar System Object", objects_ = SkyObjectPosCalc.sunSystemObjects });
-            database_.Add(new ClientCommonAPI.ObjDatabaseEntry() { name_ = "Star", objects_ = SkyObjectPosCalc.stars });
-            database_.Add(new ClientCommonAPI.ObjDatabaseEntry() { name_ = "Messier Object", objects_ = SkyObjectPosCalc.messier });
-            
-            // load database files
-            string startupPath = Application.StartupPath + @"\";
-            AddToDatabase(startupPath + "Objects0.csv");
-            AddToDatabase(startupPath + "Objects1.csv");
-            AddToDatabase(startupPath + "Objects2.csv");
-            AddToDatabase(startupPath + "Objects3.csv");
-            AddToDatabase(startupPath + "Objects4.csv");
-            AddToDatabase(startupPath + "Objects5.csv");
-            AddToDatabase(startupPath + "Objects6.csv");
-            AddToDatabase(startupPath + "Objects7.csv");
-            AddToDatabase(startupPath + "Objects8.csv");
-            AddToDatabase(startupPath + "Objects9.csv");
+            ClientCommonAPI.BuildObjectDatabase(ref database_);
         }
 
         private void buttonNightMode_Click(object sender, EventArgs e)
@@ -1150,7 +1049,7 @@ namespace ScopeDSCClient
                 }
                 if (trackedObject_ == null)
                 {
-                    trackedObject_ = new SkyObjectPosCalc.StarPosition("Tracking", scopeRa / 15.0, scopeDec, false);
+                    trackedObject_ = new SkyObjectPosCalc.StarPosition("Unknown", scopeRa / 15.0, scopeDec, false);
                     trackedOffsetRa_ = trackedOffsetDec_ = 0;
                 }
                 TrackedObjectChanged();
@@ -1406,7 +1305,10 @@ namespace ScopeDSCClient
 
         private void buttonTrackLeft_Click(object sender, EventArgs e)
         {
-            OffsetTrackingObject(-arrowMoveSpeed_, 0);
+            if(oppositeHorzPositioningDir_)
+                OffsetTrackingObject(arrowMoveSpeed_, 0);
+            else
+                OffsetTrackingObject(-arrowMoveSpeed_, 0);
         }
 
         private void buttonTrackDown_Click(object sender, EventArgs e)
@@ -1416,7 +1318,10 @@ namespace ScopeDSCClient
 
         private void buttonTrackRight_Click(object sender, EventArgs e)
         {
-            OffsetTrackingObject(arrowMoveSpeed_, 0);
+            if (oppositeHorzPositioningDir_)
+                OffsetTrackingObject(-arrowMoveSpeed_, 0);
+            else
+                OffsetTrackingObject(arrowMoveSpeed_, 0);
         }
 
         private void buttonStop_Click(object sender, EventArgs e)

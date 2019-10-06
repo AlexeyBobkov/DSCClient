@@ -295,7 +295,7 @@ namespace ScopeDSCClient
             }
         }
 
-        private void buttonCorrectOffsets_Click(object sender, EventArgs e)
+        private void buttonRevalidate_Click(object sender, EventArgs e)
         {
             if (!alignment_.IsAligned)
                 return;

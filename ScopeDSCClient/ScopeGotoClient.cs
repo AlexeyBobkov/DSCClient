@@ -62,6 +62,7 @@ namespace ScopeDSCClient
         private SkyObjectPosCalc.SkyPosition trackedObject_;
         private double trackedOffsetRa_, trackedOffsetDec_;
         private bool switchOn_ = false;
+        private bool autoTrack_ = true;
         private bool allowAutoTrack_ = false;
         private SkyObjectPosCalc.SkyPosition[] lastSelectedObjects_ = new SkyObjectPosCalc.SkyPosition[LAST_OBJ_COUNT];
 
@@ -219,12 +220,17 @@ namespace ScopeDSCClient
             get { return (double)(altPos_) * 2 * Math.PI / (altRes_ != 0 ? (double)altRes_ : 1); }
         }
 
-        private class ScopePositions : ClientCommonAPI.IScopePositions
+        private class ClientHost : ClientCommonAPI.IClientHost
         {
-            public ScopePositions(ScopeGotoClient parent) { parent_ = parent; }
+            public ClientHost(ScopeGotoClient parent) { parent_ = parent; }
+
             public double AzmAngle { get { return parent_.AzmAngleLimited; } }
             public double AltAngle { get { return parent_.AltAngle; } }
             public double EquAngle { get { return 0; } }
+
+            public bool NightMode { get { return parent_.nightMode_; } }
+            public double Latitude { get { return parent_.latitude_; } }
+            public double Longitude { get { return parent_.longitude_; } }
 
             private ScopeGotoClient parent_;
         }
@@ -399,7 +405,7 @@ namespace ScopeDSCClient
         }
         private void UpdateUI(bool sendPositionToStellarium)
         {
-            checkBoxTrackAuto.Enabled = true;
+            //checkBoxTrackAuto.Enabled = true;
 
             if (connectionGoTo_ == null)
             {
@@ -632,7 +638,7 @@ namespace ScopeDSCClient
             if (connectToStellarium_)
                 OpenStellariumConnection(stellariumTcpPort_);
 
-            checkBoxTrackAuto.Checked = settings_.AutoTrack;
+            autoTrack_ = settings_.AutoTrack;
 
             // Everything is changed! (Yes, it's redundant.)
             //OptionsOrTimeChanged();
@@ -673,7 +679,7 @@ namespace ScopeDSCClient
 
         private void buttonAlign_Click(object sender, EventArgs e)
         {
-            AlignmentForm form = new AlignmentForm(new ScopePositions(this), nightMode_, latitude_, longitude_, lastAlignmentObjSettings_, alignment_);
+            AlignmentForm form = new AlignmentForm(new ClientHost(this), lastAlignmentObjSettings_, alignment_);
             if (form.ShowDialog() != DialogResult.OK)
                 return;
 
@@ -687,7 +693,7 @@ namespace ScopeDSCClient
 
         private void buttonSelectObject_Click(object sender, EventArgs e)
         {
-            SkyObjectForm form = new SkyObjectForm(nightMode_, latitude_, longitude_, database_, stellariumConnection_, lastSelectedObjects_, lastObjSettings_);
+            SkyObjectForm form = new SkyObjectForm(new ClientHost(this), database_, stellariumConnection_, lastSelectedObjects_, lastObjSettings_);
             if (form.ShowDialog() != DialogResult.OK)
                 return;
 
@@ -751,9 +757,12 @@ namespace ScopeDSCClient
 
         private void buttonOptions_Click(object sender, EventArgs e)
         {
-            OptionsForm form = new OptionsForm(nightMode_, showNearestAzmRotation_, connectToStellarium_, stellariumTcpPort_, oppositeHorzPositioningDir_);
-            form.Latitude = latitude_;
-            form.Longitude = longitude_;
+            OptionsForm form = new OptionsForm(new ClientHost(this),
+                                               showNearestAzmRotation_,
+                                               connectToStellarium_,
+                                               stellariumTcpPort_,
+                                               oppositeHorzPositioningDir_,
+                                               autoTrack_ ? ClientCommonAPI.AutoTrack.ON : ClientCommonAPI.AutoTrack.OFF);
             if (form.ShowDialog() != DialogResult.OK)
                 return;
 
@@ -774,10 +783,10 @@ namespace ScopeDSCClient
 
                 if (form.ConnectToStellarium)
                 {
-                    if (stellariumConnection_ != null && stellariumTcpPort_ != form.TcpPort)
+                    if (stellariumConnection_ != null && stellariumTcpPort_ != form.StellariumTcpPort)
                         CloseStellariumConnection();
                     if (stellariumConnection_ == null)
-                        OpenStellariumConnection(form.TcpPort);
+                        OpenStellariumConnection(form.StellariumTcpPort);
                 }
                 else if (stellariumConnection_ != null)
                     CloseStellariumConnection();
@@ -786,7 +795,8 @@ namespace ScopeDSCClient
                     settings_.OppositeHorzPositioningDir = oppositeHorzPositioningDir_ = form.OppositeHorzPositioningDir;
 
                 settings_.ConnectToStellarium = connectToStellarium_ = form.ConnectToStellarium;
-                settings_.TcpPort = stellariumTcpPort_ = form.TcpPort;
+                settings_.TcpPort = stellariumTcpPort_ = form.StellariumTcpPort;
+                settings_.AutoTrack = autoTrack_ = (form.AutoTrack == ClientCommonAPI.AutoTrack.ON);
             }
             UpdateUI();
         }
@@ -1166,7 +1176,7 @@ namespace ScopeDSCClient
                     trackedObject_ = null;
                     TrackedObjectChanged();
                 }
-                else if (!oldSwitchOn && checkBoxTrackAuto.Checked && allowAutoTrack_)
+                else if (!oldSwitchOn && autoTrack_ && allowAutoTrack_)
                     StartTracking();
             }
             else
@@ -1284,23 +1294,13 @@ namespace ScopeDSCClient
                     TrackedObjectChanged();
                 }
                 allowAutoTrack_ = true;
+                UpdateUI();
             }
         }
 
         private void buttonTrackUp_Click(object sender, EventArgs e)
         {
             OffsetTrackingObject(0, arrowMoveSpeed_);
-        }
-
-        private void checkBoxTrackAuto_CheckedChanged(object sender, EventArgs e)
-        {
-            if (checkBoxTrackAuto.Checked)
-            {
-                StartTracking();
-                allowAutoTrack_ = true;
-                UpdateUI();
-            }
-            settings_.AutoTrack = checkBoxTrackAuto.Checked;
         }
 
         private void buttonTrackLeft_Click(object sender, EventArgs e)
@@ -1373,6 +1373,11 @@ namespace ScopeDSCClient
                 CloseStellariumConnection();
             else
                 OpenStellariumConnection(stellariumTcpPort_);
+        }
+
+        private void buttonArrowSpeed_Click(object sender, EventArgs e)
+        {
+
         }
     }
 

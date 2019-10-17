@@ -10,11 +10,24 @@ namespace ScopeDSCClient
 {
     public struct ClientCommonAPI
     {
-        public interface IScopePositions
+        public enum AutoTrack
         {
+            ON,
+            OFF,
+            DISABLED
+        }
+
+        public interface IClientHost
+        {
+            // positions
             double AzmAngle { get; }
             double AltAngle { get; }
             double EquAngle { get; }
+
+            // most common settings and options
+            bool NightMode { get; }
+            double Latitude { get; }
+            double Longitude { get; }
         }
         
         // object databases

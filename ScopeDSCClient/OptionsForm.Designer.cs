@@ -48,6 +48,7 @@
             this.labelStellariumTcpPort = new System.Windows.Forms.Label();
             this.textBoxStellariumTCPPort = new System.Windows.Forms.TextBox();
             this.checkBoxOppHorzPositionDirection = new System.Windows.Forms.CheckBox();
+            this.checkBoxAutoTrack = new System.Windows.Forms.CheckBox();
             this.buttonScreenKbd = new ScopeDSCClientHelper.NoSelectButton();
             this.groupBoxLocUnits.SuspendLayout();
             this.SuspendLayout();
@@ -55,7 +56,7 @@
             // buttonOK
             // 
             this.buttonOK.DialogResult = System.Windows.Forms.DialogResult.OK;
-            this.buttonOK.Location = new System.Drawing.Point(312, 417);
+            this.buttonOK.Location = new System.Drawing.Point(312, 515);
             this.buttonOK.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.buttonOK.Name = "buttonOK";
             this.buttonOK.Size = new System.Drawing.Size(201, 92);
@@ -66,7 +67,7 @@
             // buttonCancel
             // 
             this.buttonCancel.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.buttonCancel.Location = new System.Drawing.Point(583, 417);
+            this.buttonCancel.Location = new System.Drawing.Point(583, 515);
             this.buttonCancel.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.buttonCancel.Name = "buttonCancel";
             this.buttonCancel.Size = new System.Drawing.Size(201, 92);
@@ -273,10 +274,21 @@
             this.checkBoxOppHorzPositionDirection.UseVisualStyleBackColor = true;
             this.checkBoxOppHorzPositionDirection.CheckedChanged += new System.EventHandler(this.checkBoxOppHorzPositionDirection_CheckedChanged);
             // 
+            // checkBoxAutoStart
+            // 
+            this.checkBoxAutoTrack.AutoSize = true;
+            this.checkBoxAutoTrack.Location = new System.Drawing.Point(292, 388);
+            this.checkBoxAutoTrack.Name = "checkBoxAutoStart";
+            this.checkBoxAutoTrack.Size = new System.Drawing.Size(157, 33);
+            this.checkBoxAutoTrack.TabIndex = 19;
+            this.checkBoxAutoTrack.Text = "Auto Track";
+            this.checkBoxAutoTrack.UseVisualStyleBackColor = true;
+            this.checkBoxAutoTrack.CheckedChanged += new System.EventHandler(this.checkBoxAutoTrack_CheckedChanged);
+            // 
             // buttonScreenKbd
             // 
             this.buttonScreenKbd.Font = new System.Drawing.Font("Wingdings", 48F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(2)));
-            this.buttonScreenKbd.Location = new System.Drawing.Point(40, 417);
+            this.buttonScreenKbd.Location = new System.Drawing.Point(40, 515);
             this.buttonScreenKbd.Name = "buttonScreenKbd";
             this.buttonScreenKbd.Size = new System.Drawing.Size(114, 92);
             this.buttonScreenKbd.TabIndex = 16;
@@ -288,7 +300,8 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(15F, 29F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(828, 548);
+            this.ClientSize = new System.Drawing.Size(828, 646);
+            this.Controls.Add(this.checkBoxAutoTrack);
             this.Controls.Add(this.checkBoxOppHorzPositionDirection);
             this.Controls.Add(this.textBoxStellariumTCPPort);
             this.Controls.Add(this.labelStellariumTcpPort);
@@ -344,5 +357,6 @@
         private System.Windows.Forms.Label labelStellariumTcpPort;
         private System.Windows.Forms.TextBox textBoxStellariumTCPPort;
         private System.Windows.Forms.CheckBox checkBoxOppHorzPositionDirection;
+        private System.Windows.Forms.CheckBox checkBoxAutoTrack;
     }
 }

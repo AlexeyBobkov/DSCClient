@@ -30,17 +30,15 @@ namespace ScopeDSCClient
             }
         }
 
-        public SkyObjectForm   (bool nightMode,
-                                double latitude,
-                                double longitude,
+        public SkyObjectForm   (ClientCommonAPI.IClientHost host,
                                 List<ClientCommonAPI.ObjDatabaseEntry> database,
                                 StellariumServer.Connection stellariumConnection,
                                 SkyObjectPosCalc.SkyPosition[] lastObjects,
                                 LastSettings settings)
         {
-            nightMode_ = nightMode;
-            latitude_ = latitude;
-            longitude_ = longitude;
+            nightMode_ = host.NightMode;
+            latitude_ = host.Latitude;
+            longitude_ = host.Longitude;
             database_ = database;
             stellariumConnection_ = stellariumConnection;
             lastObjects_ = lastObjects;

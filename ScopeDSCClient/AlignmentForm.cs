@@ -20,29 +20,29 @@ namespace ScopeDSCClient
             public static LastSettings Default { get { return new LastSettings { objTypeIdx_ = 0, objIdx_ = 0 }; } }
         }
 
-        public AlignmentForm(ClientCommonAPI.IScopePositions angles, bool nightMode, double latitude, double longitude, LastSettings settings, DSCAlignment alignment)
-        {
-            nightMode_ = nightMode;
-            angles_ = angles;
-            latitude_ = latitude;
-            longitude_ = longitude;
-            settings_ = settings;
-            alignment_ = (alignment != null) ? (DSCAlignment)alignment.Clone() : new DSCAlignment(new Vect3(0, latitude_ * Const.toRad), Precisions.Default);
-            InitializeComponent();
-        }
-
+        public LastSettings Settings;
         public DSCAlignment Alignment
         {
             get { return alignment_.IsAligned ? alignment_ : null; }
+            set { alignment_ = (value != null) ? (DSCAlignment)value.Clone() : new DSCAlignment(new Vect3(0, latitude_ * Const.toRad), Precisions.Default); }
         }
-        public LastSettings Settings { get { return settings_; } }
+
+        public AlignmentForm(ClientCommonAPI.IClientHost host, LastSettings settings, DSCAlignment alignment)
+        {
+            host_ = host;
+            nightMode_ = host.NightMode;
+            latitude_ = host.Latitude;
+            longitude_ = host.Longitude;
+            Settings = settings;
+            Alignment = alignment;
+            InitializeComponent();
+        }
 
         // implementation
         private bool init_ = false;
+        private ClientCommonAPI.IClientHost host_;
         private bool nightMode_ = false;
-        private ClientCommonAPI.IScopePositions angles_;
         private double latitude_, longitude_;
-        private LastSettings settings_;
         private DSCAlignment alignment_;
 
         private void AlignmentForm_Load(object sender, EventArgs e)
@@ -55,14 +55,14 @@ namespace ScopeDSCClient
                     "Solar System Object",
                     "Star"
                 });
-            if (settings_.objTypeIdx_ >= 0 && settings_.objTypeIdx_ < comboBoxType.Items.Count)
-                comboBoxType.SelectedIndex = settings_.objTypeIdx_;
+            if (Settings.objTypeIdx_ >= 0 && Settings.objTypeIdx_ < comboBoxType.Items.Count)
+                comboBoxType.SelectedIndex = Settings.objTypeIdx_;
             else
                 comboBoxType.SelectedIndex = 0;
 
             FillObjectComboBox();
-            if (settings_.objIdx_ >= 0 && settings_.objIdx_ < comboBoxObj.Items.Count)
-                comboBoxObj.SelectedIndex = settings_.objIdx_;
+            if (Settings.objIdx_ >= 0 && Settings.objIdx_ < comboBoxObj.Items.Count)
+                comboBoxObj.SelectedIndex = Settings.objIdx_;
             else
                 comboBoxObj.SelectedIndex = 0;
 
@@ -175,15 +175,15 @@ namespace ScopeDSCClient
             FillObjectComboBox();
             comboBoxObj.SelectedIndex = 0;
 
-            settings_.objTypeIdx_ = comboBoxType.SelectedIndex;
-            settings_.objIdx_ = comboBoxObj.SelectedIndex;
+            Settings.objTypeIdx_ = comboBoxType.SelectedIndex;
+            Settings.objIdx_ = comboBoxObj.SelectedIndex;
 
             CalcAndOutputResults();
         }
 
         private void comboBoxObj_SelectedIndexChanged(object sender, EventArgs e)
         {
-            settings_.objIdx_ = comboBoxObj.SelectedIndex;
+            Settings.objIdx_ = comboBoxObj.SelectedIndex;
             CalcAndOutputResults();
         }
 
@@ -201,7 +201,7 @@ namespace ScopeDSCClient
             try
             {
                 DSCAlignment alignmentNew = (DSCAlignment)alignment_.Clone();
-                alignmentNew.AddStar(new AlignStar(obj.Name, new Vect3(azm * Const.toRad, alt * Const.toRad), new PairA(angles_.AzmAngle, angles_.AltAngle), angles_.EquAngle));
+                alignmentNew.AddStar(new AlignStar(obj.Name, new Vect3(azm * Const.toRad, alt * Const.toRad), new PairA(host_.AzmAngle, host_.AltAngle), host_.EquAngle));
                 alignmentNew.ForceAlignment();
                 alignment_ = alignmentNew;
             }
@@ -307,7 +307,7 @@ namespace ScopeDSCClient
 
             try
             {
-                alignment_.CorrectOffsets(new AlignStar(obj.Name, new Vect3(azm * Const.toRad, alt * Const.toRad), new PairA(angles_.AzmAngle, angles_.AltAngle), angles_.EquAngle));
+                alignment_.CorrectOffsets(new AlignStar(obj.Name, new Vect3(azm * Const.toRad, alt * Const.toRad), new PairA(host_.AzmAngle, host_.AltAngle), host_.EquAngle));
             }
             catch (Exception ex)
             {

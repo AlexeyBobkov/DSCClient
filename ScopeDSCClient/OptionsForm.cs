@@ -36,27 +36,36 @@ namespace ScopeDSCClient
             Degree
         }
 
+        public double Latitude = 37.28203, Longitude = -121.85925;
+        public bool ShowNearestAzmRotation = false;
+        public bool ConnectToStellarium = false;
+        public int StellariumTcpPort = 0;
+        public bool OppositeHorzPositioningDir = false;
+        public ClientCommonAPI.AutoTrack AutoTrack;
+
+        public OptionsForm (ClientCommonAPI.IClientHost host,
+                            bool showNearestAzmRotation,
+                            bool connectToStellarium,
+                            int stellariumTcpPort,
+                            bool oppositeHorzPositioningDir,
+                            ClientCommonAPI.AutoTrack autoTrack)
+        {
+            nightMode_ = host.NightMode;
+            Latitude = host.Latitude;
+            Longitude = host.Longitude;
+            ShowNearestAzmRotation = showNearestAzmRotation;
+            ConnectToStellarium = connectToStellarium;
+            StellariumTcpPort = stellariumTcpPort;
+            OppositeHorzPositioningDir = oppositeHorzPositioningDir;
+            AutoTrack = autoTrack;
+            InitializeComponent();
+        }
+
         private bool init_ = false;
         private bool nightMode_ = false;
         private LocFormat locFmt_ = LocFormat.DMS;
         private int textBoxLatDegWidth_, textBoxLonDegWidth_;
         private bool ignoreLocChange_ = false;
-
-        public double Latitude = 37.28203, Longitude = -121.85925;
-        public bool ShowNearestAzmRotation = false;
-        public bool ConnectToStellarium = false;
-        public int TcpPort = 0;
-        public bool OppositeHorzPositioningDir = false;
-
-        public OptionsForm(bool nightMode, bool showNearestAzmRotation, bool connectToStellarium, int tcpPort, bool oppositeHorzPositioningDir)
-        {
-            nightMode_ = nightMode;
-            ShowNearestAzmRotation = showNearestAzmRotation;
-            ConnectToStellarium = connectToStellarium;
-            TcpPort = tcpPort;
-            OppositeHorzPositioningDir = oppositeHorzPositioningDir;
-            InitializeComponent();
-        }
 
         private void OptionsForm_Load(object sender, EventArgs e)
         {
@@ -87,8 +96,24 @@ namespace ScopeDSCClient
             checkBoxConnectToStellarium.Checked = ConnectToStellarium;
             labelStellariumTcpPort.Enabled = ConnectToStellarium;
             textBoxStellariumTCPPort.Enabled = ConnectToStellarium;
-            textBoxStellariumTCPPort.Text = TcpPort.ToString();
+            textBoxStellariumTCPPort.Text = StellariumTcpPort.ToString();
             checkBoxOppHorzPositionDirection.Checked = OppositeHorzPositioningDir;
+
+            switch (AutoTrack)
+            {
+                default:
+                case ClientCommonAPI.AutoTrack.DISABLED:
+                    checkBoxAutoTrack.Visible = checkBoxAutoTrack.Enabled = false;
+                    break;
+
+                case ClientCommonAPI.AutoTrack.ON:
+                    checkBoxAutoTrack.Checked = true;
+                    break;
+
+                case ClientCommonAPI.AutoTrack.OFF:
+                    checkBoxAutoTrack.Checked = false;
+                    break;
+            }
 
             init_ = true;
         }
@@ -299,11 +324,11 @@ namespace ScopeDSCClient
         {
             try
             {
-                TcpPort = Convert.ToInt32(textBoxStellariumTCPPort.Text);
+                StellariumTcpPort = Convert.ToInt32(textBoxStellariumTCPPort.Text);
             }
             catch
             {
-                TcpPort = 0;
+                StellariumTcpPort = 0;
             }
         }
 
@@ -312,6 +337,13 @@ namespace ScopeDSCClient
             if (!init_)
                 return;
             OppositeHorzPositioningDir = checkBoxOppHorzPositionDirection.Checked;
+        }
+
+        private void checkBoxAutoTrack_CheckedChanged(object sender, EventArgs e)
+        {
+            if (!init_)
+                return;
+            AutoTrack = checkBoxAutoTrack.Checked ? ClientCommonAPI.AutoTrack.ON : ClientCommonAPI.AutoTrack.OFF;
         }
     }
 }

@@ -199,12 +199,17 @@ namespace ScopeDSCClient
             get { return (double)equPos_ * 2 * Math.PI / (equRes_ != 0 ? (double)equRes_ : 1) - Math.PI; }
         }
 
-        private class ScopePositions : ClientCommonAPI.IScopePositions
+        private class ClientHost : ClientCommonAPI.IClientHost
         {
-            public ScopePositions(ScopeDSCClient parent) { parent_ = parent; }
+            public ClientHost(ScopeDSCClient parent) { parent_ = parent; }
+
             public double AzmAngle { get { return parent_.AzmAngle; } }
             public double AltAngle { get { return parent_.AltAngle; } }
             public double EquAngle { get { return parent_.EquAngle; } }
+
+            public bool NightMode { get { return parent_.nightMode_; } }
+            public double Latitude { get { return parent_.latitude_; } }
+            public double Longitude { get { return parent_.longitude_; } }
 
             private ScopeDSCClient parent_;
         }
@@ -618,7 +623,7 @@ namespace ScopeDSCClient
 
         private void buttonAlign_Click(object sender, EventArgs e)
         {
-            AlignmentForm form = new AlignmentForm(new ScopePositions(this), nightMode_, latitude_, longitude_, lastAlignmentObjSettings_, alignment_);
+            AlignmentForm form = new AlignmentForm(new ClientHost(this), lastAlignmentObjSettings_, alignment_);
             if (form.ShowDialog() != DialogResult.OK)
                 return;
 
@@ -632,7 +637,7 @@ namespace ScopeDSCClient
 
         private void buttonSelectObject_Click(object sender, EventArgs e)
         {
-            SkyObjectForm form = new SkyObjectForm(nightMode_, latitude_, longitude_, database_, stellariumConnection_, lastObjects_, lastObjSettings_);
+            SkyObjectForm form = new SkyObjectForm(new ClientHost(this), database_, stellariumConnection_, lastObjects_, lastObjSettings_);
             if (form.ShowDialog() != DialogResult.OK)
                 return;
 
@@ -696,9 +701,12 @@ namespace ScopeDSCClient
 
         private void buttonOptions_Click(object sender, EventArgs e)
         {
-            OptionsForm form = new OptionsForm(nightMode_, showNearestAzmRotation_, connectToStellarium_, stellariumTcpPort_, oppositeHorzPositioningDir_);
-            form.Latitude = latitude_;
-            form.Longitude = longitude_;
+            OptionsForm form = new OptionsForm(new ClientHost(this),
+                                               showNearestAzmRotation_,
+                                               connectToStellarium_,
+                                               stellariumTcpPort_,
+                                               oppositeHorzPositioningDir_,
+                                               ClientCommonAPI.AutoTrack.DISABLED);
             if (form.ShowDialog() != DialogResult.OK)
                 return;
 
@@ -719,10 +727,10 @@ namespace ScopeDSCClient
 
                 if (form.ConnectToStellarium)
                 {
-                    if (stellariumConnection_ != null && stellariumTcpPort_ != form.TcpPort)
+                    if (stellariumConnection_ != null && stellariumTcpPort_ != form.StellariumTcpPort)
                         CloseStellariumConnection();
                     if (stellariumConnection_ == null)
-                        OpenStellariumConnection(form.TcpPort);
+                        OpenStellariumConnection(form.StellariumTcpPort);
                 }
                 else if (stellariumConnection_ != null)
                     CloseStellariumConnection();
@@ -731,7 +739,7 @@ namespace ScopeDSCClient
                     settings_.OppositeHorzPositioningDir = oppositeHorzPositioningDir_ = form.OppositeHorzPositioningDir;
 
                 settings_.ConnectToStellarium = connectToStellarium_ = form.ConnectToStellarium;
-                settings_.TcpPort = stellariumTcpPort_ = form.TcpPort;
+                settings_.TcpPort = stellariumTcpPort_ = form.StellariumTcpPort;
             }
             UpdateUI();
         }

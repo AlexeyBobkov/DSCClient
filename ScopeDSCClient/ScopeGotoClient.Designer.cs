@@ -53,12 +53,12 @@
             this.buttonTrackLeft = new System.Windows.Forms.Button();
             this.buttonTrackUp = new System.Windows.Forms.Button();
             this.buttonTrackGoTo = new System.Windows.Forms.Button();
-            this.checkBoxTrackAuto = new System.Windows.Forms.CheckBox();
             this.buttonOptions = new System.Windows.Forms.Button();
             this.buttonStop = new System.Windows.Forms.Button();
             this.buttonStellariumConnect = new System.Windows.Forms.Button();
             this.textBoxPosition = new System.Windows.Forms.TextBox();
             this.timer1 = new System.Windows.Forms.Timer(this.components);
+            this.buttonArrowSpeed = new System.Windows.Forms.Button();
             this.tableLayoutPanel1.SuspendLayout();
             this.tableLayoutPanel2.SuspendLayout();
             this.tableLayoutPanel3.SuspendLayout();
@@ -99,10 +99,11 @@
             this.tableLayoutPanel2.Location = new System.Drawing.Point(16, 13);
             this.tableLayoutPanel2.Margin = new System.Windows.Forms.Padding(5, 4, 5, 4);
             this.tableLayoutPanel2.Name = "tableLayoutPanel2";
-            this.tableLayoutPanel2.RowCount = 3;
+            this.tableLayoutPanel2.RowCount = 4;
             this.tableLayoutPanel2.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 10F));
             this.tableLayoutPanel2.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 20F));
             this.tableLayoutPanel2.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 70F));
+            this.tableLayoutPanel2.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 20F));
             this.tableLayoutPanel2.Size = new System.Drawing.Size(1150, 611);
             this.tableLayoutPanel2.TabIndex = 0;
             // 
@@ -122,7 +123,7 @@
             this.tableLayoutPanel3.Name = "tableLayoutPanel3";
             this.tableLayoutPanel3.RowCount = 1;
             this.tableLayoutPanel3.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
-            this.tableLayoutPanel3.Size = new System.Drawing.Size(1140, 53);
+            this.tableLayoutPanel3.Size = new System.Drawing.Size(1140, 51);
             this.tableLayoutPanel3.TabIndex = 0;
             // 
             // buttonNightMode
@@ -133,7 +134,7 @@
             this.buttonNightMode.AutoSize = true;
             this.buttonNightMode.Location = new System.Drawing.Point(869, 3);
             this.buttonNightMode.Name = "buttonNightMode";
-            this.buttonNightMode.Size = new System.Drawing.Size(130, 47);
+            this.buttonNightMode.Size = new System.Drawing.Size(130, 45);
             this.buttonNightMode.TabIndex = 1;
             this.buttonNightMode.Text = "Night &Mode";
             this.buttonNightMode.UseVisualStyleBackColor = true;
@@ -147,7 +148,7 @@
             this.buttonFullScreen.AutoSize = true;
             this.buttonFullScreen.Location = new System.Drawing.Point(1005, 3);
             this.buttonFullScreen.Name = "buttonFullScreen";
-            this.buttonFullScreen.Size = new System.Drawing.Size(132, 47);
+            this.buttonFullScreen.Size = new System.Drawing.Size(132, 45);
             this.buttonFullScreen.TabIndex = 2;
             this.buttonFullScreen.Text = "&Full Screen";
             this.buttonFullScreen.UseVisualStyleBackColor = true;
@@ -163,7 +164,7 @@
             this.objectNameLabel.Location = new System.Drawing.Point(5, 0);
             this.objectNameLabel.Margin = new System.Windows.Forms.Padding(5, 0, 5, 0);
             this.objectNameLabel.Name = "objectNameLabel";
-            this.objectNameLabel.Size = new System.Drawing.Size(856, 53);
+            this.objectNameLabel.Size = new System.Drawing.Size(856, 51);
             this.objectNameLabel.TabIndex = 0;
             this.objectNameLabel.Text = "Position";
             this.objectNameLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
@@ -176,12 +177,12 @@
             this.tableLayoutPanel4.Controls.Add(this.tableLayoutPanel5, 0, 0);
             this.tableLayoutPanel4.Controls.Add(this.tableLayoutPanel6, 1, 0);
             this.tableLayoutPanel4.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.tableLayoutPanel4.Location = new System.Drawing.Point(5, 187);
+            this.tableLayoutPanel4.Location = new System.Drawing.Point(5, 181);
             this.tableLayoutPanel4.Margin = new System.Windows.Forms.Padding(5, 4, 5, 4);
             this.tableLayoutPanel4.Name = "tableLayoutPanel4";
             this.tableLayoutPanel4.RowCount = 1;
             this.tableLayoutPanel4.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
-            this.tableLayoutPanel4.Size = new System.Drawing.Size(1140, 420);
+            this.tableLayoutPanel4.Size = new System.Drawing.Size(1140, 405);
             this.tableLayoutPanel4.TabIndex = 2;
             // 
             // tableLayoutPanel5
@@ -204,7 +205,7 @@
             this.tableLayoutPanel5.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 28F));
             this.tableLayoutPanel5.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 75F));
             this.tableLayoutPanel5.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 25F));
-            this.tableLayoutPanel5.Size = new System.Drawing.Size(788, 412);
+            this.tableLayoutPanel5.Size = new System.Drawing.Size(788, 397);
             this.tableLayoutPanel5.TabIndex = 0;
             // 
             // label2
@@ -237,7 +238,7 @@
             this.textBoxAlignment.Multiline = true;
             this.textBoxAlignment.Name = "textBoxAlignment";
             this.textBoxAlignment.ReadOnly = true;
-            this.textBoxAlignment.Size = new System.Drawing.Size(384, 282);
+            this.textBoxAlignment.Size = new System.Drawing.Size(384, 270);
             this.textBoxAlignment.TabIndex = 1;
             // 
             // textBoxObject
@@ -250,7 +251,7 @@
             this.textBoxObject.Multiline = true;
             this.textBoxObject.Name = "textBoxObject";
             this.textBoxObject.ReadOnly = true;
-            this.textBoxObject.Size = new System.Drawing.Size(384, 282);
+            this.textBoxObject.Size = new System.Drawing.Size(384, 270);
             this.textBoxObject.TabIndex = 3;
             // 
             // tableLayoutPanel8
@@ -261,11 +262,11 @@
             this.tableLayoutPanel8.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 20F));
             this.tableLayoutPanel8.Controls.Add(this.buttonSelectObject, 0, 0);
             this.tableLayoutPanel8.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.tableLayoutPanel8.Location = new System.Drawing.Point(401, 319);
+            this.tableLayoutPanel8.Location = new System.Drawing.Point(401, 307);
             this.tableLayoutPanel8.Name = "tableLayoutPanel8";
             this.tableLayoutPanel8.RowCount = 1;
             this.tableLayoutPanel8.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
-            this.tableLayoutPanel8.Size = new System.Drawing.Size(384, 90);
+            this.tableLayoutPanel8.Size = new System.Drawing.Size(384, 87);
             this.tableLayoutPanel8.TabIndex = 5;
             // 
             // buttonSelectObject
@@ -275,7 +276,7 @@
                         | System.Windows.Forms.AnchorStyles.Right)));
             this.buttonSelectObject.Location = new System.Drawing.Point(3, 3);
             this.buttonSelectObject.Name = "buttonSelectObject";
-            this.buttonSelectObject.Size = new System.Drawing.Size(378, 84);
+            this.buttonSelectObject.Size = new System.Drawing.Size(378, 81);
             this.buttonSelectObject.TabIndex = 0;
             this.buttonSelectObject.Text = "&Select Object";
             this.buttonSelectObject.UseVisualStyleBackColor = true;
@@ -290,11 +291,11 @@
             this.tableLayoutPanel7.Controls.Add(this.buttonAlign, 2, 0);
             this.tableLayoutPanel7.Controls.Add(this.buttonConnection, 0, 0);
             this.tableLayoutPanel7.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.tableLayoutPanel7.Location = new System.Drawing.Point(3, 319);
+            this.tableLayoutPanel7.Location = new System.Drawing.Point(3, 307);
             this.tableLayoutPanel7.Name = "tableLayoutPanel7";
             this.tableLayoutPanel7.RowCount = 1;
             this.tableLayoutPanel7.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
-            this.tableLayoutPanel7.Size = new System.Drawing.Size(384, 90);
+            this.tableLayoutPanel7.Size = new System.Drawing.Size(384, 87);
             this.tableLayoutPanel7.TabIndex = 4;
             // 
             // buttonAlign
@@ -304,8 +305,8 @@
                         | System.Windows.Forms.AnchorStyles.Right)));
             this.buttonAlign.Location = new System.Drawing.Point(197, 3);
             this.buttonAlign.Name = "buttonAlign";
-            this.buttonAlign.Size = new System.Drawing.Size(184, 84);
-            this.buttonAlign.TabIndex = 0;
+            this.buttonAlign.Size = new System.Drawing.Size(184, 81);
+            this.buttonAlign.TabIndex = 1;
             this.buttonAlign.Text = "&Align";
             this.buttonAlign.UseVisualStyleBackColor = true;
             this.buttonAlign.Click += new System.EventHandler(this.buttonAlign_Click);
@@ -317,8 +318,8 @@
                         | System.Windows.Forms.AnchorStyles.Right)));
             this.buttonConnection.Location = new System.Drawing.Point(3, 3);
             this.buttonConnection.Name = "buttonConnection";
-            this.buttonConnection.Size = new System.Drawing.Size(183, 84);
-            this.buttonConnection.TabIndex = 1;
+            this.buttonConnection.Size = new System.Drawing.Size(183, 81);
+            this.buttonConnection.TabIndex = 0;
             this.buttonConnection.Text = "&Connection";
             this.buttonConnection.UseVisualStyleBackColor = true;
             this.buttonConnection.Click += new System.EventHandler(this.buttonConnection_Click);
@@ -343,8 +344,8 @@
             this.tableLayoutPanel6.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 12.5F));
             this.tableLayoutPanel6.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 12.5F));
             this.tableLayoutPanel6.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 12.5F));
-            this.tableLayoutPanel6.Size = new System.Drawing.Size(332, 412);
-            this.tableLayoutPanel6.TabIndex = 0;
+            this.tableLayoutPanel6.Size = new System.Drawing.Size(332, 397);
+            this.tableLayoutPanel6.TabIndex = 1;
             // 
             // tableLayoutPanel9
             // 
@@ -352,19 +353,20 @@
             this.tableLayoutPanel9.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 33.33333F));
             this.tableLayoutPanel9.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 33.33333F));
             this.tableLayoutPanel9.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 33.33333F));
+            this.tableLayoutPanel9.Controls.Add(this.buttonArrowSpeed, 2, 0);
             this.tableLayoutPanel9.Controls.Add(this.buttonTrackRight, 2, 1);
             this.tableLayoutPanel9.Controls.Add(this.buttonTrackDown, 1, 1);
             this.tableLayoutPanel9.Controls.Add(this.buttonTrackLeft, 0, 1);
             this.tableLayoutPanel9.Controls.Add(this.buttonTrackUp, 1, 0);
             this.tableLayoutPanel9.Controls.Add(this.buttonTrackGoTo, 0, 0);
-            this.tableLayoutPanel9.Controls.Add(this.checkBoxTrackAuto, 2, 0);
             this.tableLayoutPanel9.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tableLayoutPanel9.Location = new System.Drawing.Point(23, 3);
             this.tableLayoutPanel9.Name = "tableLayoutPanel9";
             this.tableLayoutPanel9.RowCount = 2;
             this.tableLayoutPanel9.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
             this.tableLayoutPanel9.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
-            this.tableLayoutPanel9.Size = new System.Drawing.Size(286, 200);
+            this.tableLayoutPanel9.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 20F));
+            this.tableLayoutPanel9.Size = new System.Drawing.Size(286, 192);
             this.tableLayoutPanel9.TabIndex = 0;
             // 
             // buttonTrackRight
@@ -373,10 +375,10 @@
                         | System.Windows.Forms.AnchorStyles.Left)
                         | System.Windows.Forms.AnchorStyles.Right)));
             this.buttonTrackRight.Font = new System.Drawing.Font("Microsoft Sans Serif", 27.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.buttonTrackRight.Location = new System.Drawing.Point(193, 103);
+            this.buttonTrackRight.Location = new System.Drawing.Point(193, 99);
             this.buttonTrackRight.Name = "buttonTrackRight";
-            this.buttonTrackRight.Size = new System.Drawing.Size(90, 94);
-            this.buttonTrackRight.TabIndex = 0;
+            this.buttonTrackRight.Size = new System.Drawing.Size(90, 90);
+            this.buttonTrackRight.TabIndex = 5;
             this.buttonTrackRight.Text = "⮞";
             this.buttonTrackRight.UseVisualStyleBackColor = true;
             this.buttonTrackRight.Click += new System.EventHandler(this.buttonTrackRight_Click);
@@ -387,10 +389,10 @@
                         | System.Windows.Forms.AnchorStyles.Left)
                         | System.Windows.Forms.AnchorStyles.Right)));
             this.buttonTrackDown.Font = new System.Drawing.Font("Microsoft Sans Serif", 27.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.buttonTrackDown.Location = new System.Drawing.Point(98, 103);
+            this.buttonTrackDown.Location = new System.Drawing.Point(98, 99);
             this.buttonTrackDown.Name = "buttonTrackDown";
-            this.buttonTrackDown.Size = new System.Drawing.Size(89, 94);
-            this.buttonTrackDown.TabIndex = 5;
+            this.buttonTrackDown.Size = new System.Drawing.Size(89, 90);
+            this.buttonTrackDown.TabIndex = 4;
             this.buttonTrackDown.Text = "⮟";
             this.buttonTrackDown.UseVisualStyleBackColor = true;
             this.buttonTrackDown.Click += new System.EventHandler(this.buttonTrackDown_Click);
@@ -401,10 +403,10 @@
                         | System.Windows.Forms.AnchorStyles.Left)
                         | System.Windows.Forms.AnchorStyles.Right)));
             this.buttonTrackLeft.Font = new System.Drawing.Font("Microsoft Sans Serif", 27.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.buttonTrackLeft.Location = new System.Drawing.Point(3, 103);
+            this.buttonTrackLeft.Location = new System.Drawing.Point(3, 99);
             this.buttonTrackLeft.Name = "buttonTrackLeft";
-            this.buttonTrackLeft.Size = new System.Drawing.Size(89, 94);
-            this.buttonTrackLeft.TabIndex = 4;
+            this.buttonTrackLeft.Size = new System.Drawing.Size(89, 90);
+            this.buttonTrackLeft.TabIndex = 3;
             this.buttonTrackLeft.Text = "⮜";
             this.buttonTrackLeft.UseVisualStyleBackColor = true;
             this.buttonTrackLeft.Click += new System.EventHandler(this.buttonTrackLeft_Click);
@@ -417,8 +419,8 @@
             this.buttonTrackUp.Font = new System.Drawing.Font("Microsoft Sans Serif", 27.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
             this.buttonTrackUp.Location = new System.Drawing.Point(98, 3);
             this.buttonTrackUp.Name = "buttonTrackUp";
-            this.buttonTrackUp.Size = new System.Drawing.Size(89, 94);
-            this.buttonTrackUp.TabIndex = 2;
+            this.buttonTrackUp.Size = new System.Drawing.Size(89, 90);
+            this.buttonTrackUp.TabIndex = 1;
             this.buttonTrackUp.Text = "⮝";
             this.buttonTrackUp.UseVisualStyleBackColor = true;
             this.buttonTrackUp.Click += new System.EventHandler(this.buttonTrackUp_Click);
@@ -428,41 +430,23 @@
             this.buttonTrackGoTo.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
                         | System.Windows.Forms.AnchorStyles.Left)
                         | System.Windows.Forms.AnchorStyles.Right)));
-            this.buttonTrackGoTo.Font = new System.Drawing.Font("Microsoft Sans Serif", 48F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+            this.buttonTrackGoTo.Font = new System.Drawing.Font("Microsoft Sans Serif", 27.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
             this.buttonTrackGoTo.Location = new System.Drawing.Point(3, 3);
             this.buttonTrackGoTo.Name = "buttonTrackGoTo";
-            this.buttonTrackGoTo.Size = new System.Drawing.Size(89, 94);
-            this.buttonTrackGoTo.TabIndex = 1;
-            this.buttonTrackGoTo.Text = "⌖";
+            this.buttonTrackGoTo.Size = new System.Drawing.Size(89, 90);
+            this.buttonTrackGoTo.TabIndex = 0;
+            this.buttonTrackGoTo.Text = "🔭";
             this.buttonTrackGoTo.UseVisualStyleBackColor = true;
             this.buttonTrackGoTo.Click += new System.EventHandler(this.buttonTrackGoTo_Click);
-            // 
-            // checkBoxTrackAuto
-            // 
-            this.checkBoxTrackAuto.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-                        | System.Windows.Forms.AnchorStyles.Left)
-                        | System.Windows.Forms.AnchorStyles.Right)));
-            this.checkBoxTrackAuto.Appearance = System.Windows.Forms.Appearance.Button;
-            this.checkBoxTrackAuto.AutoSize = true;
-            this.checkBoxTrackAuto.FlatStyle = System.Windows.Forms.FlatStyle.System;
-            this.checkBoxTrackAuto.Font = new System.Drawing.Font("Microsoft Sans Serif", 27.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.checkBoxTrackAuto.Location = new System.Drawing.Point(193, 3);
-            this.checkBoxTrackAuto.Name = "checkBoxTrackAuto";
-            this.checkBoxTrackAuto.Size = new System.Drawing.Size(90, 94);
-            this.checkBoxTrackAuto.TabIndex = 3;
-            this.checkBoxTrackAuto.Text = "🔭";
-            this.checkBoxTrackAuto.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-            this.checkBoxTrackAuto.UseVisualStyleBackColor = true;
-            this.checkBoxTrackAuto.CheckedChanged += new System.EventHandler(this.checkBoxTrackAuto_CheckedChanged);
             // 
             // buttonOptions
             // 
             this.buttonOptions.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
                         | System.Windows.Forms.AnchorStyles.Left)
                         | System.Windows.Forms.AnchorStyles.Right)));
-            this.buttonOptions.Location = new System.Drawing.Point(23, 260);
+            this.buttonOptions.Location = new System.Drawing.Point(23, 250);
             this.buttonOptions.Name = "buttonOptions";
-            this.buttonOptions.Size = new System.Drawing.Size(286, 45);
+            this.buttonOptions.Size = new System.Drawing.Size(286, 43);
             this.buttonOptions.TabIndex = 2;
             this.buttonOptions.Text = "&Options";
             this.buttonOptions.UseVisualStyleBackColor = true;
@@ -473,9 +457,9 @@
             this.buttonStop.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
                         | System.Windows.Forms.AnchorStyles.Left)
                         | System.Windows.Forms.AnchorStyles.Right)));
-            this.buttonStop.Location = new System.Drawing.Point(23, 209);
+            this.buttonStop.Location = new System.Drawing.Point(23, 201);
             this.buttonStop.Name = "buttonStop";
-            this.buttonStop.Size = new System.Drawing.Size(286, 45);
+            this.buttonStop.Size = new System.Drawing.Size(286, 43);
             this.buttonStop.TabIndex = 1;
             this.buttonStop.Text = "■";
             this.buttonStop.UseVisualStyleBackColor = true;
@@ -486,9 +470,9 @@
             this.buttonStellariumConnect.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
                         | System.Windows.Forms.AnchorStyles.Left)
                         | System.Windows.Forms.AnchorStyles.Right)));
-            this.buttonStellariumConnect.Location = new System.Drawing.Point(23, 362);
+            this.buttonStellariumConnect.Location = new System.Drawing.Point(23, 348);
             this.buttonStellariumConnect.Name = "buttonStellariumConnect";
-            this.buttonStellariumConnect.Size = new System.Drawing.Size(286, 47);
+            this.buttonStellariumConnect.Size = new System.Drawing.Size(286, 46);
             this.buttonStellariumConnect.TabIndex = 3;
             this.buttonStellariumConnect.Text = "Stellarium: Disconnected\r\n(Press to Connect)";
             this.buttonStellariumConnect.UseVisualStyleBackColor = true;
@@ -499,7 +483,7 @@
             this.textBoxPosition.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
             this.textBoxPosition.BorderStyle = System.Windows.Forms.BorderStyle.None;
             this.textBoxPosition.Font = new System.Drawing.Font("Arial", 80F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.textBoxPosition.Location = new System.Drawing.Point(3, 64);
+            this.textBoxPosition.Location = new System.Drawing.Point(3, 62);
             this.textBoxPosition.Name = "textBoxPosition";
             this.textBoxPosition.ReadOnly = true;
             this.textBoxPosition.Size = new System.Drawing.Size(1144, 123);
@@ -512,6 +496,20 @@
             this.timer1.Enabled = true;
             this.timer1.Interval = 250;
             this.timer1.Tick += new System.EventHandler(this.timer1_Tick);
+            // 
+            // buttonArrowSpeed
+            // 
+            this.buttonArrowSpeed.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+                        | System.Windows.Forms.AnchorStyles.Left)
+                        | System.Windows.Forms.AnchorStyles.Right)));
+            this.buttonArrowSpeed.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+            this.buttonArrowSpeed.Location = new System.Drawing.Point(193, 3);
+            this.buttonArrowSpeed.Name = "buttonArrowSpeed";
+            this.buttonArrowSpeed.Size = new System.Drawing.Size(90, 90);
+            this.buttonArrowSpeed.TabIndex = 2;
+            this.buttonArrowSpeed.Text = "Arrow Speed";
+            this.buttonArrowSpeed.UseVisualStyleBackColor = true;
+            this.buttonArrowSpeed.Click += new System.EventHandler(this.buttonArrowSpeed_Click);
             // 
             // ScopeGotoClient
             // 
@@ -538,7 +536,6 @@
             this.tableLayoutPanel7.ResumeLayout(false);
             this.tableLayoutPanel6.ResumeLayout(false);
             this.tableLayoutPanel9.ResumeLayout(false);
-            this.tableLayoutPanel9.PerformLayout();
             this.ResumeLayout(false);
 
         }
@@ -574,7 +571,7 @@
         private System.Windows.Forms.Button buttonTrackGoTo;
         private System.Windows.Forms.Button buttonStop;
         private System.Windows.Forms.Button buttonStellariumConnect;
-        private System.Windows.Forms.CheckBox checkBoxTrackAuto;
+        private System.Windows.Forms.Button buttonArrowSpeed;
     }
 }
 

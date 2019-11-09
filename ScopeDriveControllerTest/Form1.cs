@@ -1,4 +1,6 @@
-﻿using System;
+﻿#define LOGGING_ON
+
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -62,6 +64,32 @@ namespace ScopeDriveControllerTest
             private SerialConnection connection_;
         }
 
+        // timeout class
+        public class Timeout
+        {
+            private DateTime start_;
+            private int timeoutInMS_;
+
+            public Timeout(int timeoutInMS)
+            {
+                timeoutInMS_ = timeoutInMS;
+                Restart();
+            }
+
+            public void Restart() { start_ = DateTime.Now; }
+
+            public bool CheckExpired() { return CheckExpired(true); }
+            public bool CheckExpired(bool restart)
+            {
+                DateTime now = DateTime.Now;
+                if ((now - start_).TotalMilliseconds < timeoutInMS_)
+                    return false;
+                if (restart)
+                    start_ = now;
+                return true;
+            }
+        }
+
         ////////////////////////////////////////////////////////////////////////////////////
         private void CloseConnection(SerialConnection connection)
         {
@@ -75,6 +103,7 @@ namespace ScopeDriveControllerTest
                 }
             }
             started_ = false;
+            UpdateUI();
             prevAltPos_.Clear();
             prevTs_.Clear();
         }
@@ -93,6 +122,10 @@ namespace ScopeDriveControllerTest
                 connection_.SendReceiveRequest(cmd, receiveCnt, new BaseConnectionHandler(this, receiveDelegate, connection));
         }
 
+        private void ReceiveDummy(byte[] data)
+        {
+        }
+
         private void ChangeSpeed(Int32 speed, byte dst)
         {
             if (!started_)
@@ -105,6 +138,7 @@ namespace ScopeDriveControllerTest
                                                           (byte)(speed >> 16),
                                                           (byte)(speed >> 24)}, 8, ReceiveStart);
                 speed_ = speed;
+                tmoSendPos_.Restart();
             }
             else
             {
@@ -116,8 +150,32 @@ namespace ScopeDriveControllerTest
                                                           (byte)(speed >> 16),
                                                           (byte)(speed >> 24)}, 8, ReceiveStart);
                 speed_ = speed;
+                tmoSendPos_.Restart();
             }
         }
+
+#if LOGGING_ON
+        private void SendLoggingMode()
+        {
+            if (connection_ != null)
+            {
+                byte mode;
+                if (!started_ || !checkBoxLogging.Checked)
+                    mode = 0;
+                else
+                    switch (mode_)
+                    {
+                    case M_ALT:
+                    case A_ALT: mode = M_ALT; break;
+                    case M_AZM:
+                    case A_AZM: mode = M_AZM; break;
+                    default:    mode = 0; break;
+                    }
+
+                SendCommand(connection_, new byte[] { (byte)'L', (byte)'m', mode }, 1, ReceiveDummy);
+            }
+        }
+#endif
 
         private void SendSetNextPosCommand(Int32 sp, Int32 ts, byte dst, ReceiveDelegate receiveDelegate)
         {
@@ -164,6 +222,22 @@ namespace ScopeDriveControllerTest
             speed_ = 0;
         }
 
+        private void UpdateUI()
+        {
+#if LOGGING_ON
+            if (started_)
+            {
+                checkBoxLogging.Enabled = false;
+                buttonSaveLog.Enabled = false;
+            }
+            else
+            {
+                checkBoxLogging.Enabled = true;
+                buttonSaveLog.Enabled = true;
+            }
+#endif
+        }
+
         private void ReceiveStart(byte[] data)
         {
             Int32 altPos = (Int32)((((UInt32)data[3]) << 24) + (((UInt32)data[2]) << 16) + (((UInt32)data[1]) << 8) + data[0]);
@@ -174,6 +248,8 @@ namespace ScopeDriveControllerTest
             startDT_ = DateTime.Now;
             startAltPos_ = altPos;
 
+            UpdateUI();
+            SendLoggingMode();
             PrintPosition(altPos, ts, 0, 0, 0, 0);
         }
 
@@ -186,6 +262,7 @@ namespace ScopeDriveControllerTest
             startDT_ = DateTime.Now;
             startAltPos_ = altPos;
             speed_ = (int)((double)(nextSp_ - altPos) * 60000.0 * 60.0 * 24.0 / (double)(nextTs_ - ts));
+            tmoSendPos_.Restart();
             
             prevAltPos_.Clear();
             prevTs_.Clear();
@@ -202,6 +279,8 @@ namespace ScopeDriveControllerTest
         private void ReceiveStop(byte[] data)
         {
             started_ = false;
+            SendLoggingMode();
+            UpdateUI();
             prevAltPos_.Clear();
             prevTs_.Clear();
         }
@@ -215,6 +294,64 @@ namespace ScopeDriveControllerTest
         private List<Int32> prevTs_ = new List<int>();
         private const int MAX_POSITIONS = 50;
         private int timerSendNextPosTicks_ = 0;
+        private Timeout tmoSendPos_ = new Timeout(8000);
+
+#if LOGGING_ON
+        UInt32 logStart_ = 0;
+        Int32 logAbsPos_ = 0, logAbsTs_ = 0;
+        int logNextBlockSize_ = 0;
+        List<Int32> logData_ = new List<int>();
+        private Timeout tmoAddLogData_ = new Timeout(1000);
+
+        private void AddLogData(byte[] data)
+        {
+            int reported = (int)data[1];
+            int stillInBuffer = (int)data[2];
+            if (data[3] != 0)   // ring buffer was overflowed
+            {
+                // force restart and re-synchronization
+                logStart_ = 0;
+                logAbsPos_ = logAbsTs_ = 0;
+            }
+
+            logNextBlockSize_ = stillInBuffer;
+
+            for (int i = 0; i < reported; ++i)
+            {
+                int start = i * 4 + 4;
+                if ((data[start + 3] & 0x80) != 0)
+                {
+                    // re-sync!
+                    logStart_ = (((UInt32)data[start + 3]) << 24) + (((UInt32)data[start + 2]) << 16) + (((UInt32)data[start + 1]) << 8) + (UInt32)data[start];
+                    logAbsPos_ = logAbsTs_ = 0;
+                    continue;
+                }
+                if (logStart_ == 0)
+                    continue;       // skip it: waiting for re-sync
+                if (logAbsPos_ == 0)
+                {
+
+                    logAbsPos_ = (((Int32)(byte)logStart_) << 24) + (((Int32)data[start + 2]) << 16) + (((Int32)data[start + 1]) << 8) + (Int32)data[start];
+                    continue;
+                }
+
+                Int32 pos, ts;
+                if (logAbsTs_ == 0)
+                {
+                    pos = logAbsPos_;
+                    ts = logAbsTs_ = (((Int32)(byte)(logStart_ >> 8)) << 24) + (((Int32)data[start + 2]) << 16) + (((Int32)data[start + 1]) << 8) + (Int32)data[start];
+                }
+                else
+                {
+                    pos = logAbsPos_ + (((Int32)data[start + 1]) << 8) + (Int32)data[start];
+                    ts = logAbsTs_ + (((Int32)data[start + 3]) << 8) + (Int32)data[start + 2];
+                }
+                logData_.Add(ts);
+                logData_.Add(pos);
+            }
+        }
+#endif
+
         private void PrintPosition(Int32 pos, Int32 ts, Int32 rsp, Int32 dbg, Int32 motorAltPos, Int32 scopeAltPos)
         {
             if (connection_ == null)
@@ -292,6 +429,8 @@ namespace ScopeDriveControllerTest
             if (data[24] == 0 && started_)
             {
                 started_ = false;
+                SendLoggingMode();
+                UpdateUI();
                 prevAltPos_.Clear();
                 prevTs_.Clear();
             }
@@ -310,6 +449,9 @@ namespace ScopeDriveControllerTest
             default: return;
             }
             mode_ = newMode;
+#if LOGGING_ON
+            SendLoggingMode();
+#endif
         }
 
         void CheckSetMode(byte newMode)
@@ -341,7 +483,13 @@ namespace ScopeDriveControllerTest
             baudRate_ = settings_.BaudRate;
             SetMode(M_AZM);
 
-            checkBoxSetNextPos.Checked = true;
+            //checkBoxSetNextPos.Checked = true;
+#if LOGGING_ON
+            checkBoxLogging.Checked = true;
+#else
+            checkBoxLogging.Visible = false;
+            buttonSaveLog.Visible = false;
+#endif
             init_ = true;
         }
 
@@ -388,6 +536,9 @@ namespace ScopeDriveControllerTest
                 {
                     connection_ = connection;
                     buttonConnect.Text = "Disconnect";
+#if LOGGING_ON
+                    SendLoggingMode();
+#endif
                 }
             }
         }
@@ -397,12 +548,24 @@ namespace ScopeDriveControllerTest
             if (connection_ != null)
                 SendCommand(connection_, new byte[] { (byte)'P', mode_ }, 25, ReceivePosition);
 
-            if ((timerSendNextPosTicks_++ % 8) == 0 && checkBoxSetNextPos.Checked && started_)
+            if (started_)
             {
-                Int32 elapsed = (Int32)(DateTime.Now - startDT_).TotalMilliseconds;
-                Int32 ts = startTs_ + elapsed + 10000;
-                Int32 sp = (Int32)Math.Round(startAltPos_ + (double)speed_ * (elapsed + 10000) / (24.0 * 60.0 * 60000.0));
-                SendSetNextPosCommand(sp, ts, mode_, ReceiveSetNextPos);
+                if (checkBoxSetNextPos.Checked && tmoSendPos_.CheckExpired())
+                {
+                    Int32 elapsed = (Int32)(DateTime.Now - startDT_).TotalMilliseconds;
+                    Int32 ts = startTs_ + elapsed + 10000;
+                    Int32 sp = (Int32)Math.Round(startAltPos_ + (double)speed_ * (elapsed + 10000) / (24.0 * 60.0 * 60000.0));
+                    SendSetNextPosCommand(sp, ts, mode_, ReceiveSetNextPos);
+                }
+#if LOGGING_ON
+                if (connection_ != null && checkBoxLogging.Checked && tmoAddLogData_.CheckExpired())
+                {
+                    int logCnt = logNextBlockSize_ + 5;
+                    if (logCnt > 14)
+                        logCnt = 14;
+                    SendCommand(connection_, new byte[] { (byte)'L', (byte)'w', (byte)logCnt }, 4 + logCnt * 4, AddLogData);
+                }
+#endif
             }
         }
 
@@ -485,6 +648,68 @@ namespace ScopeDriveControllerTest
             {
                 return;
             }
+        }
+
+        private void buttonSaveLog_Click(object sender, EventArgs e)
+        {
+#if LOGGING_ON
+            if (started_ || logData_.Count == 0)
+                return;
+
+            SaveFileDialog savefile = new SaveFileDialog();
+
+            DateTime dt = DateTime.Now;
+            savefile.FileName = String.Format("LoggingData{0}-{1}-{2}_{3}-{4}-{5}.csv",
+                dt.Year.ToString("D4"), dt.Month.ToString("D2"), dt.Day.ToString("D2"), dt.Hour.ToString("D2"), dt.Minute.ToString("D2"), dt.Second.ToString("D2"));
+            savefile.Filter = "CSV files (*.csv)|*.csv|All files (*.*)|*.*";
+
+            try
+            {
+                DialogResult res = savefile.ShowDialog();
+                if (res != DialogResult.OK)
+                    return;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+                return;
+            }
+
+            try
+            {
+                using (System.IO.StreamWriter sw = new System.IO.StreamWriter(savefile.FileName))
+                {
+                    sw.WriteLine("Time(s),Position,Angle,Diff");
+                    double startTs = (double)logData_[0]/1000.0;
+                    double prevAngle = 0;
+                    for (int i = 0; i < logData_.Count; i += 2)
+                    {
+                        int pos = logData_[i + 1];
+                        double angle = (double)pos * 360.0 * 60.0 / ((double)M_RESOLUTION * 28.0 * 20.0);
+
+                        string s = ((double)logData_[i] / 1000.0 - startTs).ToString("F3");
+                        s += "," + pos.ToString();
+                        s += "," + angle.ToString("F3");
+                        s += "," + (i == 0 ? 0 : angle - prevAngle).ToString("F3");
+                        sw.WriteLine(s);
+
+                        prevAngle = angle;
+                    }
+                }
+                logData_ = new List<int>();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+#endif
+        }
+
+        private void checkBoxLogging_CheckedChanged(object sender, EventArgs e)
+        {
+#if LOGGING_ON
+            SendLoggingMode();
+#endif
         }
 
     }

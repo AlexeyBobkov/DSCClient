@@ -1,4 +1,6 @@
-﻿using System;
+﻿#define TESTING
+
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -69,8 +71,13 @@ namespace ScopeDSCClient
         // time sync
         private Int32 controllerTs_;
         private DateTime thisTs_;       // UTC time
+#if TESTING
+        private ClientCommonAPI.Timeout tmoSendPos_ = new ClientCommonAPI.Timeout(5000);
+        private int nextPosTimeSec_ = 20;
+#else
         private ClientCommonAPI.Timeout tmoSendPos_ = new ClientCommonAPI.Timeout(3500);
         private int nextPosTimeSec_ = 4;
+#endif
         private double arrowMoveSpeed_ = 1 / 30.0;  // degree
 
         private bool posTextChanged_ = true;
@@ -303,7 +310,9 @@ namespace ScopeDSCClient
                     s += ClientCommonAPI.AddEquAxisCorrectionText(latitude_, alignment_);
                 }
             }
-            
+#if TESTING
+            s += Environment.NewLine + currAzmPos_.ToString() + " -> " + nextAzmPos_.ToString() + ", speed = " + azmSpeed_.ToString("F5");
+#endif
             textBoxAlignment.Text = s;
         }
 
@@ -825,7 +834,7 @@ namespace ScopeDSCClient
                 break;
             }
 
-            if (trackedObject_ != null && tmoSendPos_.CheckExpired())
+            if (trackedObject_ != null && tmoSendPos_.CheckExpired(false))
                 SendNextPositions();
             
             UpdateUI(sendPositionToStellarium);
@@ -942,6 +951,16 @@ namespace ScopeDSCClient
                                                           (byte)(ts >> 16),
                                                           (byte)(ts >> 24)}, 8, ReceiveNextPosCommand);
         }
+        private void SendSetSpeedCommand(Int32 speed, byte dst)
+        {
+            if (connectionGoTo_ != null)
+                SendCommand(connectionGoTo_, new byte[] { (byte)'V',
+                                                          dst,
+                                                          (byte)speed,
+                                                          (byte)(speed >> 8),
+                                                          (byte)(speed >> 16),
+                                                          (byte)(speed >> 24)}, 8, ReceiveSetSpeedCommand);
+        }
         
         private bool altStartSent_, azmStartSent_;
         private void StartMotors()
@@ -949,12 +968,14 @@ namespace ScopeDSCClient
             if (connectionGoTo_ != null && connectionGoTo_.connection_ != null)
             {
                 Int32 speed = 0;
+#if !TESTING
                 SendCommand(connectionGoTo_, new byte[] { (byte)'S',
                                                           A_ALT,
                                                           (byte)speed,
                                                           (byte)(speed >> 8),
                                                           (byte)(speed >> 16),
                                                           (byte)(speed >> 24)}, 8, ReceiveAltStart, TimeoutAltStart);
+#endif
                 SendCommand(connectionGoTo_, new byte[] { (byte)'S',
                                                           A_AZM,
                                                           (byte)speed,
@@ -976,7 +997,7 @@ namespace ScopeDSCClient
         private void ReceiveAzmStart(byte[] data)
         {
             azmStartSent_ = false;
-            tmoSendPos_.Restart();
+            //tmoSendPos_.Restart();
             SendNextPositions();
         }
         private void TimeoutAzmStart(SerialConnection connection)
@@ -985,46 +1006,80 @@ namespace ScopeDSCClient
             SerialError(connection);
         }
 
+        private void CalcScopeShifts(DateTime nextThisTs, out double azmDiff, out double altDiff)
+        {
+            // next timestamp
+            double d = ClientCommonAPI.CalcTime(nextThisTs);
+
+            // calculate scope positions
+            double azm, alt;
+            {
+                double dec, ra;
+                trackedObject_.CalcTopoRaDec(d, latitude_, longitude_, out dec, out ra);
+                SkyObjectPosCalc.Equ2AzAlt(d, latitude_, longitude_, dec + trackedOffsetDec_, ra + trackedOffsetRa_, out azm, out alt);
+            }
+            PairA objScope = alignment_.Horz2Scope(new PairA(azm * Const.toRad, alt * Const.toRad), 0);
+
+            // azimuth difference, in degree
+            azmDiff = SkyObjectPosCalc.Rev(objScope.Azm * Const.toDeg - AzmAngle * Const.toDeg);
+            if (azmDiff > 180)
+                azmDiff -= 360;
+
+            // altitude difference, in degree
+            altDiff = (objScope.Alt - AltAngle) * Const.toDeg;
+        }
+
+#if TESTING
+        private double currAzmPos_, nextAzmPos_;
+        private double azmSpeed_;
+#endif
         private void SendNextPositions()
         {
             if (trackedObject_ != null && alignment_ != null)
             {
-                // next timestamp
-                DateTime nextThisTs = DateTime.UtcNow + new TimeSpan(0, 0, nextPosTimeSec_);
-
-                // calculate next positions
-                double d = ClientCommonAPI.CalcTime(nextThisTs);
-
-                double azm, alt;
-                //trackedObject_.CalcAzimuthal(d, latitude_, longitude_, out azm, out alt);
+                DateTime now = DateTime.UtcNow;
+                int nextPosTimeSec = nextPosTimeSec_;
+                double timeDiff, azmDiff, altDiff;
+                for (; ; )
                 {
-                    double dec, ra;
-                    trackedObject_.CalcTopoRaDec(d, latitude_, longitude_, out dec, out ra);
-                    SkyObjectPosCalc.Equ2AzAlt(d, latitude_, longitude_, dec + trackedOffsetDec_, ra + trackedOffsetRa_, out azm, out alt);
+                    DateTime nextThisTs = now + new TimeSpan(0, 0, nextPosTimeSec);
+                    CalcScopeShifts(nextThisTs, out azmDiff, out altDiff);
+
+                    double azmDiffInTicks = azmDiff * azmRes_ / 360.0;
+                    if (Math.Abs(azmDiffInTicks) <= 3 || nextPosTimeSec <= 5)
+                    {
+                        timeDiff = (nextThisTs - thisTs_).TotalSeconds;
+                        break;
+                    }
+                    nextPosTimeSec /= 2;
                 }
-                PairA objScope = alignment_.Horz2Scope(new PairA(azm * Const.toRad, alt * Const.toRad), 0);
+                tmoSendPos_.Restart((nextPosTimeSec-1)*1000);
 
-                // azimuth difference, in degree
-                double azmd = SkyObjectPosCalc.Rev(objScope.Azm * Const.toDeg - AzmAngle * Const.toDeg);
-                if (azmd > 180)
-                    azmd -= 360;
+#if !TESTING
+                double altSpeed = altDiff * altRes_ * 60 * 60 * 24 / timeDiff / 360.0;
+                SendSetSpeedCommand((int)altSpeed, A_ALT);
+#endif
+                double azmSpeed = azmDiff * azmRes_ * 60 * 60 * 24 / timeDiff / 360.0;
+                SendSetSpeedCommand((int)azmSpeed, A_AZM);
 
-                // altitude difference, in degree
-                double altd = (objScope.Alt - AltAngle) * Const.toDeg;
 
+#if TESTING
                 // next positions
-                Int32 nextAzmPos = azmPos_ + Convert.ToInt32(azmd * azmRes_ / 360.0);
-                Int32 nextAltPos = altPos_ + Convert.ToInt32(altd * altRes_ / 360.0);
+                Int32 nextAzmPos = azmPos_ + Convert.ToInt32(azmDiff * azmRes_ / 360.0);
+                //Int32 nextAltPos = altPos_ + Convert.ToInt32(altd * altRes_ / 360.0);
 
-                // next timestamp
-                Int32 nextTs = controllerTs_ + Convert.ToInt32((nextThisTs - thisTs_).TotalMilliseconds);
-
-                // send positions
-                SendSetNextPosCommand(nextAltPos, nextTs, A_ALT);
-                SendSetNextPosCommand(nextAzmPos, nextTs, A_AZM);
+                currAzmPos_ = azmPos_;
+                nextAzmPos_ = nextAzmPos;
+                azmSpeed_ = azmSpeed;
+                connectionAndAlignTextChanged_ = true;
+                SetConnectionAndAlignmentText();
+#endif
             }
         }
         private void ReceiveNextPosCommand(byte[] data)
+        {
+        }
+        private void ReceiveSetSpeedCommand(byte[] data)
         {
         }
 
@@ -1102,7 +1157,7 @@ namespace ScopeDSCClient
                 trackedOffsetDec_ += shiftedDec - dec;
                 trackedOffsetRa_ += shiftedRa - ra;
 
-                tmoSendPos_.Restart();
+                //tmoSendPos_.Restart();
                 SendNextPositions();
                 TrackedObjectChanged();
             }
@@ -1169,12 +1224,14 @@ namespace ScopeDSCClient
                 bool altOn = (state & STATE_ALT_RUNNING) != 0, azmOn = (state & STATE_AZM_RUNNING) != 0;
                 if (trackedObject_ != null && !altStartSent_ && !azmStartSent_ && (!altOn || !azmOn))
                 {
+#if !TESTING
                     if (altOn)
                         SendStopMotorCommand(A_ALT);
                     if (azmOn)
                         SendStopMotorCommand(A_AZM);
                     trackedObject_ = null;
                     TrackedObjectChanged();
+#endif
                 }
                 else if (!oldSwitchOn && autoTrack_ && allowAutoTrack_)
                     StartTracking();
@@ -1288,7 +1345,7 @@ namespace ScopeDSCClient
                         StartMotors();
                     else
                     {
-                        tmoSendPos_.Restart();
+                        //tmoSendPos_.Restart();
                         SendNextPositions();
                     }
                     TrackedObjectChanged();

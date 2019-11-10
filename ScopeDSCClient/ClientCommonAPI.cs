@@ -50,6 +50,7 @@ namespace ScopeDSCClient
             }
 
             public void Restart() { start_ = DateTime.Now; }
+            public void Restart(int timeoutInMS) { timeoutInMS_ = timeoutInMS; Restart(); }
 
             public bool CheckExpired() { return CheckExpired(true); }
             public bool CheckExpired(bool restart)

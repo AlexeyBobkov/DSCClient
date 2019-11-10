@@ -44,6 +44,8 @@
             this.labelPos = new System.Windows.Forms.Label();
             this.textBoxSetPos = new System.Windows.Forms.TextBox();
             this.checkBoxSetNextPos = new System.Windows.Forms.CheckBox();
+            this.checkBoxLogging = new System.Windows.Forms.CheckBox();
+            this.buttonSaveLog = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // buttonConnect
@@ -58,7 +60,7 @@
             // 
             // textBoxSpeed
             // 
-            this.textBoxSpeed.Location = new System.Drawing.Point(46, 179);
+            this.textBoxSpeed.Location = new System.Drawing.Point(46, 168);
             this.textBoxSpeed.Name = "textBoxSpeed";
             this.textBoxSpeed.Size = new System.Drawing.Size(100, 20);
             this.textBoxSpeed.TabIndex = 6;
@@ -66,7 +68,7 @@
             // labelSpeed
             // 
             this.labelSpeed.AutoSize = true;
-            this.labelSpeed.Location = new System.Drawing.Point(43, 163);
+            this.labelSpeed.Location = new System.Drawing.Point(43, 152);
             this.labelSpeed.Name = "labelSpeed";
             this.labelSpeed.Size = new System.Drawing.Size(64, 13);
             this.labelSpeed.TabIndex = 5;
@@ -74,26 +76,26 @@
             // 
             // textBoxOutput
             // 
-            this.textBoxOutput.Location = new System.Drawing.Point(24, 224);
+            this.textBoxOutput.Location = new System.Drawing.Point(24, 250);
             this.textBoxOutput.Multiline = true;
             this.textBoxOutput.Name = "textBoxOutput";
             this.textBoxOutput.ReadOnly = true;
-            this.textBoxOutput.Size = new System.Drawing.Size(556, 322);
-            this.textBoxOutput.TabIndex = 12;
+            this.textBoxOutput.Size = new System.Drawing.Size(556, 354);
+            this.textBoxOutput.TabIndex = 15;
             // 
             // label2
             // 
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(21, 208);
+            this.label2.Location = new System.Drawing.Point(21, 234);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(37, 13);
-            this.label2.TabIndex = 11;
+            this.label2.TabIndex = 14;
             this.label2.Text = "Result";
             // 
             // timerPoll
             // 
             this.timerPoll.Enabled = true;
-            this.timerPoll.Interval = 1000;
+            this.timerPoll.Interval = 250;
             this.timerPoll.Tick += new System.EventHandler(this.timerPoll_Tick);
             // 
             // radioButtonMAZM
@@ -146,7 +148,7 @@
             // 
             // buttonSetSpeed
             // 
-            this.buttonSetSpeed.Location = new System.Drawing.Point(152, 179);
+            this.buttonSetSpeed.Location = new System.Drawing.Point(152, 168);
             this.buttonSetSpeed.Name = "buttonSetSpeed";
             this.buttonSetSpeed.Size = new System.Drawing.Size(59, 20);
             this.buttonSetSpeed.TabIndex = 7;
@@ -156,7 +158,7 @@
             // 
             // buttonSetPos
             // 
-            this.buttonSetPos.Location = new System.Drawing.Point(354, 179);
+            this.buttonSetPos.Location = new System.Drawing.Point(354, 168);
             this.buttonSetPos.Name = "buttonSetPos";
             this.buttonSetPos.Size = new System.Drawing.Size(59, 20);
             this.buttonSetPos.TabIndex = 10;
@@ -167,7 +169,7 @@
             // labelPos
             // 
             this.labelPos.AutoSize = true;
-            this.labelPos.Location = new System.Drawing.Point(245, 163);
+            this.labelPos.Location = new System.Drawing.Point(245, 152);
             this.labelPos.Name = "labelPos";
             this.labelPos.Size = new System.Drawing.Size(97, 13);
             this.labelPos.TabIndex = 8;
@@ -175,7 +177,7 @@
             // 
             // textBoxSetPos
             // 
-            this.textBoxSetPos.Location = new System.Drawing.Point(248, 179);
+            this.textBoxSetPos.Location = new System.Drawing.Point(248, 168);
             this.textBoxSetPos.Name = "textBoxSetPos";
             this.textBoxSetPos.Size = new System.Drawing.Size(100, 20);
             this.textBoxSetPos.TabIndex = 9;
@@ -183,18 +185,41 @@
             // checkBoxSetNextPos
             // 
             this.checkBoxSetNextPos.AutoSize = true;
-            this.checkBoxSetNextPos.Location = new System.Drawing.Point(438, 181);
+            this.checkBoxSetNextPos.Location = new System.Drawing.Point(438, 170);
             this.checkBoxSetNextPos.Name = "checkBoxSetNextPos";
             this.checkBoxSetNextPos.Size = new System.Drawing.Size(121, 17);
-            this.checkBoxSetNextPos.TabIndex = 13;
+            this.checkBoxSetNextPos.TabIndex = 11;
             this.checkBoxSetNextPos.Text = "SetNextPos by timer";
             this.checkBoxSetNextPos.UseVisualStyleBackColor = true;
+            // 
+            // checkBoxLogging
+            // 
+            this.checkBoxLogging.AutoSize = true;
+            this.checkBoxLogging.Location = new System.Drawing.Point(354, 210);
+            this.checkBoxLogging.Name = "checkBoxLogging";
+            this.checkBoxLogging.Size = new System.Drawing.Size(92, 17);
+            this.checkBoxLogging.TabIndex = 12;
+            this.checkBoxLogging.Text = "Allow Logging";
+            this.checkBoxLogging.UseVisualStyleBackColor = true;
+            this.checkBoxLogging.CheckedChanged += new System.EventHandler(this.checkBoxLogging_CheckedChanged);
+            // 
+            // buttonSaveLog
+            // 
+            this.buttonSaveLog.Location = new System.Drawing.Point(460, 206);
+            this.buttonSaveLog.Name = "buttonSaveLog";
+            this.buttonSaveLog.Size = new System.Drawing.Size(76, 23);
+            this.buttonSaveLog.TabIndex = 13;
+            this.buttonSaveLog.Text = "Save Log";
+            this.buttonSaveLog.UseVisualStyleBackColor = true;
+            this.buttonSaveLog.Click += new System.EventHandler(this.buttonSaveLog_Click);
             // 
             // TestForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(603, 575);
+            this.ClientSize = new System.Drawing.Size(603, 629);
+            this.Controls.Add(this.buttonSaveLog);
+            this.Controls.Add(this.checkBoxLogging);
             this.Controls.Add(this.checkBoxSetNextPos);
             this.Controls.Add(this.buttonSetPos);
             this.Controls.Add(this.labelPos);
@@ -235,6 +260,8 @@
         private System.Windows.Forms.Label labelPos;
         private System.Windows.Forms.TextBox textBoxSetPos;
         private System.Windows.Forms.CheckBox checkBoxSetNextPos;
+        private System.Windows.Forms.CheckBox checkBoxLogging;
+        private System.Windows.Forms.Button buttonSaveLog;
     }
 }
 

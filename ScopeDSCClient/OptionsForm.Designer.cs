@@ -50,6 +50,9 @@
             this.checkBoxOppHorzPositionDirection = new System.Windows.Forms.CheckBox();
             this.checkBoxAutoTrack = new System.Windows.Forms.CheckBox();
             this.buttonScreenKbd = new ScopeDSCClientHelper.NoSelectButton();
+            this.checkBoxLogging = new System.Windows.Forms.CheckBox();
+            this.buttonSaveLog = new System.Windows.Forms.Button();
+            this.checkBoxLoggingAZM = new System.Windows.Forms.CheckBox();
             this.groupBoxLocUnits.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -274,11 +277,11 @@
             this.checkBoxOppHorzPositionDirection.UseVisualStyleBackColor = true;
             this.checkBoxOppHorzPositionDirection.CheckedChanged += new System.EventHandler(this.checkBoxOppHorzPositionDirection_CheckedChanged);
             // 
-            // checkBoxAutoStart
+            // checkBoxAutoTrack
             // 
             this.checkBoxAutoTrack.AutoSize = true;
             this.checkBoxAutoTrack.Location = new System.Drawing.Point(292, 388);
-            this.checkBoxAutoTrack.Name = "checkBoxAutoStart";
+            this.checkBoxAutoTrack.Name = "checkBoxAutoTrack";
             this.checkBoxAutoTrack.Size = new System.Drawing.Size(157, 33);
             this.checkBoxAutoTrack.TabIndex = 19;
             this.checkBoxAutoTrack.Text = "Auto Track";
@@ -296,11 +299,46 @@
             this.buttonScreenKbd.UseVisualStyleBackColor = true;
             this.buttonScreenKbd.Click += new System.EventHandler(this.buttonScreenKbd_Click);
             // 
+            // checkBoxLogging
+            // 
+            this.checkBoxLogging.AutoSize = true;
+            this.checkBoxLogging.Location = new System.Drawing.Point(292, 428);
+            this.checkBoxLogging.Name = "checkBoxLogging";
+            this.checkBoxLogging.Size = new System.Drawing.Size(127, 33);
+            this.checkBoxLogging.TabIndex = 20;
+            this.checkBoxLogging.Text = "Logging";
+            this.checkBoxLogging.UseVisualStyleBackColor = true;
+            this.checkBoxLogging.CheckedChanged += new System.EventHandler(this.checkBoxLogging_CheckedChanged);
+            // 
+            // buttonSaveLog
+            // 
+            this.buttonSaveLog.Location = new System.Drawing.Point(582, 421);
+            this.buttonSaveLog.Name = "buttonSaveLog";
+            this.buttonSaveLog.Size = new System.Drawing.Size(202, 46);
+            this.buttonSaveLog.TabIndex = 21;
+            this.buttonSaveLog.Text = "Save Log";
+            this.buttonSaveLog.UseVisualStyleBackColor = true;
+            this.buttonSaveLog.Click += new System.EventHandler(this.buttonSaveLog_Click);
+            // 
+            // checkBoxLoggingAZM
+            // 
+            this.checkBoxLoggingAZM.AutoSize = true;
+            this.checkBoxLoggingAZM.Location = new System.Drawing.Point(446, 429);
+            this.checkBoxLoggingAZM.Name = "checkBoxLoggingAZM";
+            this.checkBoxLoggingAZM.Size = new System.Drawing.Size(84, 33);
+            this.checkBoxLoggingAZM.TabIndex = 22;
+            this.checkBoxLoggingAZM.Text = "AZM";
+            this.checkBoxLoggingAZM.UseVisualStyleBackColor = true;
+            this.checkBoxLoggingAZM.CheckedChanged += new System.EventHandler(this.checkBoxLoggingAZM_CheckedChanged);
+            // 
             // OptionsForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(15F, 29F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(828, 646);
+            this.Controls.Add(this.checkBoxLoggingAZM);
+            this.Controls.Add(this.buttonSaveLog);
+            this.Controls.Add(this.checkBoxLogging);
             this.Controls.Add(this.checkBoxAutoTrack);
             this.Controls.Add(this.checkBoxOppHorzPositionDirection);
             this.Controls.Add(this.textBoxStellariumTCPPort);
@@ -358,5 +396,8 @@
         private System.Windows.Forms.TextBox textBoxStellariumTCPPort;
         private System.Windows.Forms.CheckBox checkBoxOppHorzPositionDirection;
         private System.Windows.Forms.CheckBox checkBoxAutoTrack;
+        private System.Windows.Forms.CheckBox checkBoxLogging;
+        private System.Windows.Forms.Button buttonSaveLog;
+        private System.Windows.Forms.CheckBox checkBoxLoggingAZM;
     }
 }

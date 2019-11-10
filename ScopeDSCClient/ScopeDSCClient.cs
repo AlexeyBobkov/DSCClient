@@ -706,7 +706,9 @@ namespace ScopeDSCClient
                                                connectToStellarium_,
                                                stellariumTcpPort_,
                                                oppositeHorzPositioningDir_,
-                                               ClientCommonAPI.AutoTrack.DISABLED);
+                                               ClientCommonAPI.AutoTrack.DISABLED,
+                                               ClientCommonAPI.LoggingMode.DISABLED,
+                                               null);
             if (form.ShowDialog() != DialogResult.OK)
                 return;
 

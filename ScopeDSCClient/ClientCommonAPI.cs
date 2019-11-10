@@ -17,6 +17,15 @@ namespace ScopeDSCClient
             DISABLED
         }
 
+        public enum LoggingMode
+        {
+            ALT_OFF,
+            AZM_OFF,
+            ALT_ON,
+            AZM_ON,
+            DISABLED
+        }
+
         public interface IClientHost
         {
             // positions

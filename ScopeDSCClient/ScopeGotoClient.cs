@@ -1,4 +1,6 @@
-﻿using System;
+﻿#define TESTING
+
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -89,6 +91,14 @@ namespace ScopeDSCClient
 
         private const byte A_ALT = 0;   // command for alt adapter
         private const byte A_AZM = 1;   // command for azm adapter
+        private const byte M_ALT = 2;   // command for alt motor
+        private const byte M_AZM = 3;   // command for azm motor
+        private const byte LMODE_OFF = A_ALT; // any != M_ALT, != M_AZM
+
+#if LOGGING_ON
+        private ClientCommonAPI.LoggingMode loggingMode_ = ClientCommonAPI.LoggingMode.AZM_OFF;
+        public List<int> logData_ = new List<int>();
+#endif
 
         private class ConnectionData
         {
@@ -493,7 +503,7 @@ namespace ScopeDSCClient
                 if (trackedObject_ != null)
                 {
                     trackedObject_ = null;
-                    TrackedObjectChanged();
+                    TrackedObjectChanged(true);
                     // As there is no connection, it doesn't make sense to stop motors.
                 }
             }
@@ -543,9 +553,13 @@ namespace ScopeDSCClient
             scopePosAndObjTextChanged_ = true;
         }
 
-        private void TrackedObjectChanged()
+        private void TrackedObjectChanged(bool sendMode)
         {
             scopePosAndObjTextChanged_ = true;
+#if LOGGING_ON
+            if(sendMode)
+                SendLoggingMode();
+#endif
         }
 
         private void TimeChanged()
@@ -762,7 +776,14 @@ namespace ScopeDSCClient
                                                connectToStellarium_,
                                                stellariumTcpPort_,
                                                oppositeHorzPositioningDir_,
-                                               autoTrack_ ? ClientCommonAPI.AutoTrack.ON : ClientCommonAPI.AutoTrack.OFF);
+                                               autoTrack_ ? ClientCommonAPI.AutoTrack.ON : ClientCommonAPI.AutoTrack.OFF,
+#if LOGGING_ON
+                                               loggingMode_,
+                                               logData_);
+#else
+                                               ClientCommonAPI.LoggingMode.DISABLED,
+                                               null);
+#endif
             if (form.ShowDialog() != DialogResult.OK)
                 return;
 
@@ -798,6 +819,11 @@ namespace ScopeDSCClient
                 settings_.TcpPort = stellariumTcpPort_ = form.StellariumTcpPort;
                 settings_.AutoTrack = autoTrack_ = (form.AutoTrack == ClientCommonAPI.AutoTrack.ON);
             }
+
+#if LOGGING_ON
+            loggingMode_ = form.LoggingMode;
+            logData_ = form.LogData;
+#endif
             UpdateUI();
         }
 
@@ -827,7 +853,18 @@ namespace ScopeDSCClient
 
             if (trackedObject_ != null && tmoSendPos_.CheckExpired())
                 SendNextPositions();
-            
+
+#if LOGGING_ON
+            if (connectionGoTo_ != null &&
+                (loggingMode_ == ClientCommonAPI.LoggingMode.ALT_ON || loggingMode_ == ClientCommonAPI.LoggingMode.AZM_ON) &&
+                tmoAddLogData_.CheckExpired())
+            {
+                int logCnt = logNextBlockSize_ + 5;
+                if (logCnt > 14)
+                    logCnt = 14;
+                SendCommand(connectionGoTo_, new byte[] { (byte)'L', (byte)'w', (byte)logCnt }, 4 + logCnt * 4, AddLogData);
+            }
+#endif
             UpdateUI(sendPositionToStellarium);
         }
 
@@ -949,12 +986,14 @@ namespace ScopeDSCClient
             if (connectionGoTo_ != null && connectionGoTo_.connection_ != null)
             {
                 Int32 speed = 0;
+#if !TESTING
                 SendCommand(connectionGoTo_, new byte[] { (byte)'S',
                                                           A_ALT,
                                                           (byte)speed,
                                                           (byte)(speed >> 8),
                                                           (byte)(speed >> 16),
                                                           (byte)(speed >> 24)}, 8, ReceiveAltStart, TimeoutAltStart);
+#endif
                 SendCommand(connectionGoTo_, new byte[] { (byte)'S',
                                                           A_AZM,
                                                           (byte)speed,
@@ -1028,6 +1067,80 @@ namespace ScopeDSCClient
         {
         }
 
+#if LOGGING_ON
+        private UInt32 logStart_ = 0;
+        private Int32 logAbsPos_ = 0, logAbsTs_ = 0;
+        private int logNextBlockSize_ = 0;
+        private ClientCommonAPI.Timeout tmoAddLogData_ = new ClientCommonAPI.Timeout(1000);
+
+        private void AddLogData(byte[] data)
+        {
+            int reported = (int)data[1];
+            int stillInBuffer = (int)data[2];
+            if (data[3] != 0)   // ring buffer was overflowed
+            {
+                // force restart and re-synchronization
+                logStart_ = 0;
+                logAbsPos_ = logAbsTs_ = 0;
+            }
+
+            logNextBlockSize_ = stillInBuffer;
+
+            for (int i = 0; i < reported; ++i)
+            {
+                int start = i * 4 + 4;
+                if ((data[start + 3] & 0x80) != 0)
+                {
+                    // re-sync!
+                    logStart_ = (((UInt32)data[start + 3]) << 24) + (((UInt32)data[start + 2]) << 16) + (((UInt32)data[start + 1]) << 8) + (UInt32)data[start];
+                    logAbsPos_ = logAbsTs_ = 0;
+                    continue;
+                }
+                if (logStart_ == 0)
+                    continue;       // skip it: waiting for re-sync
+                if (logAbsPos_ == 0)
+                {
+
+                    logAbsPos_ = (Int32)((((UInt32)(byte)logStart_) << 24) + (((UInt32)data[start + 2]) << 16) + (((UInt32)data[start + 1]) << 8) + (UInt32)data[start]);
+                    continue;
+                }
+
+                Int32 pos, ts;
+                if (logAbsTs_ == 0)
+                {
+                    pos = logAbsPos_;
+                    ts = logAbsTs_ = (Int32)((((UInt32)(byte)(logStart_ >> 8)) << 24) + (((UInt32)data[start + 2]) << 16) + (((UInt32)data[start + 1]) << 8) + (UInt32)data[start]);
+                }
+                else
+                {
+                    pos = logAbsPos_ + (Int16)((((UInt16)data[start + 1]) << 8) + (UInt16)data[start]);
+                    ts = logAbsTs_ + (Int16)((((UInt16)data[start + 3]) << 8) + (UInt16)data[start + 2]);
+                }
+                logData_.Add(ts);
+                logData_.Add(pos);
+            }
+        }
+
+        private void SendLoggingMode()
+        {
+            if (connectionGoTo_ != null)
+            {
+                byte mode;
+                if (trackedObject_ == null)
+                    mode = LMODE_OFF;
+                else
+                    switch (loggingMode_)
+                    {
+                    case ClientCommonAPI.LoggingMode.ALT_ON:    mode = M_ALT; break;
+                    case ClientCommonAPI.LoggingMode.AZM_ON:    mode = M_AZM; break;
+                    default:                                    mode = LMODE_OFF; break;
+                    }
+
+                SendCommand(connectionGoTo_, new byte[] { (byte)'L', (byte)'m', mode }, 1, ReceiveDummy);
+            }
+        }
+#endif
+
         private const double maxSelDiff_ = 1.0;
         private void SetTrackedObject()
         {
@@ -1062,7 +1175,7 @@ namespace ScopeDSCClient
                     trackedObject_ = new SkyObjectPosCalc.StarPosition("Unknown", scopeRa / 15.0, scopeDec, false);
                     trackedOffsetRa_ = trackedOffsetDec_ = 0;
                 }
-                TrackedObjectChanged();
+                TrackedObjectChanged(true);
             }
         }
         private void StartTracking()
@@ -1081,7 +1194,7 @@ namespace ScopeDSCClient
                 SendStopMotorCommand(A_ALT);
                 SendStopMotorCommand(A_AZM);
                 trackedObject_ = null;
-                TrackedObjectChanged();
+                TrackedObjectChanged(true);
             }
         }
 
@@ -1104,7 +1217,7 @@ namespace ScopeDSCClient
 
                 tmoSendPos_.Restart();
                 SendNextPositions();
-                TrackedObjectChanged();
+                TrackedObjectChanged(false);
             }
         }
         
@@ -1169,12 +1282,14 @@ namespace ScopeDSCClient
                 bool altOn = (state & STATE_ALT_RUNNING) != 0, azmOn = (state & STATE_AZM_RUNNING) != 0;
                 if (trackedObject_ != null && !altStartSent_ && !azmStartSent_ && (!altOn || !azmOn))
                 {
+#if !TESTING
                     if (altOn)
                         SendStopMotorCommand(A_ALT);
                     if (azmOn)
                         SendStopMotorCommand(A_AZM);
                     trackedObject_ = null;
-                    TrackedObjectChanged();
+                    TrackedObjectChanged(true);
+#endif
                 }
                 else if (!oldSwitchOn && autoTrack_ && allowAutoTrack_)
                     StartTracking();
@@ -1186,7 +1301,7 @@ namespace ScopeDSCClient
                 if (trackedObject_ != null)
                 {
                     trackedObject_ = null;
-                    TrackedObjectChanged();
+                    TrackedObjectChanged(true);
                     // As switch is off, motors are stopped by themselves
                 }
             }
@@ -1285,13 +1400,16 @@ namespace ScopeDSCClient
                     trackedObject_ = selectedObject_;
                     trackedOffsetRa_ = trackedOffsetDec_ = 0;
                     if (prevTrackedObj == null)
+                    {
                         StartMotors();
+                        TrackedObjectChanged(true);
+                    }
                     else
                     {
                         tmoSendPos_.Restart();
                         SendNextPositions();
+                        TrackedObjectChanged(false);
                     }
-                    TrackedObjectChanged();
                 }
                 allowAutoTrack_ = true;
                 UpdateUI();

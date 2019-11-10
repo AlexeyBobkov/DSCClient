@@ -335,7 +335,7 @@ namespace ScopeDriveControllerTest
                 if (logAbsPos_ == 0)
                 {
 
-                    logAbsPos_ = (((Int32)(byte)logStart_) << 24) + (((Int32)data[start + 2]) << 16) + (((Int32)data[start + 1]) << 8) + (Int32)data[start];
+                    logAbsPos_ = (Int32)((((UInt32)(byte)logStart_) << 24) + (((UInt32)data[start + 2]) << 16) + (((UInt32)data[start + 1]) << 8) + (UInt32)data[start]);
                     continue;
                 }
 
@@ -343,12 +343,12 @@ namespace ScopeDriveControllerTest
                 if (logAbsTs_ == 0)
                 {
                     pos = logAbsPos_;
-                    ts = logAbsTs_ = (((Int32)(byte)(logStart_ >> 8)) << 24) + (((Int32)data[start + 2]) << 16) + (((Int32)data[start + 1]) << 8) + (Int32)data[start];
+                    ts = logAbsTs_ = (Int32)((((UInt32)(byte)(logStart_ >> 8)) << 24) + (((UInt32)data[start + 2]) << 16) + (((UInt32)data[start + 1]) << 8) + (UInt32)data[start]);
                 }
                 else
                 {
-                    pos = logAbsPos_ + (((Int32)data[start + 1]) << 8) + (Int32)data[start];
-                    ts = logAbsTs_ + (((Int32)data[start + 3]) << 8) + (Int32)data[start + 2];
+                    pos = logAbsPos_ + (Int16)((((UInt16)data[start + 1]) << 8) + (UInt16)data[start]);
+                    ts = logAbsTs_ + (Int16)((((UInt16)data[start + 3]) << 8) + (UInt16)data[start + 2]);
                 }
                 logData_.Add(ts);
                 logData_.Add(pos);

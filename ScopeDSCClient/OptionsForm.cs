@@ -42,13 +42,19 @@ namespace ScopeDSCClient
         public int StellariumTcpPort = 0;
         public bool OppositeHorzPositioningDir = false;
         public ClientCommonAPI.AutoTrack AutoTrack;
+#if LOGGING_ON
+        public ClientCommonAPI.LoggingMode LoggingMode;
+        public List<int> LogData;
+#endif
 
         public OptionsForm (ClientCommonAPI.IClientHost host,
                             bool showNearestAzmRotation,
                             bool connectToStellarium,
                             int stellariumTcpPort,
                             bool oppositeHorzPositioningDir,
-                            ClientCommonAPI.AutoTrack autoTrack)
+                            ClientCommonAPI.AutoTrack autoTrack,
+                            ClientCommonAPI.LoggingMode lmode,
+                            List<int> logData)
         {
             nightMode_ = host.NightMode;
             Latitude = host.Latitude;
@@ -58,6 +64,10 @@ namespace ScopeDSCClient
             StellariumTcpPort = stellariumTcpPort;
             OppositeHorzPositioningDir = oppositeHorzPositioningDir;
             AutoTrack = autoTrack;
+#if LOGGING_ON
+            LoggingMode = lmode;
+            LogData = logData;
+#endif
             InitializeComponent();
         }
 
@@ -115,6 +125,37 @@ namespace ScopeDSCClient
                     break;
             }
 
+#if LOGGING_ON
+            switch (LoggingMode)
+            {
+            case ClientCommonAPI.LoggingMode.ALT_OFF:
+                checkBoxLogging.Checked = false;
+                checkBoxLoggingAZM.Checked = false;
+                break;
+            case ClientCommonAPI.LoggingMode.AZM_OFF:
+                checkBoxLogging.Checked = false;
+                checkBoxLoggingAZM.Checked = true;
+                break;
+            case ClientCommonAPI.LoggingMode.ALT_ON:
+                checkBoxLogging.Checked = true;
+                checkBoxLoggingAZM.Checked = false;
+                break;
+            case ClientCommonAPI.LoggingMode.AZM_ON:
+                checkBoxLogging.Checked = true;
+                checkBoxLoggingAZM.Checked = true;
+                break;
+            default:
+            case ClientCommonAPI.LoggingMode.DISABLED:
+                checkBoxLogging.Visible = false;
+                buttonSaveLog.Visible = false;
+                checkBoxLoggingAZM.Visible = false;
+                break;
+            }
+#else
+            checkBoxLogging.Visible = false;
+            buttonSaveLog.Visible = false;
+            checkBoxLoggingAZM.Visible = false;
+#endif
             init_ = true;
         }
 
@@ -344,6 +385,91 @@ namespace ScopeDSCClient
             if (!init_)
                 return;
             AutoTrack = checkBoxAutoTrack.Checked ? ClientCommonAPI.AutoTrack.ON : ClientCommonAPI.AutoTrack.OFF;
+        }
+
+        private void checkBoxLogging_CheckedChanged(object sender, EventArgs e)
+        {
+#if LOGGING_ON
+            if (checkBoxLogging.Checked)
+                if (checkBoxLoggingAZM.Checked)
+                    LoggingMode = ClientCommonAPI.LoggingMode.AZM_ON;
+                else
+                    LoggingMode = ClientCommonAPI.LoggingMode.ALT_ON;
+            else if (checkBoxLoggingAZM.Checked)
+                LoggingMode = ClientCommonAPI.LoggingMode.AZM_OFF;
+            else
+                LoggingMode = ClientCommonAPI.LoggingMode.ALT_OFF;
+#endif
+        }
+
+        private void buttonSaveLog_Click(object sender, EventArgs e)
+        {
+#if LOGGING_ON
+            if (LogData == null || LogData.Count == 0)
+                return;
+
+            SaveFileDialog savefile = new SaveFileDialog();
+
+            DateTime dt = DateTime.Now;
+            savefile.FileName = String.Format("LoggingData{0}-{1}-{2}_{3}-{4}-{5}.csv",
+                dt.Year.ToString("D4"), dt.Month.ToString("D2"), dt.Day.ToString("D2"), dt.Hour.ToString("D2"), dt.Minute.ToString("D2"), dt.Second.ToString("D2"));
+            savefile.Filter = "CSV files (*.csv)|*.csv|All files (*.*)|*.*";
+
+            try
+            {
+                DialogResult res = savefile.ShowDialog();
+                if (res != DialogResult.OK)
+                    return;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+                return;
+            }
+
+            try
+            {
+                using (System.IO.StreamWriter sw = new System.IO.StreamWriter(savefile.FileName))
+                {
+                    sw.WriteLine("Time(s),Position,Angle,Diff");
+                    double startTs = (double)LogData[0] / 1000.0;
+                    double prevAngle = 0;
+                    for (int i = 0; i < LogData.Count; i += 2)
+                    {
+                        int pos = LogData[i + 1];
+                        double angle = (double)pos * 360.0 * 60.0 / ((double)10000 * 28.0 * 20.0);  // some hardcoded approximate values
+
+                        string s = ((double)LogData[i] / 1000.0 - startTs).ToString("F3");
+                        s += "," + pos.ToString();
+                        s += "," + angle.ToString("F3");
+                        s += "," + (i == 0 ? 0 : angle - prevAngle).ToString("F3");
+                        sw.WriteLine(s);
+
+                        prevAngle = angle;
+                    }
+                }
+                LogData = new List<int>();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+#endif
+        }
+
+        private void checkBoxLoggingAZM_CheckedChanged(object sender, EventArgs e)
+        {
+#if LOGGING_ON
+            if (checkBoxLogging.Checked)
+                if (checkBoxLoggingAZM.Checked)
+                    LoggingMode = ClientCommonAPI.LoggingMode.AZM_ON;
+                else
+                    LoggingMode = ClientCommonAPI.LoggingMode.ALT_ON;
+            else if (checkBoxLoggingAZM.Checked)
+                LoggingMode = ClientCommonAPI.LoggingMode.AZM_OFF;
+            else
+                LoggingMode = ClientCommonAPI.LoggingMode.ALT_OFF;
+#endif
         }
     }
 }

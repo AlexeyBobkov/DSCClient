@@ -26,6 +26,15 @@ namespace ScopeDriveControllerTest
         private const byte A_AZM = 1;   // command for azm adapter
         private const byte M_ALT = 2;   // command for alt motor (debug only)
         private const byte M_AZM = 3;   // command for azm motor (debug only)
+
+        private const byte LMODE_OFF = 0;
+        private const byte LMODE_POS_M_ALT = 2;
+        private const byte LMODE_POS_M_AZM = 3;
+        private const byte LMODE_SPD_M_ALT = 4;
+        private const byte LMODE_SPD_M_AZM = 5;
+        private const byte LMODE_SPD_A_ALT = 6;
+        private const byte LMODE_SPD_A_AZM = 7;
+
         private byte mode_ = M_AZM;
         private bool ignoreModeButtonChanged_ = false;
         
@@ -161,15 +170,35 @@ namespace ScopeDriveControllerTest
             {
                 byte mode;
                 if (!started_ || !checkBoxLogging.Checked)
-                    mode = 0;
+                    mode = LMODE_OFF;
                 else
                     switch (mode_)
                     {
                     case M_ALT:
-                    case A_ALT: mode = M_ALT; break;
+                    case A_ALT:
+                        switch (comboBoxLoggingType.SelectedIndex)
+                        {
+                        case 0: mode = LMODE_POS_M_ALT; break;
+                        case 1: mode = LMODE_SPD_M_ALT; break;
+                        case 2: mode = LMODE_SPD_A_ALT; break;
+                        default: mode = LMODE_OFF; break;
+                        }
+                        break;
+
                     case M_AZM:
-                    case A_AZM: mode = M_AZM; break;
-                    default:    mode = 0; break;
+                    case A_AZM:
+                        switch (comboBoxLoggingType.SelectedIndex)
+                        {
+                        case 0: mode = LMODE_POS_M_AZM; break;
+                        case 1: mode = LMODE_SPD_M_AZM; break;
+                        case 2: mode = LMODE_SPD_A_AZM; break;
+                        default: mode = LMODE_OFF; break;
+                        }
+                        break;
+
+                    default:
+                        mode = LMODE_OFF;
+                        break;
                     }
 
                 SendCommand(connection_, new byte[] { (byte)'L', (byte)'m', mode }, 1, ReceiveDummy);
@@ -201,7 +230,7 @@ namespace ScopeDriveControllerTest
                 if (checkBoxSetNextPos.Checked)
                 {
                     startAltPos_ += value;
-                    timerSendNextPosTicks_ = 0;
+                    //timerSendNextPosTicks_ = 0;
                 }
                 else
                 {
@@ -297,7 +326,7 @@ namespace ScopeDriveControllerTest
         private List<Int32> prevAltPos_ = new List<int>();
         private List<Int32> prevTs_ = new List<int>();
         private const int MAX_POSITIONS = 50;
-        private int timerSendNextPosTicks_ = 0;
+        //private int timerSendNextPosTicks_ = 0;
         private Timeout tmoSendPos_ = new Timeout(8000);
 
 #if LOGGING_ON
@@ -489,12 +518,16 @@ namespace ScopeDriveControllerTest
             baudRate_ = settings_.BaudRate;
             SetMode(M_AZM);
 
-            //checkBoxSetNextPos.Checked = true;
 #if LOGGING_ON
             checkBoxLogging.Checked = true;
+            comboBoxLoggingType.Items.Add("Motor Position");
+            comboBoxLoggingType.Items.Add("Motor Speed");
+            comboBoxLoggingType.Items.Add("Adapter Speed");
+            comboBoxLoggingType.SelectedIndex = 0;
 #else
             checkBoxLogging.Visible = false;
             buttonSaveLog.Visible = false;
+            comboBoxLoggingType.Visible = false;
 #endif
             init_ = true;
         }
@@ -656,6 +689,7 @@ namespace ScopeDriveControllerTest
             }
         }
 
+        private const double MSPEED_SCALE = 4000.0;
         private void buttonSaveLog_Click(object sender, EventArgs e)
         {
 #if LOGGING_ON
@@ -665,8 +699,9 @@ namespace ScopeDriveControllerTest
             SaveFileDialog savefile = new SaveFileDialog();
 
             DateTime dt = DateTime.Now;
-            savefile.FileName = String.Format("LoggingData{0}-{1}-{2}_{3}-{4}-{5}.csv",
-                dt.Year.ToString("D4"), dt.Month.ToString("D2"), dt.Day.ToString("D2"), dt.Hour.ToString("D2"), dt.Minute.ToString("D2"), dt.Second.ToString("D2"));
+            string name = comboBoxLoggingType.SelectedIndex == 0 ? "LoggingPos" : "LoggingSpeed";
+            savefile.FileName = String.Format("{6}{0}-{1}-{2}_{3}-{4}-{5}.csv",
+                dt.Year.ToString("D4"), dt.Month.ToString("D2"), dt.Day.ToString("D2"), dt.Hour.ToString("D2"), dt.Minute.ToString("D2"), dt.Second.ToString("D2"), name);
             savefile.Filter = "CSV files (*.csv)|*.csv|All files (*.*)|*.*";
 
             try
@@ -685,21 +720,51 @@ namespace ScopeDriveControllerTest
             {
                 using (System.IO.StreamWriter sw = new System.IO.StreamWriter(savefile.FileName))
                 {
-                    sw.WriteLine("Time(s),Position,Angle,Diff");
-                    double startTs = (double)logData_[0] / 1000.0;
-                    double prevAngle = 0;
-                    for (int i = 0; i < logData_.Count; i += 2)
+                    switch (comboBoxLoggingType.SelectedIndex)
                     {
-                        int pos = logData_[i + 1];
-                        double angle = (double)pos * 360.0 * 60.0 / ((double)M_RESOLUTION * 28.0 * 20.0);
+                    case 0:
+                        {
+                            sw.WriteLine("Time(s),Position,Angle,Diff");
+                            double startTs = (double)logData_[0] / 1000.0;
+                            double prevAngle = 0;
+                            for (int i = 0; i < logData_.Count; i += 2)
+                            {
+                                int pos = logData_[i + 1];
+                                double angle = (double)pos * 360.0 * 60.0 / ((double)M_RESOLUTION * 28.0 * 20.0);
 
-                        string s = ((double)logData_[i] / 1000.0 - startTs).ToString("F3");
-                        s += "," + pos.ToString();
-                        s += "," + angle.ToString("F3");
-                        s += "," + (i == 0 ? 0 : angle - prevAngle).ToString("F3");
-                        sw.WriteLine(s);
+                                string s = ((double)logData_[i] / 1000.0 - startTs).ToString("F3");
+                                s += "," + pos.ToString();
+                                s += "," + angle.ToString("F3");
+                                s += "," + (i == 0 ? 0 : angle - prevAngle).ToString("F3");
+                                sw.WriteLine(s);
 
-                        prevAngle = angle;
+                                prevAngle = angle;
+                            }
+                        }
+                        break;
+
+                    case 1:
+                    case 2:
+                        {
+                            sw.WriteLine("Time(s),Speed(u/sec),Diff");
+                            double startTs = (double)logData_[0] / 1000.0;
+                            double prevSpeed = 0;
+                            for (int i = 0; i < logData_.Count; i += 2)
+                            {
+                                int pos = logData_[i + 1];
+                                double speed = (double)pos * 1000.0 / MSPEED_SCALE;
+
+                                string s = ((double)logData_[i] / 1000.0 - startTs).ToString("F3");
+                                s += "," + speed.ToString("F3");
+                                s += "," + (i == 0 ? 0 : speed - prevSpeed).ToString("F3");
+                                sw.WriteLine(s);
+                                prevSpeed = speed;
+                            }
+                        }
+                        break;
+
+                    default:
+                        break;
                     }
                 }
                 logData_ = new List<int>();
@@ -712,6 +777,13 @@ namespace ScopeDriveControllerTest
         }
 
         private void checkBoxLogging_CheckedChanged(object sender, EventArgs e)
+        {
+#if LOGGING_ON
+            SendLoggingMode();
+#endif
+        }
+
+        private void comboBoxLoggingType_SelectedIndexChanged(object sender, EventArgs e)
         {
 #if LOGGING_ON
             SendLoggingMode();

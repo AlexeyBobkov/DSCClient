@@ -91,13 +91,20 @@ namespace ScopeDSCClient
 
         private const byte A_ALT = 0;   // command for alt adapter
         private const byte A_AZM = 1;   // command for azm adapter
-        private const byte M_ALT = 2;   // command for alt motor
-        private const byte M_AZM = 3;   // command for azm motor
-        private const byte LMODE_OFF = A_ALT; // any != M_ALT, != M_AZM
+
+        private const byte LMODE_OFF = 0;
+        private const byte LMODE_POS_M_ALT = 2;
+        private const byte LMODE_POS_M_AZM = 3;
+        private const byte LMODE_SPD_M_ALT = 4;
+        private const byte LMODE_SPD_M_AZM = 5;
+        private const byte LMODE_SPD_A_ALT = 6;
+        private const byte LMODE_SPD_A_AZM = 7;
 
 #if LOGGING_ON
-        private ClientCommonAPI.LoggingMode loggingMode_ = ClientCommonAPI.LoggingMode.AZM_OFF;
-        public List<int> logData_ = new List<int>();
+        private ClientCommonAPI.LoggingState loggingState_      = ClientCommonAPI.LoggingState.OFF;
+        private ClientCommonAPI.LoggingChannel loggingChannel_  = ClientCommonAPI.LoggingChannel.AZM;
+        private ClientCommonAPI.LoggingType loggingType_        = ClientCommonAPI.LoggingType.M_POS;
+        private List<int> logData_ = new List<int>();
 #endif
 
         private class ConnectionData
@@ -778,10 +785,14 @@ namespace ScopeDSCClient
                                                oppositeHorzPositioningDir_,
                                                autoTrack_ ? ClientCommonAPI.AutoTrack.ON : ClientCommonAPI.AutoTrack.OFF,
 #if LOGGING_ON
-                                               loggingMode_,
+                                               loggingState_,
+                                               loggingChannel_,
+                                               loggingType_,
                                                logData_);
 #else
-                                               ClientCommonAPI.LoggingMode.DISABLED,
+                                               ClientCommonAPI.LoggingState.DISABLED,
+                                               ClientCommonAPI.LoggingChannel.UNUSED,
+                                               ClientCommonAPI.LoggingType.UNUSED,
                                                null);
 #endif
             if (form.ShowDialog() != DialogResult.OK)
@@ -821,7 +832,9 @@ namespace ScopeDSCClient
             }
 
 #if LOGGING_ON
-            loggingMode_ = form.LoggingMode;
+            loggingState_ = form.LoggingState;
+            loggingChannel_ = form.LoggingChannel;
+            loggingType_ = form.LoggingType;
             logData_ = form.LogData;
 #endif
             UpdateUI();
@@ -855,9 +868,7 @@ namespace ScopeDSCClient
                 SendNextPositions();
 
 #if LOGGING_ON
-            if (connectionGoTo_ != null &&
-                (loggingMode_ == ClientCommonAPI.LoggingMode.ALT_ON || loggingMode_ == ClientCommonAPI.LoggingMode.AZM_ON) &&
-                tmoAddLogData_.CheckExpired())
+            if (connectionGoTo_ != null && loggingState_ == ClientCommonAPI.LoggingState.ON && tmoAddLogData_.CheckExpired())
             {
                 int logCnt = logNextBlockSize_ + 5;
                 if (logCnt > 14)
@@ -1069,10 +1080,11 @@ namespace ScopeDSCClient
 
 #if LOGGING_ON
         private UInt32 logStart_ = 0;
-        private Int32 logAbsPos_ = 0, logAbsTs_ = 0;
+        private Int32 logAbsPos_ = Int32.MinValue, logAbsTs_ = Int32.MinValue;
         private int logNextBlockSize_ = 0;
         private ClientCommonAPI.Timeout tmoAddLogData_ = new ClientCommonAPI.Timeout(1000);
 
+        private Int32 prevTs_ = 0;
         private void AddLogData(byte[] data)
         {
             int reported = (int)data[1];
@@ -1081,7 +1093,7 @@ namespace ScopeDSCClient
             {
                 // force restart and re-synchronization
                 logStart_ = 0;
-                logAbsPos_ = logAbsTs_ = 0;
+                logAbsPos_ = logAbsTs_ = Int32.MinValue;
             }
 
             logNextBlockSize_ = stillInBuffer;
@@ -1093,12 +1105,12 @@ namespace ScopeDSCClient
                 {
                     // re-sync!
                     logStart_ = (((UInt32)data[start + 3]) << 24) + (((UInt32)data[start + 2]) << 16) + (((UInt32)data[start + 1]) << 8) + (UInt32)data[start];
-                    logAbsPos_ = logAbsTs_ = 0;
+                    logAbsPos_ = logAbsTs_ = Int32.MinValue;
                     continue;
                 }
                 if (logStart_ == 0)
                     continue;       // skip it: waiting for re-sync
-                if (logAbsPos_ == 0)
+                if (logAbsPos_ == Int32.MinValue)
                 {
 
                     logAbsPos_ = (Int32)((((UInt32)(byte)logStart_) << 24) + (((UInt32)data[start + 2]) << 16) + (((UInt32)data[start + 1]) << 8) + (UInt32)data[start]);
@@ -1106,7 +1118,7 @@ namespace ScopeDSCClient
                 }
 
                 Int32 pos, ts;
-                if (logAbsTs_ == 0)
+                if (logAbsTs_ == Int32.MinValue)
                 {
                     pos = logAbsPos_;
                     ts = logAbsTs_ = (Int32)((((UInt32)(byte)(logStart_ >> 8)) << 24) + (((UInt32)data[start + 2]) << 16) + (((UInt32)data[start + 1]) << 8) + (UInt32)data[start]);
@@ -1116,6 +1128,13 @@ namespace ScopeDSCClient
                     pos = logAbsPos_ + (Int16)((((UInt16)data[start + 1]) << 8) + (UInt16)data[start]);
                     ts = logAbsTs_ + (Int16)((((UInt16)data[start + 3]) << 8) + (UInt16)data[start + 2]);
                 }
+
+                if (prevTs_ != 0 && (ts - prevTs_ > 1000 || ts - prevTs_ < -1000))
+                {
+                    prevTs_ += 1;
+                }
+                prevTs_ = ts;
+
                 logData_.Add(ts);
                 logData_.Add(pos);
             }
@@ -1129,13 +1148,41 @@ namespace ScopeDSCClient
                 if (trackedObject_ == null)
                     mode = LMODE_OFF;
                 else
-                    switch (loggingMode_)
+                    switch (loggingState_)
                     {
-                    case ClientCommonAPI.LoggingMode.ALT_ON:    mode = M_ALT; break;
-                    case ClientCommonAPI.LoggingMode.AZM_ON:    mode = M_AZM; break;
-                    default:                                    mode = LMODE_OFF; break;
-                    }
+                    default:
+                        mode = LMODE_OFF;
+                        break;
 
+                    case ClientCommonAPI.LoggingState.ON:
+                        switch (loggingChannel_)
+                        {
+                        default:
+                            mode = LMODE_OFF;
+                            break;
+
+                        case ClientCommonAPI.LoggingChannel.ALT:
+                            switch (loggingType_)
+                            {
+                            default:                                mode = LMODE_OFF; break;
+                            case ClientCommonAPI.LoggingType.M_POS: mode = LMODE_POS_M_ALT; break;
+                            case ClientCommonAPI.LoggingType.M_SPD: mode = LMODE_SPD_M_ALT; break;
+                            case ClientCommonAPI.LoggingType.A_SPD: mode = LMODE_SPD_A_ALT; break;
+                            }
+                            break;
+
+                        case ClientCommonAPI.LoggingChannel.AZM:
+                            switch (loggingType_)
+                            {
+                            default:                                mode = LMODE_OFF; break;
+                            case ClientCommonAPI.LoggingType.M_POS: mode = LMODE_POS_M_AZM; break;
+                            case ClientCommonAPI.LoggingType.M_SPD: mode = LMODE_SPD_M_AZM; break;
+                            case ClientCommonAPI.LoggingType.A_SPD: mode = LMODE_SPD_A_AZM; break;
+                            }
+                            break;
+                        }
+                        break;
+                    }
                 SendCommand(connectionGoTo_, new byte[] { (byte)'L', (byte)'m', mode }, 1, ReceiveDummy);
             }
         }

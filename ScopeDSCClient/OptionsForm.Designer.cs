@@ -53,13 +53,14 @@
             this.checkBoxLogging = new System.Windows.Forms.CheckBox();
             this.buttonSaveLog = new System.Windows.Forms.Button();
             this.checkBoxLoggingAZM = new System.Windows.Forms.CheckBox();
+            this.comboBoxLoggingType = new System.Windows.Forms.ComboBox();
             this.groupBoxLocUnits.SuspendLayout();
             this.SuspendLayout();
             // 
             // buttonOK
             // 
             this.buttonOK.DialogResult = System.Windows.Forms.DialogResult.OK;
-            this.buttonOK.Location = new System.Drawing.Point(312, 515);
+            this.buttonOK.Location = new System.Drawing.Point(312, 547);
             this.buttonOK.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.buttonOK.Name = "buttonOK";
             this.buttonOK.Size = new System.Drawing.Size(201, 92);
@@ -70,7 +71,7 @@
             // buttonCancel
             // 
             this.buttonCancel.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.buttonCancel.Location = new System.Drawing.Point(583, 515);
+            this.buttonCancel.Location = new System.Drawing.Point(583, 547);
             this.buttonCancel.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.buttonCancel.Name = "buttonCancel";
             this.buttonCancel.Size = new System.Drawing.Size(201, 92);
@@ -291,7 +292,7 @@
             // buttonScreenKbd
             // 
             this.buttonScreenKbd.Font = new System.Drawing.Font("Wingdings", 48F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(2)));
-            this.buttonScreenKbd.Location = new System.Drawing.Point(40, 515);
+            this.buttonScreenKbd.Location = new System.Drawing.Point(40, 547);
             this.buttonScreenKbd.Name = "buttonScreenKbd";
             this.buttonScreenKbd.Size = new System.Drawing.Size(114, 92);
             this.buttonScreenKbd.TabIndex = 16;
@@ -302,19 +303,19 @@
             // checkBoxLogging
             // 
             this.checkBoxLogging.AutoSize = true;
-            this.checkBoxLogging.Location = new System.Drawing.Point(292, 428);
+            this.checkBoxLogging.Location = new System.Drawing.Point(292, 456);
             this.checkBoxLogging.Name = "checkBoxLogging";
-            this.checkBoxLogging.Size = new System.Drawing.Size(127, 33);
+            this.checkBoxLogging.Size = new System.Drawing.Size(76, 33);
             this.checkBoxLogging.TabIndex = 20;
-            this.checkBoxLogging.Text = "Logging";
+            this.checkBoxLogging.Text = "Log";
             this.checkBoxLogging.UseVisualStyleBackColor = true;
             this.checkBoxLogging.CheckedChanged += new System.EventHandler(this.checkBoxLogging_CheckedChanged);
             // 
             // buttonSaveLog
             // 
-            this.buttonSaveLog.Location = new System.Drawing.Point(582, 421);
+            this.buttonSaveLog.Location = new System.Drawing.Point(621, 449);
             this.buttonSaveLog.Name = "buttonSaveLog";
-            this.buttonSaveLog.Size = new System.Drawing.Size(202, 46);
+            this.buttonSaveLog.Size = new System.Drawing.Size(163, 46);
             this.buttonSaveLog.TabIndex = 21;
             this.buttonSaveLog.Text = "Save Log";
             this.buttonSaveLog.UseVisualStyleBackColor = true;
@@ -323,7 +324,7 @@
             // checkBoxLoggingAZM
             // 
             this.checkBoxLoggingAZM.AutoSize = true;
-            this.checkBoxLoggingAZM.Location = new System.Drawing.Point(446, 429);
+            this.checkBoxLoggingAZM.Location = new System.Drawing.Point(384, 457);
             this.checkBoxLoggingAZM.Name = "checkBoxLoggingAZM";
             this.checkBoxLoggingAZM.Size = new System.Drawing.Size(84, 33);
             this.checkBoxLoggingAZM.TabIndex = 22;
@@ -331,11 +332,22 @@
             this.checkBoxLoggingAZM.UseVisualStyleBackColor = true;
             this.checkBoxLoggingAZM.CheckedChanged += new System.EventHandler(this.checkBoxLoggingAZM_CheckedChanged);
             // 
+            // comboBoxLoggingType
+            // 
+            this.comboBoxLoggingType.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.comboBoxLoggingType.FormattingEnabled = true;
+            this.comboBoxLoggingType.Location = new System.Drawing.Point(481, 454);
+            this.comboBoxLoggingType.Name = "comboBoxLoggingType";
+            this.comboBoxLoggingType.Size = new System.Drawing.Size(121, 37);
+            this.comboBoxLoggingType.TabIndex = 23;
+            this.comboBoxLoggingType.SelectedIndexChanged += new System.EventHandler(this.comboBoxLoggingType_SelectedIndexChanged);
+            // 
             // OptionsForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(15F, 29F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(828, 646);
+            this.ClientSize = new System.Drawing.Size(828, 683);
+            this.Controls.Add(this.comboBoxLoggingType);
             this.Controls.Add(this.checkBoxLoggingAZM);
             this.Controls.Add(this.buttonSaveLog);
             this.Controls.Add(this.checkBoxLogging);
@@ -399,5 +411,6 @@
         private System.Windows.Forms.CheckBox checkBoxLogging;
         private System.Windows.Forms.Button buttonSaveLog;
         private System.Windows.Forms.CheckBox checkBoxLoggingAZM;
+        private System.Windows.Forms.ComboBox comboBoxLoggingType;
     }
 }

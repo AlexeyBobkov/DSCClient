@@ -46,6 +46,7 @@
             this.checkBoxSetNextPos = new System.Windows.Forms.CheckBox();
             this.checkBoxLogging = new System.Windows.Forms.CheckBox();
             this.buttonSaveLog = new System.Windows.Forms.Button();
+            this.comboBoxLoggingType = new System.Windows.Forms.ComboBox();
             this.SuspendLayout();
             // 
             // buttonConnect
@@ -81,7 +82,7 @@
             this.textBoxOutput.Name = "textBoxOutput";
             this.textBoxOutput.ReadOnly = true;
             this.textBoxOutput.Size = new System.Drawing.Size(556, 354);
-            this.textBoxOutput.TabIndex = 15;
+            this.textBoxOutput.TabIndex = 16;
             // 
             // label2
             // 
@@ -89,7 +90,7 @@
             this.label2.Location = new System.Drawing.Point(21, 234);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(37, 13);
-            this.label2.TabIndex = 14;
+            this.label2.TabIndex = 15;
             this.label2.Text = "Result";
             // 
             // timerPoll
@@ -195,7 +196,7 @@
             // checkBoxLogging
             // 
             this.checkBoxLogging.AutoSize = true;
-            this.checkBoxLogging.Location = new System.Drawing.Point(354, 210);
+            this.checkBoxLogging.Location = new System.Drawing.Point(218, 210);
             this.checkBoxLogging.Name = "checkBoxLogging";
             this.checkBoxLogging.Size = new System.Drawing.Size(92, 17);
             this.checkBoxLogging.TabIndex = 12;
@@ -205,19 +206,30 @@
             // 
             // buttonSaveLog
             // 
-            this.buttonSaveLog.Location = new System.Drawing.Point(460, 206);
+            this.buttonSaveLog.Location = new System.Drawing.Point(475, 207);
             this.buttonSaveLog.Name = "buttonSaveLog";
             this.buttonSaveLog.Size = new System.Drawing.Size(76, 23);
-            this.buttonSaveLog.TabIndex = 13;
+            this.buttonSaveLog.TabIndex = 14;
             this.buttonSaveLog.Text = "Save Log";
             this.buttonSaveLog.UseVisualStyleBackColor = true;
             this.buttonSaveLog.Click += new System.EventHandler(this.buttonSaveLog_Click);
+            // 
+            // comboBoxLoggingType
+            // 
+            this.comboBoxLoggingType.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.comboBoxLoggingType.FormattingEnabled = true;
+            this.comboBoxLoggingType.Location = new System.Drawing.Point(324, 208);
+            this.comboBoxLoggingType.Name = "comboBoxLoggingType";
+            this.comboBoxLoggingType.Size = new System.Drawing.Size(121, 21);
+            this.comboBoxLoggingType.TabIndex = 13;
+            this.comboBoxLoggingType.SelectedIndexChanged += new System.EventHandler(this.comboBoxLoggingType_SelectedIndexChanged);
             // 
             // TestForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(603, 629);
+            this.Controls.Add(this.comboBoxLoggingType);
             this.Controls.Add(this.buttonSaveLog);
             this.Controls.Add(this.checkBoxLogging);
             this.Controls.Add(this.checkBoxSetNextPos);
@@ -262,6 +274,7 @@
         private System.Windows.Forms.CheckBox checkBoxSetNextPos;
         private System.Windows.Forms.CheckBox checkBoxLogging;
         private System.Windows.Forms.Button buttonSaveLog;
+        private System.Windows.Forms.ComboBox comboBoxLoggingType;
     }
 }
 

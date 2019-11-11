@@ -17,13 +17,24 @@ namespace ScopeDSCClient
             DISABLED
         }
 
-        public enum LoggingMode
+        public enum LoggingState
         {
-            ALT_OFF,
-            AZM_OFF,
-            ALT_ON,
-            AZM_ON,
+            ON,
+            OFF,
             DISABLED
+        }
+        public enum LoggingChannel
+        {
+            ALT,
+            AZM,
+            UNUSED
+        }
+        public enum LoggingType
+        {
+            M_POS = 0,  // motor position
+            M_SPD = 1,  // motor speed
+            A_SPD = 2,  // adapter speed
+            UNUSED
         }
 
         public interface IClientHost

@@ -331,7 +331,7 @@ namespace ScopeDriveControllerTest
 
 #if LOGGING_ON
         UInt32 logStart_ = 0;
-        Int32 logAbsPos_ = 0, logAbsTs_ = 0;
+        Int32 logAbsPos_ = Int32.MinValue, logAbsTs_ = Int32.MinValue;
         int logNextBlockSize_ = 0;
         List<Int32> logData_ = new List<int>();
         private Timeout tmoAddLogData_ = new Timeout(1000);
@@ -344,7 +344,7 @@ namespace ScopeDriveControllerTest
             {
                 // force restart and re-synchronization
                 logStart_ = 0;
-                logAbsPos_ = logAbsTs_ = 0;
+                logAbsPos_ = logAbsTs_ = Int32.MinValue;
             }
 
             logNextBlockSize_ = stillInBuffer;
@@ -356,12 +356,12 @@ namespace ScopeDriveControllerTest
                 {
                     // re-sync!
                     logStart_ = (((UInt32)data[start + 3]) << 24) + (((UInt32)data[start + 2]) << 16) + (((UInt32)data[start + 1]) << 8) + (UInt32)data[start];
-                    logAbsPos_ = logAbsTs_ = 0;
+                    logAbsPos_ = logAbsTs_ = Int32.MinValue;
                     continue;
                 }
                 if (logStart_ == 0)
                     continue;       // skip it: waiting for re-sync
-                if (logAbsPos_ == 0)
+                if (logAbsPos_ == Int32.MinValue)
                 {
 
                     logAbsPos_ = (Int32)((((UInt32)(byte)logStart_) << 24) + (((UInt32)data[start + 2]) << 16) + (((UInt32)data[start + 1]) << 8) + (UInt32)data[start]);
@@ -369,7 +369,7 @@ namespace ScopeDriveControllerTest
                 }
 
                 Int32 pos, ts;
-                if (logAbsTs_ == 0)
+                if (logAbsTs_ == Int32.MinValue)
                 {
                     pos = logAbsPos_;
                     ts = logAbsTs_ = (Int32)((((UInt32)(byte)(logStart_ >> 8)) << 24) + (((UInt32)data[start + 2]) << 16) + (((UInt32)data[start + 1]) << 8) + (UInt32)data[start]);
@@ -379,6 +379,7 @@ namespace ScopeDriveControllerTest
                     pos = logAbsPos_ + (Int16)((((UInt16)data[start + 1]) << 8) + (UInt16)data[start]);
                     ts = logAbsTs_ + (Int16)((((UInt16)data[start + 3]) << 8) + (UInt16)data[start + 2]);
                 }
+
                 logData_.Add(ts);
                 logData_.Add(pos);
             }

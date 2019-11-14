@@ -1084,7 +1084,6 @@ namespace ScopeDSCClient
         private int logNextBlockSize_ = 0;
         private ClientCommonAPI.Timeout tmoAddLogData_ = new ClientCommonAPI.Timeout(1000);
 
-        private Int32 prevTs_ = 0;
         private void AddLogData(byte[] data)
         {
             int reported = (int)data[1];
@@ -1128,12 +1127,6 @@ namespace ScopeDSCClient
                     pos = logAbsPos_ + (Int16)((((UInt16)data[start + 1]) << 8) + (UInt16)data[start]);
                     ts = logAbsTs_ + (Int16)((((UInt16)data[start + 3]) << 8) + (UInt16)data[start + 2]);
                 }
-
-                if (prevTs_ != 0 && (ts - prevTs_ > 1000 || ts - prevTs_ < -1000))
-                {
-                    prevTs_ += 1;
-                }
-                prevTs_ = ts;
 
                 logData_.Add(ts);
                 logData_.Add(pos);

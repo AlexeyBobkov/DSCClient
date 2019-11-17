@@ -45,7 +45,7 @@ namespace ScopeDSCClient
 #if LOGGING_ON
         public ClientCommonAPI.LoggingState LoggingState;
         public ClientCommonAPI.LoggingChannel LoggingChannel;
-        public ClientCommonAPI.LoggingType LoggingType;
+        public ClientCommonAPI.LoggingType LoggingType0, LoggingType1;
         public List<int> LogData;
 #endif
 
@@ -57,7 +57,8 @@ namespace ScopeDSCClient
                             ClientCommonAPI.AutoTrack autoTrack,
                             ClientCommonAPI.LoggingState lstate,
                             ClientCommonAPI.LoggingChannel lchannel,
-                            ClientCommonAPI.LoggingType ltype,
+                            ClientCommonAPI.LoggingType ltype0,
+                            ClientCommonAPI.LoggingType ltype1,
                             List<int> logData)
         {
             nightMode_ = host.NightMode;
@@ -71,7 +72,8 @@ namespace ScopeDSCClient
 #if LOGGING_ON
             LoggingState = lstate;
             LoggingChannel = lchannel;
-            LoggingType = ltype;
+            LoggingType0 = ltype0;
+            LoggingType1 = ltype1;
             LogData = logData;
 #endif
             InitializeComponent();
@@ -132,33 +134,51 @@ namespace ScopeDSCClient
             }
 
 #if LOGGING_ON
-            comboBoxLoggingType.Items.Add("M Pos");
-            comboBoxLoggingType.Items.Add("M Spd");
-            comboBoxLoggingType.Items.Add("A Spd");
+            comboBoxLoggingType0.Items.Add("M POS");
+            comboBoxLoggingType0.Items.Add("M LOG");
+            comboBoxLoggingType0.Items.Add("M SPD");
+            comboBoxLoggingType0.Items.Add("M ERR");
+            comboBoxLoggingType0.Items.Add("A POS");
+            comboBoxLoggingType0.Items.Add("A LOG");
+            comboBoxLoggingType0.Items.Add("A SPD");
+            comboBoxLoggingType0.Items.Add("A ERR");
+
+            comboBoxLoggingType1.Items.Add("M POS");
+            comboBoxLoggingType1.Items.Add("M LOG");
+            comboBoxLoggingType1.Items.Add("M SPD");
+            comboBoxLoggingType1.Items.Add("M ERR");
+            comboBoxLoggingType1.Items.Add("A POS");
+            comboBoxLoggingType1.Items.Add("A LOG");
+            comboBoxLoggingType1.Items.Add("A SPD");
+            comboBoxLoggingType1.Items.Add("A ERR");
             switch (LoggingState)
             {
                 case ClientCommonAPI.LoggingState.OFF:
                     checkBoxLogging.Checked = false;
                     checkBoxLoggingAZM.Checked = LoggingChannel == ClientCommonAPI.LoggingChannel.AZM;
-                    comboBoxLoggingType.SelectedIndex = (int)LoggingType;
+                    comboBoxLoggingType0.SelectedIndex = (int)LoggingType0;
+                    comboBoxLoggingType1.SelectedIndex = (int)LoggingType1;
                     break;
                 case ClientCommonAPI.LoggingState.ON:
                     checkBoxLogging.Checked = true;
                     checkBoxLoggingAZM.Checked = LoggingChannel == ClientCommonAPI.LoggingChannel.AZM;
-                    comboBoxLoggingType.SelectedIndex = (int)LoggingType;
+                    comboBoxLoggingType0.SelectedIndex = (int)LoggingType0;
+                    comboBoxLoggingType1.SelectedIndex = (int)LoggingType1;
                     break;
                 default:
                     checkBoxLogging.Visible = false;
                     buttonSaveLog.Visible = false;
                     checkBoxLoggingAZM.Visible = false;
-                    comboBoxLoggingType.Visible = false;
+                    comboBoxLoggingType0.Visible = false;
+                    comboBoxLoggingType1.Visible = false;
                     break;
             }
 #else
             checkBoxLogging.Visible = false;
             buttonSaveLog.Visible = false;
             checkBoxLoggingAZM.Visible = false;
-            comboBoxLoggingType.Visible = false;
+            comboBoxLoggingType0.Visible = false;
+            comboBoxLoggingType1.Visible = false;
 #endif
             init_ = true;
         }
@@ -405,17 +425,36 @@ namespace ScopeDSCClient
             if (LogData == null || LogData.Count == 0)
                 return;
 
-            SaveFileDialog savefile = new SaveFileDialog();
+            string name = "";
 
-            DateTime dt = DateTime.Now;
-            string name;
-            switch (LoggingType)
+            ClientCommonAPI.LoggingType[] lt = (LoggingType0 < LoggingType1) ?
+                new ClientCommonAPI.LoggingType[2] { LoggingType0, LoggingType1 } :
+                new ClientCommonAPI.LoggingType[2] { LoggingType1, LoggingType0 };
+            string[] posName = new string[2] {"", ""};
+            double[] factor = new double[2] {1.0, 1.0};
+            for (int i = 0; i < 2; ++i)
             {
-            default:
-            case ClientCommonAPI.LoggingType.M_POS: name = "ClientLogMotorPos"; break;
-            case ClientCommonAPI.LoggingType.M_SPD: name = "ClientLogMotorSpeed"; break;
-            case ClientCommonAPI.LoggingType.A_SPD: name = "ClientLogAdapterSpeed"; break;
+                switch (lt[i])
+                {
+                default: name += "UNKN_"; posName[i] = ""; break;
+                case ClientCommonAPI.LoggingType.M_POS: name += "MPOS_"; posName[i] = "MPOS"; break;
+                case ClientCommonAPI.LoggingType.M_LOG: name += "MLOG_"; posName[i] = "MLOG"; break;
+                case ClientCommonAPI.LoggingType.M_SPD: name += "MSPD_"; posName[i] = "MSPD(u/s)"; factor[i] = 1000.0 / MSPEED_SCALE; break;
+                case ClientCommonAPI.LoggingType.M_ERR: name += "MERR_"; posName[i] = "MERR"; break;
+                case ClientCommonAPI.LoggingType.A_POS: name += "APOS_"; posName[i] = "APOS"; break;
+                case ClientCommonAPI.LoggingType.A_LOG: name += "ALOG_"; posName[i] = "ALOG"; break;
+                case ClientCommonAPI.LoggingType.A_SPD: name += "ASPD_"; posName[i] = "ASPD(u/s)"; factor[i] = 1000.0 / MSPEED_SCALE; break;
+                case ClientCommonAPI.LoggingType.A_ERR: name += "AERR_"; posName[i] = "AERR"; break;
+                }
             }
+            if (LoggingChannel == ClientCommonAPI.LoggingChannel.AZM)
+                name += "Client_AZM_";
+            else
+                name += "Client_ALT_";
+            string header = "Time(s)," + posName[0] + ",diff0,," + posName[1] + ",diff1";
+
+            SaveFileDialog savefile = new SaveFileDialog();
+            DateTime dt = DateTime.Now;
             savefile.FileName = String.Format("{6}{0}-{1}-{2}_{3}-{4}-{5}.csv",
                 dt.Year.ToString("D4"), dt.Month.ToString("D2"), dt.Day.ToString("D2"), dt.Hour.ToString("D2"), dt.Minute.ToString("D2"), dt.Second.ToString("D2"), name);
             savefile.Filter = "CSV files (*.csv)|*.csv|All files (*.*)|*.*";
@@ -436,41 +475,25 @@ namespace ScopeDSCClient
             {
                 using (System.IO.StreamWriter sw = new System.IO.StreamWriter(savefile.FileName))
                 {
-                    if (LoggingType == ClientCommonAPI.LoggingType.M_POS)
+                    sw.WriteLine(header);
+                    double startTs = (double)LogData[0] / 1000.0;
+                    double[] prev = new double[2] {0.0, 0.0};
+                    for (int i = 0; i < LogData.Count; i += 3)
                     {
-                        sw.WriteLine("Time(s),Position,Angle,Diff");
-                        double startTs = (double)LogData[0] / 1000.0;
-                        double prevAngle = 0;
-                        for (int i = 0; i < LogData.Count; i += 2)
-                        {
-                            int pos = LogData[i + 1];
-                            double angle = (double)pos * 360.0 * 60.0 / ((double)10000 * 22.0 * 20.0);  // some hardcoded approximate values
+                        string s = ((double)LogData[i] / 1000.0 - startTs).ToString("F3");
+                        double x = LogData[i + 1] * factor[0];
+                        s += "," + x.ToString();
+                        s += "," + (i == 0 ? 0 : x - prev[0]).ToString("F3");
+                        prev[0] = x;
 
-                            string s = ((double)LogData[i] / 1000.0 - startTs).ToString("F3");
-                            s += "," + pos.ToString();
-                            s += "," + angle.ToString("F3");
-                            s += "," + (i == 0 ? 0 : angle - prevAngle).ToString("F3");
-                            sw.WriteLine(s);
+                        s += ",";
 
-                            prevAngle = angle;
-                        }
-                    }
-                    else
-                    {
-                        sw.WriteLine("Time(s),Speed(u/sec),Diff");
-                        double startTs = (double)LogData[0] / 1000.0;
-                        double prevSpeed = 0;
-                        for (int i = 0; i < LogData.Count; i += 2)
-                        {
-                            int pos = LogData[i + 1];
-                            double speed = (double)pos * 1000.0 / MSPEED_SCALE;
+                        x = LogData[i + 2] * factor[1];
+                        s += "," + x.ToString();
+                        s += "," + (i == 0 ? 0 : x - prev[1]).ToString("F3");
+                        prev[1] = x;
 
-                            string s = ((double)LogData[i] / 1000.0 - startTs).ToString("F3");
-                            s += "," + speed.ToString("F3");
-                            s += "," + (i == 0 ? 0 : speed - prevSpeed).ToString("F3");
-                            sw.WriteLine(s);
-                            prevSpeed = speed;
-                        }
+                        sw.WriteLine(s);
                     }
                 }
                 LogData = new List<int>();
@@ -489,17 +512,40 @@ namespace ScopeDSCClient
 #endif
         }
 
-        private void comboBoxLoggingType_SelectedIndexChanged(object sender, EventArgs e)
+        private void comboBoxLoggingType0_SelectedIndexChanged(object sender, EventArgs e)
         {
 #if LOGGING_ON
-            switch (comboBoxLoggingType.SelectedIndex)
+            switch (comboBoxLoggingType0.SelectedIndex)
             {
-            case 0: LoggingType = ClientCommonAPI.LoggingType.M_POS; break;
-            case 1: LoggingType = ClientCommonAPI.LoggingType.M_SPD; break;
-            case 2: LoggingType = ClientCommonAPI.LoggingType.A_SPD; break;
+            case 0: LoggingType0 = ClientCommonAPI.LoggingType.M_POS; break;
+            case 1: LoggingType0 = ClientCommonAPI.LoggingType.M_LOG; break;
+            case 2: LoggingType0 = ClientCommonAPI.LoggingType.M_SPD; break;
+            case 3: LoggingType0 = ClientCommonAPI.LoggingType.M_ERR; break;
+            case 4: LoggingType0 = ClientCommonAPI.LoggingType.A_POS; break;
+            case 5: LoggingType0 = ClientCommonAPI.LoggingType.A_LOG; break;
+            case 6: LoggingType0 = ClientCommonAPI.LoggingType.A_SPD; break;
+            case 7: LoggingType0 = ClientCommonAPI.LoggingType.A_ERR; break;
             default: break;
-#endif
             }
+#endif
+        }
+
+        private void comboBoxLoggingType1_SelectedIndexChanged(object sender, EventArgs e)
+        {
+#if LOGGING_ON
+            switch (comboBoxLoggingType1.SelectedIndex)
+            {
+            case 0: LoggingType1 = ClientCommonAPI.LoggingType.M_POS; break;
+            case 1: LoggingType1 = ClientCommonAPI.LoggingType.M_LOG; break;
+            case 2: LoggingType1 = ClientCommonAPI.LoggingType.M_SPD; break;
+            case 3: LoggingType1 = ClientCommonAPI.LoggingType.M_ERR; break;
+            case 4: LoggingType1 = ClientCommonAPI.LoggingType.A_POS; break;
+            case 5: LoggingType1 = ClientCommonAPI.LoggingType.A_LOG; break;
+            case 6: LoggingType1 = ClientCommonAPI.LoggingType.A_SPD; break;
+            case 7: LoggingType1 = ClientCommonAPI.LoggingType.A_ERR; break;
+            default: break;
+            }
+#endif
         }
     }
 }

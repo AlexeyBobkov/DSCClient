@@ -710,6 +710,7 @@ namespace ScopeDSCClient
                                                ClientCommonAPI.LoggingState.DISABLED,
                                                ClientCommonAPI.LoggingChannel.UNUSED,
                                                ClientCommonAPI.LoggingType.UNUSED,
+                                               ClientCommonAPI.LoggingType.UNUSED,
                                                null);
             if (form.ShowDialog() != DialogResult.OK)
                 return;

@@ -27,13 +27,21 @@ namespace ScopeDriveControllerTest
         private const byte M_ALT = 2;   // command for alt motor (debug only)
         private const byte M_AZM = 3;   // command for azm motor (debug only)
 
-        private const byte LMODE_OFF = 0;
-        private const byte LMODE_POS_M_ALT = 2;
-        private const byte LMODE_POS_M_AZM = 3;
-        private const byte LMODE_SPD_M_ALT = 4;
-        private const byte LMODE_SPD_M_AZM = 5;
-        private const byte LMODE_SPD_A_ALT = 6;
-        private const byte LMODE_SPD_A_AZM = 7;
+        private const UInt16 LMODE_ALT = 0;
+        private const UInt16 LMODE_AZM = 0x8000;
+
+        private const UInt16 LMODE_FIRST = 1;
+        private const UInt16 LMODE_MPOS = 1;
+        private const UInt16 LMODE_MLOG = 2;
+        private const UInt16 LMODE_MSPD = 4;
+        private const UInt16 LMODE_MERR = 8;
+        private const UInt16 LMODE_APOS = 0x10;
+        private const UInt16 LMODE_ALOG = 0x20;
+        private const UInt16 LMODE_ASPD = 0x40;
+        private const UInt16 LMODE_AERR = 0x80;
+        private const UInt16 LMODE_LAST = 0x100;
+
+        private const UInt16 LMODE_OFF = 0;
 
         private byte mode_ = M_AZM;
         private bool ignoreModeButtonChanged_ = false;
@@ -164,44 +172,29 @@ namespace ScopeDriveControllerTest
         }
 
 #if LOGGING_ON
+        private UInt16 GetLoggingMode()
+        {
+            switch (mode_)
+            {
+            case M_ALT:
+            case A_ALT:
+                return (UInt16)((1 << comboBoxLoggingType0.SelectedIndex) | (1 << comboBoxLoggingType1.SelectedIndex));
+
+            case M_AZM:
+            case A_AZM:
+                return (UInt16)((1 << comboBoxLoggingType0.SelectedIndex) | (1 << comboBoxLoggingType1.SelectedIndex) | LMODE_AZM);
+
+            default:
+                return LMODE_OFF;
+            }
+        }
+
         private void SendLoggingMode()
         {
             if (connection_ != null)
             {
-                byte mode;
-                if (!started_ || !checkBoxLogging.Checked)
-                    mode = LMODE_OFF;
-                else
-                    switch (mode_)
-                    {
-                    case M_ALT:
-                    case A_ALT:
-                        switch (comboBoxLoggingType.SelectedIndex)
-                        {
-                        case 0: mode = LMODE_POS_M_ALT; break;
-                        case 1: mode = LMODE_SPD_M_ALT; break;
-                        case 2: mode = LMODE_SPD_A_ALT; break;
-                        default: mode = LMODE_OFF; break;
-                        }
-                        break;
-
-                    case M_AZM:
-                    case A_AZM:
-                        switch (comboBoxLoggingType.SelectedIndex)
-                        {
-                        case 0: mode = LMODE_POS_M_AZM; break;
-                        case 1: mode = LMODE_SPD_M_AZM; break;
-                        case 2: mode = LMODE_SPD_A_AZM; break;
-                        default: mode = LMODE_OFF; break;
-                        }
-                        break;
-
-                    default:
-                        mode = LMODE_OFF;
-                        break;
-                    }
-
-                SendCommand(connection_, new byte[] { (byte)'L', (byte)'m', mode }, 1, ReceiveDummy);
+                UInt16 loggingMode = (!started_ || !checkBoxLogging.Checked) ? LMODE_OFF : GetLoggingMode();
+                SendCommand(connection_, new byte[] { (byte)'L', (byte)'m', (byte)loggingMode, (byte)(loggingMode >> 8) }, 1, ReceiveDummy);
             }
         }
 #endif
@@ -330,10 +323,13 @@ namespace ScopeDriveControllerTest
         private Timeout tmoSendPos_ = new Timeout(8000);
 
 #if LOGGING_ON
-        UInt32 logStart_ = 0;
-        Int32 logAbsPos_ = Int32.MinValue, logAbsTs_ = Int32.MinValue;
-        int logNextBlockSize_ = 0;
-        List<Int32> logData_ = new List<int>();
+        private const int LOG_PERIOD = 200; //msec
+
+        private UInt32 logStart_ = 0;
+        private Int32 logTs_ = Int32.MinValue;
+        private Int32 logAbs1_ = Int32.MinValue, logAbs2_ = Int32.MinValue;
+        private int logNextBlockSize_ = 0;
+        private List<Int32> logData_ = new List<int>();
         private Timeout tmoAddLogData_ = new Timeout(1000);
 
         private void AddLogData(byte[] data)
@@ -344,7 +340,7 @@ namespace ScopeDriveControllerTest
             {
                 // force restart and re-synchronization
                 logStart_ = 0;
-                logAbsPos_ = logAbsTs_ = Int32.MinValue;
+                logAbs1_ = logAbs2_ = logTs_ = Int32.MinValue;
             }
 
             logNextBlockSize_ = stillInBuffer;
@@ -352,36 +348,47 @@ namespace ScopeDriveControllerTest
             for (int i = 0; i < reported; ++i)
             {
                 int start = i * 4 + 4;
-                if ((data[start + 3] & 0x80) != 0)
+                if (data[start + 3] == 0x80)
                 {
                     // re-sync!
                     logStart_ = (((UInt32)data[start + 3]) << 24) + (((UInt32)data[start + 2]) << 16) + (((UInt32)data[start + 1]) << 8) + (UInt32)data[start];
-                    logAbsPos_ = logAbsTs_ = Int32.MinValue;
+                    logAbs1_ = logAbs2_ = logTs_ = Int32.MinValue;
                     continue;
                 }
                 if (logStart_ == 0)
                     continue;       // skip it: waiting for re-sync
-                if (logAbsPos_ == Int32.MinValue)
-                {
 
-                    logAbsPos_ = (Int32)((((UInt32)(byte)logStart_) << 24) + (((UInt32)data[start + 2]) << 16) + (((UInt32)data[start + 1]) << 8) + (UInt32)data[start]);
+                if (logTs_ == Int32.MinValue)
+                {
+                    logTs_ = (Int32)((((UInt32)(byte)(logStart_ & 1L)) << 31) + (((UInt32)data[start + 3]) << 24) + 
+                                     (((UInt32)data[start + 2]) << 16) + (((UInt32)data[start + 1]) << 8) + (UInt32)data[start]);
+                    continue;
+                }
+                if (logAbs1_ == Int32.MinValue)
+                {
+                    logAbs1_ = (Int32)((((UInt32)(byte)(logStart_ & 2L)) << 30) + (((UInt32)data[start + 3]) << 24) +
+                                       (((UInt32)data[start + 2]) << 16) + (((UInt32)data[start + 1]) << 8) + (UInt32)data[start]);
                     continue;
                 }
 
-                Int32 pos, ts;
-                if (logAbsTs_ == Int32.MinValue)
+                Int32 pos1, pos2;
+                if (logAbs2_ == Int32.MinValue)
                 {
-                    pos = logAbsPos_;
-                    ts = logAbsTs_ = (Int32)((((UInt32)(byte)(logStart_ >> 8)) << 24) + (((UInt32)data[start + 2]) << 16) + (((UInt32)data[start + 1]) << 8) + (UInt32)data[start]);
+                    pos1 = logAbs1_;
+                    pos2 = logAbs2_ = (Int32)((((UInt32)(byte)(logStart_ & 4L)) << 29) + (((UInt32)data[start + 3]) << 24) +
+                                              (((UInt32)data[start + 2]) << 16) + (((UInt32)data[start + 1]) << 8) + (UInt32)data[start]);
                 }
                 else
                 {
-                    pos = logAbsPos_ + (Int16)((((UInt16)data[start + 1]) << 8) + (UInt16)data[start]);
-                    ts = logAbsTs_ + (Int16)((((UInt16)data[start + 3]) << 8) + (UInt16)data[start + 2]);
+                    pos1 = logAbs1_ + (Int16)((((UInt16)data[start + 1]) << 8) + (UInt16)data[start]);
+                    pos2 = logAbs2_ + (Int16)((((UInt16)data[start + 3]) << 8) + (UInt16)data[start + 2]);
                 }
 
-                logData_.Add(ts);
-                logData_.Add(pos);
+                logData_.Add(logTs_);
+                logData_.Add(pos1);
+                logData_.Add(pos2);
+
+                logTs_ += LOG_PERIOD;
             }
         }
 #endif
@@ -521,14 +528,30 @@ namespace ScopeDriveControllerTest
 
 #if LOGGING_ON
             checkBoxLogging.Checked = true;
-            comboBoxLoggingType.Items.Add("Motor Position");
-            comboBoxLoggingType.Items.Add("Motor Speed");
-            comboBoxLoggingType.Items.Add("Adapter Speed");
-            comboBoxLoggingType.SelectedIndex = 0;
+            comboBoxLoggingType0.Items.Add("M POS");
+            comboBoxLoggingType0.Items.Add("M LOG");
+            comboBoxLoggingType0.Items.Add("M SPD");
+            comboBoxLoggingType0.Items.Add("M ERR");
+            comboBoxLoggingType0.Items.Add("A POS");
+            comboBoxLoggingType0.Items.Add("A LOG");
+            comboBoxLoggingType0.Items.Add("A SPD");
+            comboBoxLoggingType0.Items.Add("A ERR");
+            comboBoxLoggingType0.SelectedIndex = 0;
+
+            comboBoxLoggingType1.Items.Add("M POS");
+            comboBoxLoggingType1.Items.Add("M LOG");
+            comboBoxLoggingType1.Items.Add("M SPD");
+            comboBoxLoggingType1.Items.Add("M ERR");
+            comboBoxLoggingType1.Items.Add("A POS");
+            comboBoxLoggingType1.Items.Add("A LOG");
+            comboBoxLoggingType1.Items.Add("A SPD");
+            comboBoxLoggingType1.Items.Add("A ERR");
+            comboBoxLoggingType1.SelectedIndex = 0;
 #else
             checkBoxLogging.Visible = false;
             buttonSaveLog.Visible = false;
-            comboBoxLoggingType.Visible = false;
+            comboBoxLoggingType0.Visible = false;
+            comboBoxLoggingType1.Visible = false;
 #endif
             init_ = true;
         }
@@ -603,7 +626,7 @@ namespace ScopeDriveControllerTest
                     int logCnt = logNextBlockSize_ + 5;
                     if (logCnt > 14)
                         logCnt = 14;
-                    SendCommand(connection_, new byte[] { (byte)'L', (byte)'w', (byte)logCnt }, 4 + logCnt * 4, AddLogData);
+                    SendCommand(connection_, new byte[] { (byte)'L', (byte)'w', (byte)logCnt, 0 }, 4 + logCnt * 4, AddLogData);
                 }
 #endif
             }
@@ -697,10 +720,40 @@ namespace ScopeDriveControllerTest
             if (started_ || logData_.Count == 0)
                 return;
 
-            SaveFileDialog savefile = new SaveFileDialog();
+            UInt16 loggingMode = GetLoggingMode();
+            string name = "";
 
+            string[] posName = new string[2] {"", ""};
+            double[] factor = new double[2] {1.0, 1.0};
+            int i = 0;
+            for(UInt16 mask = LMODE_FIRST; mask != LMODE_LAST; mask <<= 1)
+            {
+                if ((loggingMode & mask) != 0)
+                {
+                    switch(mask)
+                    {
+                    default:            name += "UNKN_"; posName[i] = ""; break;
+                    case LMODE_MPOS:    name += "MPOS_"; posName[i] = "MPOS"; break;
+                    case LMODE_MLOG:    name += "MLOG_"; posName[i] = "MLOG"; break;
+                    case LMODE_MSPD:    name += "MSPD_"; posName[i] = "MSPD(u/s)"; factor[i] = 1000.0 / MSPEED_SCALE; break;
+                    case LMODE_MERR:    name += "MERR_"; posName[i] = "MERR"; break;
+                    case LMODE_APOS:    name += "APOS_"; posName[i] = "APOS"; break;
+                    case LMODE_ALOG:    name += "ALOG_"; posName[i] = "ALOG"; break;
+                    case LMODE_ASPD:    name += "ASPD_"; posName[i] = "ASPD(u/s)"; factor[i] = 1000.0 / MSPEED_SCALE; break;
+                    case LMODE_AERR:    name += "AERR_"; posName[i] = "AERR"; break;
+                    }
+                    if (++i >= 2)
+                        break;
+                }
+            }
+            if ((loggingMode & LMODE_AZM) != 0)
+                name += "AZM_";
+            else
+                name += "ALT_";
+            string header = "Time(s)," + posName[0] + ",diff0,," + posName[1] + ",diff1";
+
+            SaveFileDialog savefile = new SaveFileDialog();
             DateTime dt = DateTime.Now;
-            string name = comboBoxLoggingType.SelectedIndex == 0 ? "LoggingPos" : "LoggingSpeed";
             savefile.FileName = String.Format("{6}{0}-{1}-{2}_{3}-{4}-{5}.csv",
                 dt.Year.ToString("D4"), dt.Month.ToString("D2"), dt.Day.ToString("D2"), dt.Hour.ToString("D2"), dt.Minute.ToString("D2"), dt.Second.ToString("D2"), name);
             savefile.Filter = "CSV files (*.csv)|*.csv|All files (*.*)|*.*";
@@ -721,51 +774,25 @@ namespace ScopeDriveControllerTest
             {
                 using (System.IO.StreamWriter sw = new System.IO.StreamWriter(savefile.FileName))
                 {
-                    switch (comboBoxLoggingType.SelectedIndex)
+                    sw.WriteLine(header);
+                    double startTs = (double)logData_[0] / 1000.0;
+                    double[] prev = new double[2] {0.0, 0.0};
+                    for (i = 0; i < logData_.Count; i += 3)
                     {
-                    case 0:
-                        {
-                            sw.WriteLine("Time(s),Position,Angle,Diff");
-                            double startTs = (double)logData_[0] / 1000.0;
-                            double prevAngle = 0;
-                            for (int i = 0; i < logData_.Count; i += 2)
-                            {
-                                int pos = logData_[i + 1];
-                                double angle = (double)pos * 360.0 * 60.0 / ((double)M_RESOLUTION * 28.0 * 20.0);
+                        string s = ((double)logData_[i] / 1000.0 - startTs).ToString("F3");
+                        double x = logData_[i+1] * factor[0];
+                        s += "," + x.ToString();
+                        s += "," + (i == 0 ? 0 : x - prev[0]).ToString("F3");
+                        prev[0] = x;
 
-                                string s = ((double)logData_[i] / 1000.0 - startTs).ToString("F3");
-                                s += "," + pos.ToString();
-                                s += "," + angle.ToString("F3");
-                                s += "," + (i == 0 ? 0 : angle - prevAngle).ToString("F3");
-                                sw.WriteLine(s);
+                        s += ",";
 
-                                prevAngle = angle;
-                            }
-                        }
-                        break;
+                        x = logData_[i+2] * factor[1];
+                        s += "," + x.ToString();
+                        s += "," + (i == 0 ? 0 : x - prev[1]).ToString("F3");
+                        prev[1] = x;
 
-                    case 1:
-                    case 2:
-                        {
-                            sw.WriteLine("Time(s),Speed(u/sec),Diff");
-                            double startTs = (double)logData_[0] / 1000.0;
-                            double prevSpeed = 0;
-                            for (int i = 0; i < logData_.Count; i += 2)
-                            {
-                                int pos = logData_[i + 1];
-                                double speed = (double)pos * 1000.0 / MSPEED_SCALE;
-
-                                string s = ((double)logData_[i] / 1000.0 - startTs).ToString("F3");
-                                s += "," + speed.ToString("F3");
-                                s += "," + (i == 0 ? 0 : speed - prevSpeed).ToString("F3");
-                                sw.WriteLine(s);
-                                prevSpeed = speed;
-                            }
-                        }
-                        break;
-
-                    default:
-                        break;
+                        sw.WriteLine(s);
                     }
                 }
                 logData_ = new List<int>();
@@ -784,7 +811,14 @@ namespace ScopeDriveControllerTest
 #endif
         }
 
-        private void comboBoxLoggingType_SelectedIndexChanged(object sender, EventArgs e)
+        private void comboBoxLoggingType0_SelectedIndexChanged(object sender, EventArgs e)
+        {
+#if LOGGING_ON
+            SendLoggingMode();
+#endif
+        }
+
+        private void comboBoxLoggingType1_SelectedIndexChanged(object sender, EventArgs e)
         {
 #if LOGGING_ON
             SendLoggingMode();

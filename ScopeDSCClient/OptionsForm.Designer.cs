@@ -53,7 +53,8 @@
             this.checkBoxLogging = new System.Windows.Forms.CheckBox();
             this.buttonSaveLog = new System.Windows.Forms.Button();
             this.checkBoxLoggingAZM = new System.Windows.Forms.CheckBox();
-            this.comboBoxLoggingType = new System.Windows.Forms.ComboBox();
+            this.comboBoxLoggingType0 = new System.Windows.Forms.ComboBox();
+            this.comboBoxLoggingType1 = new System.Windows.Forms.ComboBox();
             this.groupBoxLocUnits.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -303,7 +304,7 @@
             // checkBoxLogging
             // 
             this.checkBoxLogging.AutoSize = true;
-            this.checkBoxLogging.Location = new System.Drawing.Point(292, 456);
+            this.checkBoxLogging.Location = new System.Drawing.Point(135, 456);
             this.checkBoxLogging.Name = "checkBoxLogging";
             this.checkBoxLogging.Size = new System.Drawing.Size(76, 33);
             this.checkBoxLogging.TabIndex = 20;
@@ -324,7 +325,7 @@
             // checkBoxLoggingAZM
             // 
             this.checkBoxLoggingAZM.AutoSize = true;
-            this.checkBoxLoggingAZM.Location = new System.Drawing.Point(384, 457);
+            this.checkBoxLoggingAZM.Location = new System.Drawing.Point(227, 457);
             this.checkBoxLoggingAZM.Name = "checkBoxLoggingAZM";
             this.checkBoxLoggingAZM.Size = new System.Drawing.Size(84, 33);
             this.checkBoxLoggingAZM.TabIndex = 22;
@@ -332,22 +333,33 @@
             this.checkBoxLoggingAZM.UseVisualStyleBackColor = true;
             this.checkBoxLoggingAZM.CheckedChanged += new System.EventHandler(this.checkBoxLoggingAZM_CheckedChanged);
             // 
-            // comboBoxLoggingType
+            // comboBoxLoggingType0
             // 
-            this.comboBoxLoggingType.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.comboBoxLoggingType.FormattingEnabled = true;
-            this.comboBoxLoggingType.Location = new System.Drawing.Point(481, 454);
-            this.comboBoxLoggingType.Name = "comboBoxLoggingType";
-            this.comboBoxLoggingType.Size = new System.Drawing.Size(121, 37);
-            this.comboBoxLoggingType.TabIndex = 23;
-            this.comboBoxLoggingType.SelectedIndexChanged += new System.EventHandler(this.comboBoxLoggingType_SelectedIndexChanged);
+            this.comboBoxLoggingType0.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.comboBoxLoggingType0.FormattingEnabled = true;
+            this.comboBoxLoggingType0.Location = new System.Drawing.Point(324, 454);
+            this.comboBoxLoggingType0.Name = "comboBoxLoggingType0";
+            this.comboBoxLoggingType0.Size = new System.Drawing.Size(121, 37);
+            this.comboBoxLoggingType0.TabIndex = 23;
+            this.comboBoxLoggingType0.SelectedIndexChanged += new System.EventHandler(this.comboBoxLoggingType0_SelectedIndexChanged);
+            // 
+            // comboBoxLoggingType1
+            // 
+            this.comboBoxLoggingType1.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.comboBoxLoggingType1.FormattingEnabled = true;
+            this.comboBoxLoggingType1.Location = new System.Drawing.Point(467, 454);
+            this.comboBoxLoggingType1.Name = "comboBoxLoggingType1";
+            this.comboBoxLoggingType1.Size = new System.Drawing.Size(121, 37);
+            this.comboBoxLoggingType1.TabIndex = 24;
+            this.comboBoxLoggingType1.SelectedIndexChanged += new System.EventHandler(this.comboBoxLoggingType1_SelectedIndexChanged);
             // 
             // OptionsForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(15F, 29F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(828, 683);
-            this.Controls.Add(this.comboBoxLoggingType);
+            this.Controls.Add(this.comboBoxLoggingType1);
+            this.Controls.Add(this.comboBoxLoggingType0);
             this.Controls.Add(this.checkBoxLoggingAZM);
             this.Controls.Add(this.buttonSaveLog);
             this.Controls.Add(this.checkBoxLogging);
@@ -411,6 +423,7 @@
         private System.Windows.Forms.CheckBox checkBoxLogging;
         private System.Windows.Forms.Button buttonSaveLog;
         private System.Windows.Forms.CheckBox checkBoxLoggingAZM;
-        private System.Windows.Forms.ComboBox comboBoxLoggingType;
+        private System.Windows.Forms.ComboBox comboBoxLoggingType0;
+        private System.Windows.Forms.ComboBox comboBoxLoggingType1;
     }
 }

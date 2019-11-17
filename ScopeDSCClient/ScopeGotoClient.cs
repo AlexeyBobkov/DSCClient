@@ -92,18 +92,27 @@ namespace ScopeDSCClient
         private const byte A_ALT = 0;   // command for alt adapter
         private const byte A_AZM = 1;   // command for azm adapter
 
-        private const byte LMODE_OFF = 0;
-        private const byte LMODE_POS_M_ALT = 2;
-        private const byte LMODE_POS_M_AZM = 3;
-        private const byte LMODE_SPD_M_ALT = 4;
-        private const byte LMODE_SPD_M_AZM = 5;
-        private const byte LMODE_SPD_A_ALT = 6;
-        private const byte LMODE_SPD_A_AZM = 7;
+        private const UInt16 LMODE_ALT = 0;
+        private const UInt16 LMODE_AZM = 0x8000;
+
+        private const UInt16 LMODE_FIRST = 1;
+        private const UInt16 LMODE_MPOS = 1;
+        private const UInt16 LMODE_MLOG = 2;
+        private const UInt16 LMODE_MSPD = 4;
+        private const UInt16 LMODE_MERR = 8;
+        private const UInt16 LMODE_APOS = 0x10;
+        private const UInt16 LMODE_ALOG = 0x20;
+        private const UInt16 LMODE_ASPD = 0x40;
+        private const UInt16 LMODE_AERR = 0x80;
+        private const UInt16 LMODE_LAST = 0x100;
+
+        private const UInt16 LMODE_OFF = 0;
 
 #if LOGGING_ON
         private ClientCommonAPI.LoggingState loggingState_      = ClientCommonAPI.LoggingState.OFF;
         private ClientCommonAPI.LoggingChannel loggingChannel_  = ClientCommonAPI.LoggingChannel.AZM;
-        private ClientCommonAPI.LoggingType loggingType_        = ClientCommonAPI.LoggingType.M_POS;
+        private ClientCommonAPI.LoggingType loggingType0_       = ClientCommonAPI.LoggingType.M_POS;
+        private ClientCommonAPI.LoggingType loggingType1_       = ClientCommonAPI.LoggingType.M_POS;
         private List<int> logData_ = new List<int>();
 #endif
 
@@ -787,11 +796,13 @@ namespace ScopeDSCClient
 #if LOGGING_ON
                                                loggingState_,
                                                loggingChannel_,
-                                               loggingType_,
+                                               loggingType0_,
+                                               loggingType1_,
                                                logData_);
 #else
                                                ClientCommonAPI.LoggingState.DISABLED,
                                                ClientCommonAPI.LoggingChannel.UNUSED,
+                                               ClientCommonAPI.LoggingType.UNUSED,
                                                ClientCommonAPI.LoggingType.UNUSED,
                                                null);
 #endif
@@ -834,7 +845,8 @@ namespace ScopeDSCClient
 #if LOGGING_ON
             loggingState_ = form.LoggingState;
             loggingChannel_ = form.LoggingChannel;
-            loggingType_ = form.LoggingType;
+            loggingType0_ = form.LoggingType0;
+            loggingType1_ = form.LoggingType1;
             logData_ = form.LogData;
 #endif
             UpdateUI();
@@ -873,7 +885,7 @@ namespace ScopeDSCClient
                 int logCnt = logNextBlockSize_ + 5;
                 if (logCnt > 14)
                     logCnt = 14;
-                SendCommand(connectionGoTo_, new byte[] { (byte)'L', (byte)'w', (byte)logCnt }, 4 + logCnt * 4, AddLogData);
+                SendCommand(connectionGoTo_, new byte[] { (byte)'L', (byte)'w', (byte)logCnt, 0 }, 4 + logCnt * 4, AddLogData);
             }
 #endif
             UpdateUI(sendPositionToStellarium);
@@ -1079,8 +1091,10 @@ namespace ScopeDSCClient
         }
 
 #if LOGGING_ON
+        private const int LOG_PERIOD = 200; //msec
         private UInt32 logStart_ = 0;
-        private Int32 logAbsPos_ = Int32.MinValue, logAbsTs_ = Int32.MinValue;
+        private Int32 logTs_ = Int32.MinValue;
+        private Int32 logAbs1_ = Int32.MinValue, logAbs2_ = Int32.MinValue;
         private int logNextBlockSize_ = 0;
         private ClientCommonAPI.Timeout tmoAddLogData_ = new ClientCommonAPI.Timeout(1000);
 
@@ -1092,7 +1106,7 @@ namespace ScopeDSCClient
             {
                 // force restart and re-synchronization
                 logStart_ = 0;
-                logAbsPos_ = logAbsTs_ = Int32.MinValue;
+                logAbs1_ = logAbs2_ = logTs_ = Int32.MinValue;
             }
 
             logNextBlockSize_ = stillInBuffer;
@@ -1100,36 +1114,47 @@ namespace ScopeDSCClient
             for (int i = 0; i < reported; ++i)
             {
                 int start = i * 4 + 4;
-                if ((data[start + 3] & 0x80) != 0)
+                if (data[start + 3] == 0x80)
                 {
                     // re-sync!
                     logStart_ = (((UInt32)data[start + 3]) << 24) + (((UInt32)data[start + 2]) << 16) + (((UInt32)data[start + 1]) << 8) + (UInt32)data[start];
-                    logAbsPos_ = logAbsTs_ = Int32.MinValue;
+                    logAbs1_ = logAbs2_ = logTs_ = Int32.MinValue;
                     continue;
                 }
                 if (logStart_ == 0)
                     continue;       // skip it: waiting for re-sync
-                if (logAbsPos_ == Int32.MinValue)
-                {
 
-                    logAbsPos_ = (Int32)((((UInt32)(byte)logStart_) << 24) + (((UInt32)data[start + 2]) << 16) + (((UInt32)data[start + 1]) << 8) + (UInt32)data[start]);
+                if (logTs_ == Int32.MinValue)
+                {
+                    logTs_ = (Int32)((((UInt32)(byte)(logStart_ & 1L)) << 31) + (((UInt32)data[start + 3]) << 24) +
+                                     (((UInt32)data[start + 2]) << 16) + (((UInt32)data[start + 1]) << 8) + (UInt32)data[start]);
+                    continue;
+                }
+                if (logAbs1_ == Int32.MinValue)
+                {
+                    logAbs1_ = (Int32)((((UInt32)(byte)(logStart_ & 2L)) << 30) + (((UInt32)data[start + 3]) << 24) +
+                                       (((UInt32)data[start + 2]) << 16) + (((UInt32)data[start + 1]) << 8) + (UInt32)data[start]);
                     continue;
                 }
 
-                Int32 pos, ts;
-                if (logAbsTs_ == Int32.MinValue)
+                Int32 pos1, pos2;
+                if (logAbs2_ == Int32.MinValue)
                 {
-                    pos = logAbsPos_;
-                    ts = logAbsTs_ = (Int32)((((UInt32)(byte)(logStart_ >> 8)) << 24) + (((UInt32)data[start + 2]) << 16) + (((UInt32)data[start + 1]) << 8) + (UInt32)data[start]);
+                    pos1 = logAbs1_;
+                    pos2 = logAbs2_ = (Int32)((((UInt32)(byte)(logStart_ & 4L)) << 29) + (((UInt32)data[start + 3]) << 24) +
+                                              (((UInt32)data[start + 2]) << 16) + (((UInt32)data[start + 1]) << 8) + (UInt32)data[start]);
                 }
                 else
                 {
-                    pos = logAbsPos_ + (Int16)((((UInt16)data[start + 1]) << 8) + (UInt16)data[start]);
-                    ts = logAbsTs_ + (Int16)((((UInt16)data[start + 3]) << 8) + (UInt16)data[start + 2]);
+                    pos1 = logAbs1_ + (Int16)((((UInt16)data[start + 1]) << 8) + (UInt16)data[start]);
+                    pos2 = logAbs2_ + (Int16)((((UInt16)data[start + 3]) << 8) + (UInt16)data[start + 2]);
                 }
 
-                logData_.Add(ts);
-                logData_.Add(pos);
+                logData_.Add(logTs_);
+                logData_.Add(pos1);
+                logData_.Add(pos2);
+
+                logTs_ += LOG_PERIOD;
             }
         }
 
@@ -1137,46 +1162,59 @@ namespace ScopeDSCClient
         {
             if (connectionGoTo_ != null)
             {
-                byte mode;
+                UInt16 loggingMode = 0;
                 if (trackedObject_ == null)
-                    mode = LMODE_OFF;
+                    loggingMode = LMODE_OFF;
                 else
                     switch (loggingState_)
                     {
                     default:
-                        mode = LMODE_OFF;
                         break;
 
                     case ClientCommonAPI.LoggingState.ON:
+                        switch (loggingType0_)
+                        {
+                        default: break;
+                        case ClientCommonAPI.LoggingType.M_POS: loggingMode = LMODE_MPOS; break;
+                        case ClientCommonAPI.LoggingType.M_LOG: loggingMode = LMODE_MLOG; break;
+                        case ClientCommonAPI.LoggingType.M_SPD: loggingMode = LMODE_MSPD; break;
+                        case ClientCommonAPI.LoggingType.M_ERR: loggingMode = LMODE_MERR; break;
+                        case ClientCommonAPI.LoggingType.A_POS: loggingMode = LMODE_APOS; break;
+                        case ClientCommonAPI.LoggingType.A_LOG: loggingMode = LMODE_ALOG; break;
+                        case ClientCommonAPI.LoggingType.A_SPD: loggingMode = LMODE_ASPD; break;
+                        case ClientCommonAPI.LoggingType.A_ERR: loggingMode = LMODE_AERR; break;
+                        }
+
+                        switch (loggingType1_)
+                        {
+                        default: break;
+                        case ClientCommonAPI.LoggingType.M_POS: loggingMode |= LMODE_MPOS; break;
+                        case ClientCommonAPI.LoggingType.M_LOG: loggingMode |= LMODE_MLOG; break;
+                        case ClientCommonAPI.LoggingType.M_SPD: loggingMode |= LMODE_MSPD; break;
+                        case ClientCommonAPI.LoggingType.M_ERR: loggingMode |= LMODE_MERR; break;
+                        case ClientCommonAPI.LoggingType.A_POS: loggingMode |= LMODE_APOS; break;
+                        case ClientCommonAPI.LoggingType.A_LOG: loggingMode |= LMODE_ALOG; break;
+                        case ClientCommonAPI.LoggingType.A_SPD: loggingMode |= LMODE_ASPD; break;
+                        case ClientCommonAPI.LoggingType.A_ERR: loggingMode |= LMODE_AERR; break;
+                        }
+
                         switch (loggingChannel_)
                         {
                         default:
-                            mode = LMODE_OFF;
+                            loggingMode = LMODE_OFF;
                             break;
 
                         case ClientCommonAPI.LoggingChannel.ALT:
-                            switch (loggingType_)
-                            {
-                            default:                                mode = LMODE_OFF; break;
-                            case ClientCommonAPI.LoggingType.M_POS: mode = LMODE_POS_M_ALT; break;
-                            case ClientCommonAPI.LoggingType.M_SPD: mode = LMODE_SPD_M_ALT; break;
-                            case ClientCommonAPI.LoggingType.A_SPD: mode = LMODE_SPD_A_ALT; break;
-                            }
+                            loggingMode |= LMODE_ALT;
                             break;
 
                         case ClientCommonAPI.LoggingChannel.AZM:
-                            switch (loggingType_)
-                            {
-                            default:                                mode = LMODE_OFF; break;
-                            case ClientCommonAPI.LoggingType.M_POS: mode = LMODE_POS_M_AZM; break;
-                            case ClientCommonAPI.LoggingType.M_SPD: mode = LMODE_SPD_M_AZM; break;
-                            case ClientCommonAPI.LoggingType.A_SPD: mode = LMODE_SPD_A_AZM; break;
-                            }
+                            loggingMode |= LMODE_AZM;
                             break;
                         }
                         break;
                     }
-                SendCommand(connectionGoTo_, new byte[] { (byte)'L', (byte)'m', mode }, 1, ReceiveDummy);
+                SendCommand(connectionGoTo_, new byte[] { (byte)'L', (byte)'m', (byte)loggingMode, (byte)(loggingMode >> 8) }, 1, ReceiveDummy);
             }
         }
 #endif

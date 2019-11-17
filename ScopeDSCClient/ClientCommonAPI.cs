@@ -31,9 +31,14 @@ namespace ScopeDSCClient
         }
         public enum LoggingType
         {
-            M_POS = 0,  // motor position
-            M_SPD = 1,  // motor speed
-            A_SPD = 2,  // adapter speed
+            M_POS = 0,  // motor physical position
+            M_LOG = 1,  // motor logical position
+            M_SPD = 2,  // motor speed
+            M_ERR = 3,  // motor error
+            A_POS = 4,  // adapter physical position
+            A_LOG = 5,  // adapter logical position
+            A_SPD = 6,  // adapter speed
+            A_ERR = 7,  // adapter error
             UNUSED
         }
 

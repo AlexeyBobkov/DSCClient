@@ -419,6 +419,7 @@ namespace ScopeDSCClient
         }
 
         private const double MSPEED_SCALE = 4000.0;
+        private const double ASPEED_SCALE = 600000.0;
         private void buttonSaveLog_Click(object sender, EventArgs e)
         {
 #if LOGGING_ON
@@ -443,7 +444,7 @@ namespace ScopeDSCClient
                 case ClientCommonAPI.LoggingType.M_ERR: name += "MERR_"; posName[i] = "MERR"; break;
                 case ClientCommonAPI.LoggingType.A_POS: name += "APOS_"; posName[i] = "APOS"; break;
                 case ClientCommonAPI.LoggingType.A_LOG: name += "ALOG_"; posName[i] = "ALOG"; break;
-                case ClientCommonAPI.LoggingType.A_SPD: name += "ASPD_"; posName[i] = "ASPD(u/s)"; factor[i] = 1000.0 / MSPEED_SCALE; break;
+                case ClientCommonAPI.LoggingType.A_SPD: name += "ASPD_"; posName[i] = "ASPD(u/s)"; factor[i] = 1000.0 / ASPEED_SCALE; break;
                 case ClientCommonAPI.LoggingType.A_ERR: name += "AERR_"; posName[i] = "AERR"; break;
                 }
             }

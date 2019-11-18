@@ -24,7 +24,7 @@ namespace ScopeDSCClient
         private UInt16 timerCnt_;
         private bool swapAzmAltEncoders_ = false;
         private int azmRes_, altRes_;
-        private int azmPos_, altPos_;
+        private int azmPosU_, altPosU_;   // current positions, in encoder units
         private bool positionsValid_ = false;
         private int iInitWidth_ = 1200, iInitHeight_ = 675;
         private float positionFontSize_ = (float)96;
@@ -71,8 +71,10 @@ namespace ScopeDSCClient
         // time sync
         private Int32 controllerTs_;
         private DateTime thisTs_;       // UTC time
+        private DateTime refTs_;        // UTC time
+        private double altRefPosU_, azmRefPosU_;  // in encoder units
+        private double altRefSpeedUMs_, azmRefSpeedUMs_; // in units/ms
         private ClientCommonAPI.Timeout tmoSendPos_ = new ClientCommonAPI.Timeout(3500);
-        private int nextPosTimeSec_ = 4;
         private double arrowMoveSpeed_ = 1 / 30.0;  // degree
 
         private bool posTextChanged_ = true;
@@ -227,23 +229,30 @@ namespace ScopeDSCClient
             fullScreen_ = false;
         }
 
+        // in radians
         public double AzmAngle
         {
-            get { return (double)(azmPos_) * 2 * Math.PI / (azmRes_ != 0 ? (double)azmRes_ : 1); }
+            get { return (double)(azmPosU_) * 2 * Math.PI / (azmRes_ != 0 ? (double)azmRes_ : 1); }
         }
-
         public double AzmAngleLimited
         {
             get
             {
                 int res = azmRes_ > 0 ? azmRes_ : 1;
-                return (double)(azmPos_ >= 0 ? (azmPos_ % res) : res - 1 - ((-azmPos_ - 1) % res)) * 2 * Math.PI / res;
+                return (double)(azmPosU_ >= 0 ? (azmPosU_ % res) : res - 1 - ((-azmPosU_ - 1) % res)) * 2 * Math.PI / res;
             }
         }
-
         public double AltAngle
         {
-            get { return (double)(altPos_) * 2 * Math.PI / (altRes_ != 0 ? (double)altRes_ : 1); }
+            get { return (double)(altPosU_) * 2 * Math.PI / (altRes_ != 0 ? (double)altRes_ : 1); }
+        }
+        public double AzmRefAngle
+        {
+            get { return (double)(azmRefPosU_) * 2 * Math.PI / (azmRes_ != 0 ? (double)azmRes_ : 1); }
+        }
+        public double AltRefAngle
+        {
+            get { return (double)(altRefPosU_) * 2 * Math.PI / (altRes_ != 0 ? (double)altRes_ : 1); }
         }
 
         private class ClientHost : ClientCommonAPI.IClientHost
@@ -1002,10 +1011,24 @@ namespace ScopeDSCClient
                                                           (byte)(ts >> 16),
                                                           (byte)(ts >> 24)}, 8, ReceiveNextPosCommand);
         }
+        private void SendSetSpeedCommand(Int32 speed, byte dst)
+        {
+            if (connectionGoTo_ != null)
+                SendCommand(connectionGoTo_, new byte[] { (byte)'V',
+                                                          dst,
+                                                          (byte)speed,
+                                                          (byte)(speed >> 8),
+                                                          (byte)(speed >> 16),
+                                                          (byte)(speed >> 24)}, 8, ReceiveSetSpeedCommand);
+        }
         
         private bool altStartSent_, azmStartSent_;
         private void StartMotors()
         {
+            altRefPosU_ = altPosU_;
+            azmRefPosU_ = azmPosU_;
+            refTs_ = thisTs_;
+            altRefSpeedUMs_ = azmRefSpeedUMs_ = 0;
             if (connectionGoTo_ != null && connectionGoTo_.connection_ != null)
             {
                 Int32 speed = 0;
@@ -1047,46 +1070,71 @@ namespace ScopeDSCClient
             SerialError(connection);
         }
 
+        private void CalcScopeShifts(DateTime nextTs, out double altdDeg, out double azmdDeg)
+        {
+            // next timestamp
+            double d = ClientCommonAPI.CalcTime(nextTs);
+
+            // calculate scope positions
+            double azm, alt;    // in degree
+            {
+                double dec, ra;
+                trackedObject_.CalcTopoRaDec(d, latitude_, longitude_, out dec, out ra);
+                SkyObjectPosCalc.Equ2AzAlt(d, latitude_, longitude_, dec + trackedOffsetDec_, ra + trackedOffsetRa_, out azm, out alt);
+            }
+            PairA objScope = alignment_.Horz2Scope(new PairA(azm * Const.toRad, alt * Const.toRad), 0);
+
+            // azimuth difference, in degree
+            azmdDeg = SkyObjectPosCalc.Rev(objScope.Azm * Const.toDeg - AzmRefAngle * Const.toDeg);
+            if (azmdDeg > 180)
+                azmdDeg -= 360;
+
+            // altitude difference, in degree
+#if TESTING
+            altdDeg = 0;
+#else
+            altdDeg = (objScope.Alt - AltRefAngle) * Const.toDeg;
+#endif
+        }
+
         private void SendNextPositions()
         {
             if (trackedObject_ != null && alignment_ != null)
             {
-                // next timestamp
-                DateTime nextThisTs = DateTime.UtcNow + new TimeSpan(0, 0, nextPosTimeSec_);
-
-                // calculate next positions
-                double d = ClientCommonAPI.CalcTime(nextThisTs);
-
-                double azm, alt;
-                //trackedObject_.CalcAzimuthal(d, latitude_, longitude_, out azm, out alt);
+                //DateTime now = DateTime.UtcNow;
+                double nextPosTimeSec = 100;    // in seconds
+                DateTime nextTs;
+                double altdU, azmdU;    // differences, in encoder units
+                for (; ; )
                 {
-                    double dec, ra;
-                    trackedObject_.CalcTopoRaDec(d, latitude_, longitude_, out dec, out ra);
-                    SkyObjectPosCalc.Equ2AzAlt(d, latitude_, longitude_, dec + trackedOffsetDec_, ra + trackedOffsetRa_, out azm, out alt);
+                    double altdDeg, azmdDeg;  // differences, in degrees
+                    nextTs = refTs_ + new TimeSpan(0, 0, 0, 0, Convert.ToInt32(nextPosTimeSec * 1000));
+                    CalcScopeShifts(nextTs, out altdDeg, out azmdDeg);
+
+                    // convert differences to encoder units
+                    altdU = altdDeg * altRes_ / 360.0;
+                    azmdU = azmdDeg * azmRes_ / 360.0;
+                    if ((Math.Abs(altdU) <= 3 && Math.Abs(azmdU) <= 3) || nextPosTimeSec <= 4)
+                        break;
+                    nextPosTimeSec *= 0.7;
                 }
-                PairA objScope = alignment_.Horz2Scope(new PairA(azm * Const.toRad, alt * Const.toRad), 0);
 
-                // azimuth difference, in degree
-                double azmd = SkyObjectPosCalc.Rev(objScope.Azm * Const.toDeg - AzmAngle * Const.toDeg);
-                if (azmd > 180)
-                    azmd -= 360;
+#if !TESTING
+                double altSpeed = altdU * 60 * 60 * 24 / nextPosTimeSec;
+                SendSetSpeedCommand(Convert.ToInt32(altSpeed), A_ALT);
+#endif
+                double azmSpeed = azmdU * 60 * 60 * 24 / nextPosTimeSec;
+                SendSetSpeedCommand(Convert.ToInt32(azmSpeed), A_AZM);
 
-                // altitude difference, in degree
-                double altd = (objScope.Alt - AltAngle) * Const.toDeg;
-
-                // next positions
-                Int32 nextAzmPos = azmPos_ + Convert.ToInt32(azmd * azmRes_ / 360.0);
-                Int32 nextAltPos = altPos_ + Convert.ToInt32(altd * altRes_ / 360.0);
-
-                // next timestamp
-                Int32 nextTs = controllerTs_ + Convert.ToInt32((nextThisTs - thisTs_).TotalMilliseconds);
-
-                // send positions
-                SendSetNextPosCommand(nextAltPos, nextTs, A_ALT);
-                SendSetNextPosCommand(nextAzmPos, nextTs, A_AZM);
+                altRefPosU_ += altdU;
+                azmRefPosU_ += azmdU;
+                refTs_ = nextTs;
             }
         }
         private void ReceiveNextPosCommand(byte[] data)
+        {
+        }
+        private void ReceiveSetSpeedCommand(byte[] data)
         {
         }
 
@@ -1342,10 +1390,10 @@ namespace ScopeDSCClient
                 altPos = GetInt32(data, 4);
                 azmPos = GetInt32(data, 8);
             }
-            if (azmPos_ != azmPos || altPos_ != altPos || !positionsValid_)
+            if (azmPosU_ != azmPos || altPosU_ != altPos || !positionsValid_)
                 ScopePosChanged();
-            azmPos_ = azmPos;
-            altPos_ = altPos;
+            azmPosU_ = azmPos;
+            altPosU_ = altPos;
             positionsValid_ = true;
 
             byte state = data[12];

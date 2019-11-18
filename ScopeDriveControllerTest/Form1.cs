@@ -714,6 +714,7 @@ namespace ScopeDriveControllerTest
         }
 
         private const double MSPEED_SCALE = 4000.0;
+        private const double ASPEED_SCALE = 600000.0;
         private void buttonSaveLog_Click(object sender, EventArgs e)
         {
 #if LOGGING_ON
@@ -739,7 +740,7 @@ namespace ScopeDriveControllerTest
                     case LMODE_MERR:    name += "MERR_"; posName[i] = "MERR"; break;
                     case LMODE_APOS:    name += "APOS_"; posName[i] = "APOS"; break;
                     case LMODE_ALOG:    name += "ALOG_"; posName[i] = "ALOG"; break;
-                    case LMODE_ASPD:    name += "ASPD_"; posName[i] = "ASPD(u/s)"; factor[i] = 1000.0 / MSPEED_SCALE; break;
+                    case LMODE_ASPD:    name += "ASPD_"; posName[i] = "ASPD(u/s)"; factor[i] = 1000.0 / ASPEED_SCALE; break;
                     case LMODE_AERR:    name += "AERR_"; posName[i] = "AERR"; break;
                     }
                     if (++i >= 2)

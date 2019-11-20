@@ -988,15 +988,16 @@ namespace ScopeDSCClient
             SendCommand(connectionGoTo_, new byte[] { (byte)'T', dst }, 1, ReceiveAcknowlage);
         }
 
-        private void SendSetNextPosCommand(Int32 sp, Int32 ts, byte dst)
+        private void SendSetNextPosCommand(float sp, Int32 ts, byte dst)
         {
+            byte[] spBytes = BitConverter.GetBytes(sp);
             if (connectionGoTo_ != null)
                 SendCommand(connectionGoTo_, new byte[] { (byte)'N',
                                                           dst,
-                                                          (byte)sp,
-                                                          (byte)(sp >> 8),
-                                                          (byte)(sp >> 16),
-                                                          (byte)(sp >> 24),
+                                                          spBytes[0],
+                                                          spBytes[1],
+                                                          spBytes[2],
+                                                          spBytes[3],
                                                           (byte)ts,
                                                           (byte)(ts >> 8),
                                                           (byte)(ts >> 16),
@@ -1075,15 +1076,15 @@ namespace ScopeDSCClient
                 double altd = (objScope.Alt - AltAngle) * Const.toDeg;
 
                 // next positions
-                Int32 nextAzmPos = azmPos_ + Convert.ToInt32(azmd * azmRes_ / 360.0);
-                Int32 nextAltPos = altPos_ + Convert.ToInt32(altd * altRes_ / 360.0);
+                double nextAzmPos = azmPos_ + azmd * azmRes_ / 360.0;
+                double nextAltPos = altPos_ + altd * altRes_ / 360.0;
 
                 // next timestamp
                 Int32 nextTs = controllerTs_ + Convert.ToInt32((nextThisTs - thisTs_).TotalMilliseconds);
 
                 // send positions
-                SendSetNextPosCommand(nextAltPos, nextTs, A_ALT);
-                SendSetNextPosCommand(nextAzmPos, nextTs, A_AZM);
+                SendSetNextPosCommand((float)nextAltPos, nextTs, A_ALT);
+                SendSetNextPosCommand((float)nextAzmPos, nextTs, A_AZM);
             }
         }
         private void ReceiveNextPosCommand(byte[] data)

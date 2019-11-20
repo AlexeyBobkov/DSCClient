@@ -199,15 +199,16 @@ namespace ScopeDriveControllerTest
         }
 #endif
 
-        private void SendSetNextPosCommand(Int32 sp, Int32 ts, byte dst, ReceiveDelegate receiveDelegate)
+        private void SendSetNextPosCommand(float sp, Int32 ts, byte dst, ReceiveDelegate receiveDelegate)
         {
+            byte[] spBytes = BitConverter.GetBytes(sp);
             if (connection_ != null)
                 SendCommand(connection_, new byte[] { (byte)'N',
                                                       dst,
-                                                      (byte)sp,
-                                                      (byte)(sp >> 8),
-                                                      (byte)(sp >> 16),
-                                                      (byte)(sp >> 24),
+                                                      spBytes[0],
+                                                      spBytes[1],
+                                                      spBytes[2],
+                                                      spBytes[3],
                                                       (byte)ts,
                                                       (byte)(ts >> 8),
                                                       (byte)(ts >> 16),
@@ -215,7 +216,7 @@ namespace ScopeDriveControllerTest
         }
 
         Int32 nextTs_;
-        Int32 nextSp_;
+        double nextSp_;
         private void ShiftPos(Int32 value, byte dst)
         {
             if (started_)
@@ -229,10 +230,10 @@ namespace ScopeDriveControllerTest
                 {
                     Int32 elapsed = (Int32)(DateTime.Now - startDT_).TotalMilliseconds;
                     Int32 ts = startTs_ + elapsed + 30000;
-                    Int32 sp = (Int32)Math.Round(startAltPos_ + (double)speed_ * (elapsed + 30000) / (24.0 * 60.0 * 60000.0)) + value;
+                    double sp = startAltPos_ + (double)speed_ * (elapsed + 30000) / (24.0 * 60.0 * 60000.0) + value;
                     nextTs_ = ts;
                     nextSp_ = sp;
-                    SendSetNextPosCommand(sp, ts, dst, ReceiveShiftNextPos);
+                    SendSetNextPosCommand((float)sp, ts, dst, ReceiveShiftNextPos);
                 }
             }
         }

@@ -230,7 +230,7 @@ namespace ScopeDriveControllerTest
                 {
                     Int32 elapsed = (Int32)(DateTime.Now - startDT_).TotalMilliseconds;
                     Int32 ts = startTs_ + elapsed + 30000;
-                    double sp = startAltPos_ + (double)speed_ * (elapsed + 30000) / (24.0 * 60.0 * 60000.0) + value;
+                    double sp = startAltPos_ + speed_ * (elapsed + 30000) / (24.0 * 60.0 * 60000.0) + value;
                     nextTs_ = ts;
                     nextSp_ = sp;
                     SendSetNextPosCommand((float)sp, ts, dst, ReceiveShiftNextPos);
@@ -286,7 +286,7 @@ namespace ScopeDriveControllerTest
             startTs_ = ts;
             startDT_ = DateTime.Now;
             startAltPos_ = altPos;
-            speed_ = (int)((double)(nextSp_ - altPos) * 60000.0 * 60.0 * 24.0 / (double)(nextTs_ - ts));
+            speed_ = ((double)(nextSp_ - altPos) * 60000.0 * 60.0 * 24.0 / (double)(nextTs_ - ts));
             tmoSendPos_.Restart();
             
             prevAltPos_.Clear();
@@ -313,7 +313,7 @@ namespace ScopeDriveControllerTest
         }
 
         private bool started_ = false;
-        private Int32 speed_ = 0;
+        private double speed_ = 0;
         private Int32 startAltPos_;
         private Int32 startTs_;
         private DateTime startDT_;
@@ -411,12 +411,12 @@ namespace ScopeDriveControllerTest
                 double sp = 0;
                 if (ts != startTs_)
                 {
-                    sp = startAltPos_ + (double)speed_ * (ts - startTs_) / (24.0 * 60.0 * 60000.0);
+                    sp = startAltPos_ + speed_ * (ts - startTs_) / (24.0 * 60.0 * 60000.0);
                     textBoxOutput.Text += "SP  = " + sp.ToString() + Environment.NewLine;
                 }
 
                 textBoxOutput.Text += Environment.NewLine;
-                textBoxOutput.Text += "Speed_ = " + speed_.ToString() + Environment.NewLine;
+                textBoxOutput.Text += "Speed_ = " + speed_.ToString("F3") + Environment.NewLine;
 
                 if (prevAltPos_.Count > 0)
                 {
@@ -618,8 +618,8 @@ namespace ScopeDriveControllerTest
                 {
                     Int32 elapsed = (Int32)(DateTime.Now - startDT_).TotalMilliseconds;
                     Int32 ts = startTs_ + elapsed + 10000;
-                    Int32 sp = (Int32)Math.Round(startAltPos_ + (double)speed_ * (elapsed + 10000) / (24.0 * 60.0 * 60000.0));
-                    SendSetNextPosCommand(sp, ts, mode_, ReceiveSetNextPos);
+                    double sp = startAltPos_ + speed_ * (elapsed + 10000) / (24.0 * 60.0 * 60000.0);
+                    SendSetNextPosCommand((float)sp, ts, mode_, ReceiveSetNextPos);
                 }
 #if LOGGING_ON
                 if (connection_ != null && checkBoxLogging.Checked && tmoAddLogData_.CheckExpired())

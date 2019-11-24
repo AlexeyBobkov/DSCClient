@@ -71,7 +71,7 @@ namespace ScopeDSCClient
         // time sync
         private Int32 controllerTs_;
         private DateTime thisTs_;       // UTC time
-        private ClientCommonAPI.Timeout tmoSendPos_ = new ClientCommonAPI.Timeout(3500);
+        private ClientCommonAPI.Timeout tmoSendPos_ = new ClientCommonAPI.Timeout(3800);
         private int nextPosTimeSec_ = 4;
         private double arrowMoveSpeed_ = 1 / 30.0;  // degree
 
@@ -1009,21 +1009,33 @@ namespace ScopeDSCClient
         {
             if (connectionGoTo_ != null && connectionGoTo_.connection_ != null)
             {
-                Int32 speed = 0;
+                double altd, azmd;
+                //CalcScopeShifts(DateTime.UtcNow + new TimeSpan(0, 0, nextPosTimeSec_), out altd, out azmd);
+
+                double altd1, azmd1, altd2, azmd2;
+                CalcScopeShifts(DateTime.UtcNow, out altd1, out azmd1);
+                CalcScopeShifts(DateTime.UtcNow + new TimeSpan(0, 0, nextPosTimeSec_), out altd2, out azmd2);
+                altd = altd2 - altd1;
+                azmd = azmd2 - azmd1;
+
+                Int32 altSpeed = (Int32)(altd * altRes_ * 60.0 * 60.0 * 24.0 / (360.0 * nextPosTimeSec_));
+                //altSpeed /= 2;
+                Int32 azmSpeed = (Int32)(azmd * azmRes_ * 60.0 * 60.0 * 24.0 / (360.0 * nextPosTimeSec_));
+                //azmSpeed /= 2;
 #if !TESTING
                 SendCommand(connectionGoTo_, new byte[] { (byte)'S',
                                                           A_ALT,
-                                                          (byte)speed,
-                                                          (byte)(speed >> 8),
-                                                          (byte)(speed >> 16),
-                                                          (byte)(speed >> 24)}, 8, ReceiveAltStart, TimeoutAltStart);
+                                                          (byte)altSpeed,
+                                                          (byte)(altSpeed >> 8),
+                                                          (byte)(altSpeed >> 16),
+                                                          (byte)(altSpeed >> 24)}, 8, ReceiveAltStart, TimeoutAltStart);
 #endif
                 SendCommand(connectionGoTo_, new byte[] { (byte)'S',
                                                           A_AZM,
-                                                          (byte)speed,
-                                                          (byte)(speed >> 8),
-                                                          (byte)(speed >> 16),
-                                                          (byte)(speed >> 24)}, 8, ReceiveAzmStart, TimeoutAzmStart);
+                                                          (byte)azmSpeed,
+                                                          (byte)(azmSpeed >> 8),
+                                                          (byte)(azmSpeed >> 16),
+                                                          (byte)(azmSpeed >> 24)}, 8, ReceiveAzmStart, TimeoutAzmStart);
                 altStartSent_ = azmStartSent_ = true;
             }
         }
@@ -1048,32 +1060,41 @@ namespace ScopeDSCClient
             SerialError(connection);
         }
 
+        private void CalcScopeShifts(DateTime nextTs, out double altdDeg, out double azmdDeg)
+        {
+            // next timestamp
+            double d = ClientCommonAPI.CalcTime(nextTs);
+
+            // calculate scope positions
+            double azm, alt;    // in degree
+            {
+                double dec, ra;
+                trackedObject_.CalcTopoRaDec(d, latitude_, longitude_, out dec, out ra);
+                SkyObjectPosCalc.Equ2AzAlt(d, latitude_, longitude_, dec + trackedOffsetDec_, ra + trackedOffsetRa_, out azm, out alt);
+            }
+            PairA objScope = alignment_.Horz2Scope(new PairA(azm * Const.toRad, alt * Const.toRad), 0);
+
+            // azimuth difference, in degree
+            azmdDeg = SkyObjectPosCalc.Rev(objScope.Azm * Const.toDeg - AzmAngle * Const.toDeg);
+            if (azmdDeg > 180)
+                azmdDeg -= 360;
+
+            // altitude difference, in degree
+#if TESTING
+            altdDeg = 0;
+#else
+            altdDeg = (objScope.Alt - AltAngle) * Const.toDeg;
+#endif
+        }
+
         private void SendNextPositions()
         {
             if (trackedObject_ != null && alignment_ != null)
             {
                 // next timestamp
                 DateTime nextThisTs = DateTime.UtcNow + new TimeSpan(0, 0, nextPosTimeSec_);
-
-                // calculate next positions
-                double d = ClientCommonAPI.CalcTime(nextThisTs);
-
-                double azm, alt;
-                //trackedObject_.CalcAzimuthal(d, latitude_, longitude_, out azm, out alt);
-                {
-                    double dec, ra;
-                    trackedObject_.CalcTopoRaDec(d, latitude_, longitude_, out dec, out ra);
-                    SkyObjectPosCalc.Equ2AzAlt(d, latitude_, longitude_, dec + trackedOffsetDec_, ra + trackedOffsetRa_, out azm, out alt);
-                }
-                PairA objScope = alignment_.Horz2Scope(new PairA(azm * Const.toRad, alt * Const.toRad), 0);
-
-                // azimuth difference, in degree
-                double azmd = SkyObjectPosCalc.Rev(objScope.Azm * Const.toDeg - AzmAngle * Const.toDeg);
-                if (azmd > 180)
-                    azmd -= 360;
-
-                // altitude difference, in degree
-                double altd = (objScope.Alt - AltAngle) * Const.toDeg;
+                double altd, azmd;
+                CalcScopeShifts(nextThisTs, out altd, out azmd);
 
                 // next positions
                 double nextAzmPos = azmPos_ + azmd * azmRes_ / 360.0;

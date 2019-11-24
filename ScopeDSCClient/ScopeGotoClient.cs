@@ -1,4 +1,4 @@
-﻿#define TESTING
+﻿//#define TESTING
 
 using System;
 using System.Collections.Generic;
@@ -92,6 +92,7 @@ namespace ScopeDSCClient
         private const byte A_ALT = 0;   // command for alt adapter
         private const byte A_AZM = 1;   // command for azm adapter
 
+#if LOGGING_ON
         private const UInt16 LMODE_ALT = 0;
         private const UInt16 LMODE_AZM = 0x8000;
 
@@ -108,7 +109,6 @@ namespace ScopeDSCClient
 
         private const UInt16 LMODE_OFF = 0;
 
-#if LOGGING_ON
         private ClientCommonAPI.LoggingState loggingState_      = ClientCommonAPI.LoggingState.OFF;
         private ClientCommonAPI.LoggingChannel loggingChannel_  = ClientCommonAPI.LoggingChannel.AZM;
         private ClientCommonAPI.LoggingType loggingType0_       = ClientCommonAPI.LoggingType.M_POS;
@@ -1009,19 +1009,12 @@ namespace ScopeDSCClient
         {
             if (connectionGoTo_ != null && connectionGoTo_.connection_ != null)
             {
-                double altd, azmd;
-                //CalcScopeShifts(DateTime.UtcNow + new TimeSpan(0, 0, nextPosTimeSec_), out altd, out azmd);
-
                 double altd1, azmd1, altd2, azmd2;
                 CalcScopeShifts(DateTime.UtcNow, out altd1, out azmd1);
                 CalcScopeShifts(DateTime.UtcNow + new TimeSpan(0, 0, nextPosTimeSec_), out altd2, out azmd2);
-                altd = altd2 - altd1;
-                azmd = azmd2 - azmd1;
 
-                Int32 altSpeed = (Int32)(altd * altRes_ * 60.0 * 60.0 * 24.0 / (360.0 * nextPosTimeSec_));
-                //altSpeed /= 2;
-                Int32 azmSpeed = (Int32)(azmd * azmRes_ * 60.0 * 60.0 * 24.0 / (360.0 * nextPosTimeSec_));
-                //azmSpeed /= 2;
+                Int32 altSpeed = (Int32)((altd2 - altd1) * altRes_ * 60.0 * 60.0 * 24.0 / (360.0 * nextPosTimeSec_));
+                Int32 azmSpeed = (Int32)((azmd2 - azmd1) * azmRes_ * 60.0 * 60.0 * 24.0 / (360.0 * nextPosTimeSec_));
 #if !TESTING
                 SendCommand(connectionGoTo_, new byte[] { (byte)'S',
                                                           A_ALT,

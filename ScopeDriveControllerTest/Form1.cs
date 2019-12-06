@@ -1,4 +1,5 @@
 ﻿#define LOGGING_ON
+#define TEST_SLOW_PWM
 
 using System;
 using System.Collections.Generic;
@@ -26,6 +27,8 @@ namespace ScopeDriveControllerTest
         private const byte A_AZM = 1;   // command for azm adapter
         private const byte M_ALT = 2;   // command for alt motor (debug only)
         private const byte M_AZM = 3;   // command for azm motor (debug only)
+        private const byte PWM_ALT = 4; // PWM command for alt motor (debug only)
+        private const byte PWM_AZM = 5; // PWM command for azm motor (debug only)
 
         private const UInt16 LMODE_ALT = 0;
         private const UInt16 LMODE_AZM = 0x8000;
@@ -178,10 +181,12 @@ namespace ScopeDriveControllerTest
             {
             case M_ALT:
             case A_ALT:
+            case PWM_ALT:
                 return (UInt16)((1 << comboBoxLoggingType0.SelectedIndex) | (1 << comboBoxLoggingType1.SelectedIndex));
 
             case M_AZM:
             case A_AZM:
+            case PWM_AZM:
                 return (UInt16)((1 << comboBoxLoggingType0.SelectedIndex) | (1 << comboBoxLoggingType1.SelectedIndex) | LMODE_AZM);
 
             default:
@@ -219,6 +224,8 @@ namespace ScopeDriveControllerTest
         double nextSp_;
         private void ShiftPos(Int32 value, byte dst)
         {
+            if (mode_ == PWM_ALT || mode_ == PWM_AZM)
+                return;
             if (started_)
             {
                 if (checkBoxSetNextPos.Checked)
@@ -236,6 +243,39 @@ namespace ScopeDriveControllerTest
                     SendSetNextPosCommand((float)sp, ts, dst, ReceiveShiftNextPos);
                 }
             }
+        }
+
+        private void ChangePWMSpeed(Int16 value, Int16 period, float dutyCycle, byte dst)
+        {
+            byte[] dcBytes = BitConverter.GetBytes(dutyCycle);
+            if (connection_ != null)
+            {
+                if (value != 0)
+                    SendCommand(connection_, new byte[] { (byte)'W',
+                                                      dst,
+                                                      (byte)value,
+                                                      (byte)(value >> 8),
+                                                      (byte)period,
+                                                      (byte)(period >> 8),
+                                                      dcBytes[0],
+                                                      dcBytes[1],
+                                                      dcBytes[2],
+                                                      dcBytes[3]},
+                                                      8, ReceiveStart);
+                else
+                    SendCommand(connection_, new byte[] { (byte)'W',
+                                                      dst,
+                                                      (byte)0,
+                                                      (byte)0,
+                                                      (byte)0,
+                                                      (byte)0,
+                                                      dcBytes[0],
+                                                      dcBytes[1],
+                                                      dcBytes[2],
+                                                      dcBytes[3]},
+                                                      8, ReceiveStop);
+            }
+            speed_ = 0;
         }
 
         private void Stop(byte dst)
@@ -303,13 +343,16 @@ namespace ScopeDriveControllerTest
 
         private void ReceiveStop(byte[] data)
         {
-            started_ = false;
+            if (started_)
+            {
+                started_ = false;
 #if LOGGING_ON
-            SendLoggingMode();
+                SendLoggingMode();
 #endif
-            UpdateUI();
-            prevAltPos_.Clear();
-            prevTs_.Clear();
+                UpdateUI();
+                prevAltPos_.Clear();
+                prevTs_.Clear();
+            }
         }
 
         private bool started_ = false;
@@ -422,6 +465,8 @@ namespace ScopeDriveControllerTest
                 {
                     int delta = (int)(pos - prevAltPos_[0]);
                     int dt = ts - prevTs_[0];
+                    if (dt == 0)
+                        dt = 1;
                     double speed, err;
                     string unit;
                     switch (mode_)
@@ -435,6 +480,8 @@ namespace ScopeDriveControllerTest
                         break;
                     case M_ALT:
                     case M_AZM:
+                    case PWM_ALT:
+                    case PWM_AZM:
                         speed = ((double)delta / M_RESOLUTION) * 60 * 1000.0 / (double)dt;
                         unit = " rpm";
                         err = (double)(pos - rsp) * 360.0 * 60.0 / ((double)M_RESOLUTION * 28.0 * 20.0);
@@ -486,10 +533,22 @@ namespace ScopeDriveControllerTest
         {
             switch(newMode)
             {
-            case A_ALT: radioButtonALT.Checked = true; labelSpeed.Text = "Speed (units/day)"; break;
-            case A_AZM: radioButtonAZM.Checked = true; labelSpeed.Text = "Speed (units/day)"; break;
-            case M_ALT: radioButtonMALT.Checked = true; labelSpeed.Text = "Speed (rpm)"; break;
-            case M_AZM: radioButtonMAZM.Checked = true; labelSpeed.Text = "Speed (rpm)"; break;
+            case A_ALT: radioButtonALT.Checked = true; labelSpeed.Text = "Speed (units/day)"; labelPos.Text = "Position shift (units)"; break;
+            case A_AZM: radioButtonAZM.Checked = true; labelSpeed.Text = "Speed (units/day)"; labelPos.Text = "Position shift (units)"; break;
+            case M_ALT: radioButtonMALT.Checked = true; labelSpeed.Text = "Speed (rpm)"; labelPos.Text = "Position shift (units)"; break;
+            case M_AZM: radioButtonMAZM.Checked = true; labelSpeed.Text = "Speed (rpm)"; labelPos.Text = "Position shift (units)"; break;
+#if TEST_SLOW_PWM
+            case PWM_ALT:
+                radioButtonPWMALT.Checked = true;
+                labelSpeed.Text = "Ref PWM (-255 - 255)";
+                labelPos.Text = "Period (ms)"; 
+                break;
+            case PWM_AZM:
+                radioButtonPWMAZM.Checked = true;
+                labelSpeed.Text = "Ref PWM (-255 - 255)";
+                labelPos.Text = "Period (ms)"; 
+                break;
+#endif
             default: return;
             }
             mode_ = newMode;
@@ -513,8 +572,20 @@ namespace ScopeDriveControllerTest
                     switch (newMode)
                     {
                     default:
-                    case A_ALT: case A_AZM: labelSpeed.Text = "Speed (units/day)"; break;
-                    case M_ALT: case M_AZM: labelSpeed.Text = "Speed (rpm)"; break;
+                    case A_ALT: labelSpeed.Text = "Speed (units/day)"; labelPos.Text = "Position shift (units)"; break;
+                    case A_AZM: labelSpeed.Text = "Speed (units/day)"; labelPos.Text = "Position shift (units)"; break;
+                    case M_ALT: labelSpeed.Text = "Speed (rpm)"; labelPos.Text = "Position shift (units)"; break;
+                    case M_AZM: labelSpeed.Text = "Speed (rpm)"; labelPos.Text = "Position shift (units)"; break;
+#if TEST_SLOW_PWM
+                    case PWM_ALT:
+                        labelSpeed.Text = "Ref PWM (-255 - 255)";
+                        labelPos.Text = "Period (ms)";
+                        break;
+                    case PWM_AZM:
+                        labelSpeed.Text = "Ref PWM (-255 - 255)";
+                        labelPos.Text = "Period (ms)";
+                        break;
+#endif
                     }
                 }
                 ignoreModeButtonChanged_ = false;
@@ -554,6 +625,16 @@ namespace ScopeDriveControllerTest
             comboBoxLoggingType0.Visible = false;
             comboBoxLoggingType1.Visible = false;
 #endif
+
+#if !TEST_SLOW_PWM
+            radioButtonPWMAZM.Enabled = false;
+            radioButtonPWMAZM.Visible = false;
+            radioButtonPWMALT.Enabled = false;
+            radioButtonPWMALT.Visible = false;
+            textBoxPWMDutyCycle.Enabled = false;
+            textBoxPWMDutyCycle.Visible = false;
+#endif
+
             init_ = true;
         }
 
@@ -610,11 +691,20 @@ namespace ScopeDriveControllerTest
         private void timerPoll_Tick(object sender, EventArgs e)
         {
             if (connection_ != null)
-                SendCommand(connection_, new byte[] { (byte)'P', mode_ }, 25, ReceivePosition);
+            {
+                byte mode;
+                if (mode_ == PWM_ALT)
+                    mode = M_ALT;
+                else if (mode_ == PWM_AZM)
+                    mode = M_AZM;
+                else
+                    mode = mode_;
+                SendCommand(connection_, new byte[] { (byte)'P', mode }, 25, ReceivePosition);
+            }
 
             if (started_)
             {
-                if (checkBoxSetNextPos.Checked && tmoSendPos_.CheckExpired())
+                if (checkBoxSetNextPos.Checked && tmoSendPos_.CheckExpired() && mode_ != PWM_ALT && mode_ != PWM_AZM)
                 {
                     Int32 elapsed = (Int32)(DateTime.Now - startDT_).TotalMilliseconds;
                     Int32 ts = startTs_ + elapsed + 10000;
@@ -665,21 +755,94 @@ namespace ScopeDriveControllerTest
                 CheckSetMode(A_ALT);
         }
 
+        private void radioButtonPWMAZM_CheckedChanged(object sender, EventArgs e)
+        {
+            if (!init_)
+                return;
+            if (radioButtonPWMAZM.Checked)
+                CheckSetMode(PWM_AZM);
+        }
+
+        private void radioButtonPWMALT_CheckedChanged(object sender, EventArgs e)
+        {
+            if (!init_)
+                return;
+            if (radioButtonPWMALT.Checked)
+                CheckSetMode(PWM_ALT);
+        }
+
         private void buttonSetSpeed_Click(object sender, EventArgs e)
         {
             if (!init_)
                 return;
 
+#if TEST_SLOW_PWM
+            if (mode_ == PWM_ALT || mode_ == PWM_AZM)
+            {
+                Int16 value = 1;
+                if (textBoxSpeed.Text.Length > 0)
+                {
+                    try
+                    {
+                        double x = Convert.ToDouble(textBoxSpeed.Text);
+                        value = Convert.ToInt16(x);
+                    }
+                    catch
+                    {
+                    }
+                }
+                if (value < 1)
+                    value = 1;
+                else if (value > 255)
+                    value = 255;
+
+                Int16 period = 0;
+                if (textBoxSetPos.Text.Length > 0)
+                {
+                    try
+                    {
+                        double x = Convert.ToDouble(textBoxSetPos.Text);
+                        period = Convert.ToInt16(x);
+                    }
+                    catch
+                    {
+                    }
+                }
+
+                Int16 pwmSpeed = 0;
+                if (textBoxPWMSpeed.Text.Length > 0)
+                {
+                    try
+                    {
+                        double x = Convert.ToDouble(textBoxPWMSpeed.Text);
+                        pwmSpeed = Convert.ToInt16(x);
+                    }
+                    catch
+                    {
+                    }
+                }
+                if (pwmSpeed > value)
+                    pwmSpeed = value;
+                else if (pwmSpeed < -value)
+                    pwmSpeed = (Int16)(-value);
+
+                float dutyCycle = (float)pwmSpeed/(float)value;
+
+                ChangePWMSpeed(value, period, dutyCycle, mode_ == PWM_ALT ? M_ALT : M_AZM);
+                return;
+            }
+#endif
+            
             if (textBoxSpeed.Text.Length == 0)
             {
                 Stop(mode_);
                 return;
             }
 
-            double dSpeed = 0;
+            double dValue = 0;
             try
             {
-                dSpeed = Convert.ToDouble(textBoxSpeed.Text);
+                dValue = Convert.ToDouble(textBoxSpeed.Text);
             }
             catch
             {
@@ -687,11 +850,11 @@ namespace ScopeDriveControllerTest
 
             switch (mode_)
             {
-                default:
-                case A_ALT:
-                case A_AZM: ChangeSpeed((Int32)dSpeed, mode_); break;
-                case M_ALT:
-                case M_AZM: ChangeSpeed((Int32)(dSpeed * 60 * 24 * M_RESOLUTION), mode_); break;
+            default:
+            case A_ALT:
+            case A_AZM: ChangeSpeed((Int32)dValue, mode_); break;
+            case M_ALT:
+            case M_AZM: ChangeSpeed((Int32)(dValue * 60 * 24 * M_RESOLUTION), mode_); break;
             }
         }
 

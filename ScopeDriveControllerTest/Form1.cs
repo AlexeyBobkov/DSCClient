@@ -174,7 +174,11 @@ namespace ScopeDriveControllerTest
             }
         }
 
-        private void SendGetMotorAndAdapterConfigOptions()
+        private void SetAndReciveMotorAndAdapterConfigOptions()
+        {
+            SendMotorConfigOptionsSizes();
+        }
+        private void SendMotorConfigOptionsSizes()
         {
             if (connection_ != null)
                 SendCommand(connection_, new byte[] { (byte)'Z' }, 4, ReceiveMotorConfigOptionsSizes);
@@ -182,12 +186,34 @@ namespace ScopeDriveControllerTest
         private void SendGetMotorConfigOptions(byte dst)
         {
             if (connection_ != null)
-                SendCommand(connection_, new byte[] { (byte)'O', dst }, motorOptionSize_ + 1, ReceiveMotorConfigOptions);
+                SendCommand(connection_, new byte[] { (byte)'O', dst }, motorOptionSize_ + 1, ReceiveGetMotorConfigOptions);
+        }
+        private void SendSetMotorConfigOptions(byte dst, MotorOptions opt)
+        {
+            if (connection_ != null)
+            {
+                List<byte> l = new List<byte>();
+                l.Add((byte)'M');
+                l.Add(dst);
+                WriteMotorOptions(opt, l);
+                SendCommand(connection_, l.ToArray(), 1, ReceiveSetMotorConfigOptions);
+            }
         }
         private void SendGetAdapterConfigOptions(byte dst)
         {
             if (connection_ != null)
-                SendCommand(connection_, new byte[] { (byte)'O', dst }, adapterOptionSize_ + 1, ReceiveAdapterConfigOptions);
+                SendCommand(connection_, new byte[] { (byte)'O', dst }, adapterOptionSize_ + 1, ReceiveGetAdapterConfigOptions);
+        }
+        private void SendSetAdapterConfigOptions(byte dst, AdapterOptions opt)
+        {
+            if (connection_ != null)
+            {
+                List<byte> l = new List<byte>();
+                l.Add((byte)'E');
+                l.Add(dst);
+                WriteAdapterOptions(opt, l);
+                SendCommand(connection_, l.ToArray(), 1, ReceiveSetAdapterConfigOptions);
+            }
         }
 
 #if LOGGING_ON
@@ -376,57 +402,90 @@ namespace ScopeDriveControllerTest
         {
             motorOptionSize_ = BitConverter.ToInt16(data, 0);
             adapterOptionSize_ = BitConverter.ToInt16(data, 2);
-            SendGetMotorConfigOptions(M_AZM);
-            SendGetMotorConfigOptions(M_ALT);
-            SendGetAdapterConfigOptions(A_AZM);
-            SendGetAdapterConfigOptions(A_ALT);
+
+            {
+                MotorOptions opt = settings_.AltMotorOptions;
+                if (opt.valid_)
+                    SendSetMotorConfigOptions(M_ALT, opt);
+                else
+                    SendGetMotorConfigOptions(M_ALT);
+
+                opt = settings_.AzmMotorOptions;
+                if (opt.valid_)
+                    SendSetMotorConfigOptions(M_AZM, opt);
+                else
+                    SendGetMotorConfigOptions(M_AZM);
+            }
+
+            {
+                AdapterOptions opt = settings_.AltAdapterOptions;
+                if (opt.valid_)
+                    SendSetAdapterConfigOptions(A_ALT, opt);
+                else
+                    SendGetAdapterConfigOptions(A_ALT);
+
+                opt = settings_.AzmAdapterOptions;
+                if (opt.valid_)
+                    SendSetAdapterConfigOptions(A_AZM, opt);
+                else
+                    SendGetAdapterConfigOptions(A_AZM);
+            }
+        }
+        private void ReceiveSetMotorConfigOptions(byte[] data)
+        {
+            SendGetMotorConfigOptions(data[0]);
+        }
+        private void ReceiveSetAdapterConfigOptions(byte[] data)
+        {
+            SendGetAdapterConfigOptions(data[0]);
         }
 
         private MotorOptions motorAzmOptions_, motorAltOptions_;
-        private void ReceiveMotorConfigOptions(byte[] data)
+        private void ReceiveGetMotorConfigOptions(byte[] data)
         {
             switch (data[0])
             {
             default:
-            case M_ALT: ReadMotorOptions(data, 1, out motorAltOptions_); break;
-            case M_AZM: ReadMotorOptions(data, 1, out motorAzmOptions_); break;
+            case M_ALT: ReadMotorOptions(data, 1, out motorAltOptions_); settings_.AltMotorOptions = motorAltOptions_; break;
+            case M_AZM: ReadMotorOptions(data, 1, out motorAzmOptions_); settings_.AzmMotorOptions = motorAzmOptions_; break;
             }
         }
 
         private AdapterOptions adapterAzmOptions_, adapterAltOptions_;
-        private void ReceiveAdapterConfigOptions(byte[] data)
+        private void ReceiveGetAdapterConfigOptions(byte[] data)
         {
             switch (data[0])
             {
             default:
-            case A_ALT: ReadAdapterOptions(data, 1, out adapterAltOptions_); break;
-            case A_AZM: ReadAdapterOptions(data, 1, out adapterAzmOptions_); break;
+            case A_ALT: ReadAdapterOptions(data, 1, out adapterAltOptions_); settings_.AltAdapterOptions = adapterAltOptions_; break;
+            case A_AZM: ReadAdapterOptions(data, 1, out adapterAzmOptions_); settings_.AzmAdapterOptions = adapterAzmOptions_; break;
             }
         }
 
-        private enum ApproximationType
+        public enum ApproximationType
         {
             LINEAR,
             EXPONENTIAL
         };
-        private struct PWMProfile   // size = 4
+        public struct PWMProfile   // size = 4
         {
             public byte value_;        // required value
             public byte magnitude_;    // PWM magnitude
             public Int16 period_;      // PWM (and PID) period
         }
-        private struct MotorOptions             // size = 4 + 4*4 + 1 + 4*2 = 29
+        public struct MotorOptions             // size = 4 + 4*4 + 1 + 4*2 = 29
         {
+            public bool valid_;
             public Int32 encRes_;
             public float maxSpeedRPM_;
             public float Kp_, KiF_, Kd_;
             public ApproximationType approximationType_;
             public PWMProfile loProfile_, hiProfile_;
         }
-
         private void ReadMotorOptions(byte[] data, int offset, out MotorOptions opt)
         {
             opt = new MotorOptions();
+            opt.valid_                  = true;
             opt.encRes_                 = BitConverter.ToInt32(data, offset);
             opt.maxSpeedRPM_            = BitConverter.ToSingle(data, offset + 4);
             opt.Kp_                     = BitConverter.ToSingle(data, offset + 8);
@@ -440,9 +499,25 @@ namespace ScopeDriveControllerTest
             opt.hiProfile_.magnitude_   = data[offset + 26];
             opt.hiProfile_.period_      = BitConverter.ToInt16(data, offset + 27);
         }
-
-        private struct AdapterOptions             // size = 4*12 = 48
+        private void WriteMotorOptions(MotorOptions opt, List<byte> data)
         {
+            data.AddRange(BitConverter.GetBytes(opt.encRes_));
+            data.AddRange(BitConverter.GetBytes(opt.maxSpeedRPM_));
+            data.AddRange(BitConverter.GetBytes(opt.Kp_));
+            data.AddRange(BitConverter.GetBytes(opt.KiF_));
+            data.AddRange(BitConverter.GetBytes(opt.Kd_));
+            data.Add((byte)(opt.approximationType_ == ApproximationType.LINEAR ? 0 : 1));
+            data.Add(opt.loProfile_.value_);
+            data.Add(opt.loProfile_.magnitude_);
+            data.AddRange(BitConverter.GetBytes(opt.loProfile_.period_));
+            data.Add(opt.hiProfile_.value_);
+            data.Add(opt.hiProfile_.magnitude_);
+            data.AddRange(BitConverter.GetBytes(opt.hiProfile_.period_));
+        }
+
+        public struct AdapterOptions             // size = 4*12 = 48
+        {
+            public bool valid_;
             public Int32 encRes_;
             public float scopeToMotor_;
             public float deviationSpeedFactor_, KiF_, KdF_, KpFast2F_, KpFast3F_;
@@ -451,10 +526,10 @@ namespace ScopeDriveControllerTest
             public Int32 adjustPidTmo_;     // ms
             public Int32 speedSmoothTime_;  // ms
         }
-
         private void ReadAdapterOptions(byte[] data, int offset, out AdapterOptions opt)
         {
             opt = new AdapterOptions();
+            opt.valid_                  = true;
             opt.encRes_                 = BitConverter.ToInt32(data, offset);
             opt.scopeToMotor_           = BitConverter.ToSingle(data, offset + 4);
             opt.deviationSpeedFactor_   = BitConverter.ToSingle(data, offset + 8);
@@ -467,6 +542,21 @@ namespace ScopeDriveControllerTest
             opt.pidPollPeriod_          = BitConverter.ToInt32(data, offset + 36);
             opt.adjustPidTmo_           = BitConverter.ToInt32(data, offset + 40);
             opt.speedSmoothTime_        = BitConverter.ToInt32(data, offset + 44);
+        }
+        private void WriteAdapterOptions(AdapterOptions opt, List<byte> data)
+        {
+            data.AddRange(BitConverter.GetBytes(opt.encRes_));
+            data.AddRange(BitConverter.GetBytes(opt.scopeToMotor_));
+            data.AddRange(BitConverter.GetBytes(opt.deviationSpeedFactor_));
+            data.AddRange(BitConverter.GetBytes(opt.KiF_));
+            data.AddRange(BitConverter.GetBytes(opt.KdF_));
+            data.AddRange(BitConverter.GetBytes(opt.KpFast2F_));
+            data.AddRange(BitConverter.GetBytes(opt.KpFast3F_));
+            data.AddRange(BitConverter.GetBytes(opt.diff2_));
+            data.AddRange(BitConverter.GetBytes(opt.diff3_));
+            data.AddRange(BitConverter.GetBytes(opt.pidPollPeriod_));
+            data.AddRange(BitConverter.GetBytes(opt.adjustPidTmo_));
+            data.AddRange(BitConverter.GetBytes(opt.speedSmoothTime_));
         }
 
         private bool started_ = false;
@@ -798,7 +888,7 @@ namespace ScopeDriveControllerTest
 #if LOGGING_ON
                     SendLoggingMode();
 #endif
-                    SendGetMotorAndAdapterConfigOptions();
+                    SetAndReciveMotorAndAdapterConfigOptions();
                 }
             }
         }
@@ -1123,6 +1213,46 @@ namespace ScopeDriveControllerTest
         {
             get { return profile_.GetValue(section_, "BaudRate", 115200); }
             set { profile_.SetValue(section_, "BaudRate", value); }
+        }
+
+        public TestForm.MotorOptions AltMotorOptions
+        {
+            get { return (TestForm.MotorOptions)profile_.GetValue(section_, "AltMotorOptions", new TestForm.MotorOptions()); }
+            set
+            {
+                if (value.valid_)
+                    profile_.SetValue(section_, "AltMotorOptions", value);
+            }
+        }
+
+        public TestForm.MotorOptions AzmMotorOptions
+        {
+            get { return (TestForm.MotorOptions)profile_.GetValue(section_, "AzmMotorOptions", new TestForm.MotorOptions()); }
+            set
+            {
+                if (value.valid_)
+                    profile_.SetValue(section_, "AzmMotorOptions", value);
+            }
+        }
+
+        public TestForm.AdapterOptions AltAdapterOptions
+        {
+            get { return (TestForm.AdapterOptions)profile_.GetValue(section_, "AltAdapterOptions", new TestForm.AdapterOptions()); }
+            set
+            {
+                if (value.valid_)
+                    profile_.SetValue(section_, "AltAdapterOptions", value);
+            }
+        }
+
+        public TestForm.AdapterOptions AzmAdapterOptions
+        {
+            get { return (TestForm.AdapterOptions)profile_.GetValue(section_, "AzmAdapterOptions", new TestForm.AdapterOptions()); }
+            set
+            {
+                if (value.valid_)
+                    profile_.SetValue(section_, "AzmAdapterOptions", value);
+            }
         }
 
         public XmlBuffer Buffer()

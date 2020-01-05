@@ -39,25 +39,10 @@ namespace ScopeDSCClient
         private SkyObjectForm.LastSettings lastObjSettings_ = SkyObjectForm.LastSettings.Default;
         private AlignmentForm.LastSettings lastAlignmentObjSettings_ = AlignmentForm.LastSettings.Default;
 
-        public struct AlignmentConnectionData
-        {
-            private string portName_;
-            private uint sessionId_;
-
-            public string PortName { get { return portName_; } set { portName_ = value; } }
-            public uint SessionId { get { return sessionId_; } set { sessionId_ = value; } }
-            
-            public AlignmentConnectionData(string portName, uint sessionId)
-            {
-                portName_ = portName;
-                sessionId_ = sessionId;
-            }
-        }
-
         // alignment data
         private DSCAlignment alignment_;
-        private AlignmentConnectionData alignmentConnectionAltAzm_;
-        private AlignmentConnectionData alignmentConnectionEqu_;
+        private ClientCommonAPI.AlignmentConnectionData alignmentConnectionAltAzm_;
+        private ClientCommonAPI.AlignmentConnectionData alignmentConnectionEqu_;
 
         private const int LAST_OBJ_COUNT = 10;
         private SkyObjectPosCalc.SkyPosition object_;
@@ -509,9 +494,15 @@ namespace ScopeDSCClient
                     settings_.AlignmentStars = alignment_.Stars;
                     settings_.AlignmentEquAxis = alignment_.EquAxis;
                     if (connectionAltAzm_ != null && connectionAltAzm_.connection_ != null)
-                        settings_.AlignmentConnectionAltAzm = alignmentConnectionAltAzm_ = new AlignmentConnectionData(connectionAltAzm_.connection_.PortName, connectionAltAzm_.sessionId_);
+                    {
+                        settings_.AlignmentConnectionAltAzm = alignmentConnectionAltAzm_ =
+                            new ClientCommonAPI.AlignmentConnectionData(connectionAltAzm_.connection_.PortName, connectionAltAzm_.sessionId_);
+                    }
                     if (connectionEqu_ != null && connectionEqu_.connection_ != null)
-                        settings_.AlignmentConnectionEqu = alignmentConnectionEqu_ = new AlignmentConnectionData(connectionEqu_.connection_.PortName, connectionEqu_.sessionId_);
+                    {
+                        settings_.AlignmentConnectionEqu = alignmentConnectionEqu_ =
+                            new ClientCommonAPI.AlignmentConnectionData(connectionEqu_.connection_.PortName, connectionEqu_.sessionId_);
+                    }
                 }
             }
         }
@@ -1189,15 +1180,15 @@ namespace ScopeDSCClient
             set { profile_.SetValue(section_, "AlignmentEquAxis", value); }
         }
 
-        public ScopeDSCClient.AlignmentConnectionData AlignmentConnectionAltAzm
+        public ClientCommonAPI.AlignmentConnectionData AlignmentConnectionAltAzm
         {
-            get { return (ScopeDSCClient.AlignmentConnectionData)profile_.GetValue(section_, "AlignmentConnectionAltAzm", new ScopeDSCClient.AlignmentConnectionData()); }
+            get { return (ClientCommonAPI.AlignmentConnectionData)profile_.GetValue(section_, "AlignmentConnectionAltAzm", new ClientCommonAPI.AlignmentConnectionData()); }
             set { profile_.SetValue(section_, "AlignmentConnectionAltAzm", value); }
         }
 
-        public ScopeDSCClient.AlignmentConnectionData AlignmentConnectionEqu
+        public ClientCommonAPI.AlignmentConnectionData AlignmentConnectionEqu
         {
-            get { return (ScopeDSCClient.AlignmentConnectionData)profile_.GetValue(section_, "AlignmentConnectionEqu", new ScopeDSCClient.AlignmentConnectionData()); }
+            get { return (ClientCommonAPI.AlignmentConnectionData)profile_.GetValue(section_, "AlignmentConnectionEqu", new ClientCommonAPI.AlignmentConnectionData()); }
             set { profile_.SetValue(section_, "AlignmentConnectionEqu", value); }
         }
 

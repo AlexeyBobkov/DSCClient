@@ -93,6 +93,21 @@ namespace ScopeDSCClient
             }
         }
 
+        public struct AlignmentConnectionData
+        {
+            private string portName_;
+            private uint sessionId_;
+
+            public string PortName { get { return portName_; } set { portName_ = value; } }
+            public uint SessionId { get { return sessionId_; } set { sessionId_ = value; } }
+
+            public AlignmentConnectionData(string portName, uint sessionId)
+            {
+                portName_ = portName;
+                sessionId_ = sessionId;
+            }
+        }
+
         public class StellariumObject : SkyObjectPosCalc.SkyPosition
         {
             public double Dec { get; set; }

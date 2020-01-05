@@ -39,24 +39,9 @@ namespace ScopeDSCClient
         private SkyObjectForm.LastSettings lastObjSettings_ = SkyObjectForm.LastSettings.Default;
         private AlignmentForm.LastSettings lastAlignmentObjSettings_ = AlignmentForm.LastSettings.Default;
 
-        public struct AlignmentConnectionData
-        {
-            private string portName_;
-            private uint sessionId_;
-
-            public string PortName { get { return portName_; } set { portName_ = value; } }
-            public uint SessionId { get { return sessionId_; } set { sessionId_ = value; } }
-            
-            public AlignmentConnectionData(string portName, uint sessionId)
-            {
-                portName_ = portName;
-                sessionId_ = sessionId;
-            }
-        }
-
         // alignment data
         private DSCAlignment alignment_;
-        private AlignmentConnectionData alignmentConnectionGoTo_;
+        private ClientCommonAPI.AlignmentConnectionData alignmentConnectionGoTo_;
 
         // state
         private const int LAST_OBJ_COUNT = 20;
@@ -255,7 +240,7 @@ namespace ScopeDSCClient
 
             public double AzmAngle { get { return parent_.AzmAngleLimited; } }
             public double AltAngle { get { return parent_.AltAngle; } }
-            public double EquAngle { get { return 0; } }
+            public double EquAngle { get { return -Math.PI; } }
 
             public bool NightMode { get { return parent_.nightMode_; } }
             public double Latitude { get { return parent_.latitude_; } }
@@ -288,7 +273,7 @@ namespace ScopeDSCClient
                 double d = ClientCommonAPI.CalcTime();
                 double azm, alt;
                 selectedObject_.CalcAzimuthal(d, latitude_, longitude_, out azm, out alt);
-                PairA objScope = alignment_.Horz2Scope(new PairA(azm * Const.toRad, alt * Const.toRad), 0);
+                PairA objScope = alignment_.Horz2Scope(new PairA(azm * Const.toRad, alt * Const.toRad), -Math.PI);
 
                 if (!showNearestAzmRotation_)
                     s += ClientCommonAPI.PrintAzmAltDifference(SkyObjectPosCalc.Rev(objScope.Azm * Const.toDeg) - AzmAngle * Const.toDeg, (objScope.Alt - AltAngle) * Const.toDeg, oppositeHorzPositioningDir_);
@@ -387,7 +372,7 @@ namespace ScopeDSCClient
                     s += "Scope Position Unknown" + Environment.NewLine;
                 else if (alignment_ != null && alignment_.IsAligned)
                 {
-                    PairA horz = alignment_.Scope2Horz(new PairA(AzmAngle, AltAngle), 0);
+                    PairA horz = alignment_.Scope2Horz(new PairA(AzmAngle, AltAngle), -Math.PI);
 
                     s += "Scope Position: Azm = " + ClientCommonAPI.PrintAngle(SkyObjectPosCalc.Rev(horz.Azm * Const.toDeg), false, false);
                     s += ", Alt = " + ClientCommonAPI.PrintAngle(SkyObjectPosCalc.Rev(horz.Alt * Const.toDeg), false, false) + Environment.NewLine;
@@ -606,7 +591,10 @@ namespace ScopeDSCClient
                     settings_.AlignmentStars = alignment_.Stars;
                     settings_.AlignmentEquAxis = alignment_.EquAxis;
                     if (connectionGoTo_ != null && connectionGoTo_.connection_ != null)
-                        settings_.AlignmentConnectionGoTo = alignmentConnectionGoTo_ = new AlignmentConnectionData(connectionGoTo_.connection_.PortName, connectionGoTo_.sessionId_);
+                    {
+                        settings_.AlignmentConnectionGoTo = alignmentConnectionGoTo_ =
+                            new ClientCommonAPI.AlignmentConnectionData(connectionGoTo_.connection_.PortName, connectionGoTo_.sessionId_);
+                    }
                 }
             }
         }
@@ -1077,7 +1065,7 @@ namespace ScopeDSCClient
                 trackedObject_.CalcTopoRaDec(d, latitude_, longitude_, out dec, out ra);
                 SkyObjectPosCalc.Equ2AzAlt(d, latitude_, longitude_, dec + trackedOffsetDec_, ra + trackedOffsetRa_, out azm, out alt);
             }
-            PairA objScope = alignment_.Horz2Scope(new PairA(azm * Const.toRad, alt * Const.toRad), 0);
+            PairA objScope = alignment_.Horz2Scope(new PairA(azm * Const.toRad, alt * Const.toRad), -Math.PI);
 
             // azimuth difference, in degree
             azmdDeg = SkyObjectPosCalc.Rev(objScope.Azm * Const.toDeg - AzmAngle * Const.toDeg);
@@ -1252,7 +1240,7 @@ namespace ScopeDSCClient
             if (alignment_ != null && connectionGoTo_ != null && switchOn_)
             {
                 // get current telescope position
-                PairA horz = alignment_.Scope2Horz(new PairA(AzmAngle, AltAngle), 0);
+                PairA horz = alignment_.Scope2Horz(new PairA(AzmAngle, AltAngle), -Math.PI);
                 double scopeDec, scopeRa;
                 SkyObjectPosCalc.AzAlt2Equ(ClientCommonAPI.CalcTime(), latitude_, longitude_,
                                             SkyObjectPosCalc.Rev(horz.Azm * Const.toDeg), SkyObjectPosCalc.Rev(horz.Alt * Const.toDeg), out scopeDec, out scopeRa);
@@ -1308,11 +1296,11 @@ namespace ScopeDSCClient
             if (trackedObject_ != null)
             {
                 // get current telescope position
-                PairA horz = alignment_.Scope2Horz(new PairA(AzmAngle, AltAngle), 0);
+                PairA horz = alignment_.Scope2Horz(new PairA(AzmAngle, AltAngle), -Math.PI);
                 double dec, ra;
                 SkyObjectPosCalc.AzAlt2Equ(ClientCommonAPI.CalcTime(), latitude_, longitude_,
                                             SkyObjectPosCalc.Rev(horz.Azm * Const.toDeg), SkyObjectPosCalc.Rev(horz.Alt * Const.toDeg), out dec, out ra);
-                horz = alignment_.Scope2Horz(new PairA(AzmAngle + offsetAzm * Const.toRad, AltAngle + offsetAlt * Const.toRad), 0);
+                horz = alignment_.Scope2Horz(new PairA(AzmAngle + offsetAzm * Const.toRad, AltAngle + offsetAlt * Const.toRad), -Math.PI);
                 double shiftedDec, shiftedRa;
                 SkyObjectPosCalc.AzAlt2Equ(ClientCommonAPI.CalcTime(), latitude_, longitude_,
                                             SkyObjectPosCalc.Rev(horz.Azm * Const.toDeg), SkyObjectPosCalc.Rev(horz.Alt * Const.toDeg), out shiftedDec, out shiftedRa);
@@ -1462,7 +1450,7 @@ namespace ScopeDSCClient
             }
         }
 
-        private int motorOptionSize_ = 29, adapterOptionSize_ = 48;
+        private const int motorOptionSize_ = 29, adapterOptionSize_ = 48;
         private void ReceiveMotorConfigOptionsSizes(byte[] data)
         {
             if (motorOptionSize_ != BitConverter.ToInt16(data, 0) || adapterOptionSize_ != BitConverter.ToInt16(data, 2))
@@ -1472,10 +1460,17 @@ namespace ScopeDSCClient
                 return;
             }
 
-            ConfigureMotor(M_ALT, settings_.AltMotorOptions);
-            ConfigureMotor(M_AZM, settings_.AzmMotorOptions);
-            ConfigureAdapter(A_ALT, settings_.AltAdapterOptions);
-            ConfigureAdapter(A_AZM, settings_.AzmAdapterOptions);
+            try
+            {
+                ConfigureMotor(M_ALT, settings_.AltMotorOptions);
+                ConfigureMotor(M_AZM, settings_.AzmMotorOptions);
+                ConfigureAdapter(A_ALT, settings_.AltAdapterOptions);
+                ConfigureAdapter(A_AZM, settings_.AzmAdapterOptions);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
         }
         private void ReceiveSetMotorConfigOptions(byte[] data)
         {
@@ -1488,37 +1483,51 @@ namespace ScopeDSCClient
 
         private void ReceiveGetMotorConfigOptions(byte[] data)
         {
-            MotorOptions opt;
-            switch (data[0])
+            try
             {
-            default:
-            case M_ALT: ReadMotorOptions(data, 1, out opt); settings_.AltMotorOptions = opt; break;
-            case M_AZM: ReadMotorOptions(data, 1, out opt); settings_.AzmMotorOptions = opt; break;
+                MotorOptions opt;
+                switch (data[0])
+                {
+                default:
+                case M_ALT: ReadMotorOptions(data, 1, out opt); settings_.AltMotorOptions = opt; break;
+                case M_AZM: ReadMotorOptions(data, 1, out opt); settings_.AzmMotorOptions = opt; break;
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
             }
         }
         private void ReceiveGetAdapterConfigOptions(byte[] data)
         {
-            AdapterOptions opt;
-            switch (data[0])
+            try
             {
-            default:
-            case A_ALT:
-                ReadAdapterOptions(data, 1, out opt);
-                settings_.AltAdapterOptions = opt;
-                if(swapAzmAltEncoders_)
-                    azmRes_ = opt.encRes_;
-                else
-                    altRes_ = opt.encRes_;
-                break;
+                AdapterOptions opt;
+                switch (data[0])
+                {
+                default:
+                case A_ALT:
+                    ReadAdapterOptions(data, 1, out opt);
+                    settings_.AltAdapterOptions = opt;
+                    if (swapAzmAltEncoders_)
+                        azmRes_ = opt.encRes_;
+                    else
+                        altRes_ = opt.encRes_;
+                    break;
 
-            case A_AZM:
-                ReadAdapterOptions(data, 1, out opt);
-                settings_.AzmAdapterOptions = opt;
-                if (swapAzmAltEncoders_)
-                    altRes_ = opt.encRes_;
-                else
-                    azmRes_ = opt.encRes_;
-                break;
+                case A_AZM:
+                    ReadAdapterOptions(data, 1, out opt);
+                    settings_.AzmAdapterOptions = opt;
+                    if (swapAzmAltEncoders_)
+                        altRes_ = opt.encRes_;
+                    else
+                        azmRes_ = opt.encRes_;
+                    break;
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
             }
         }
 
@@ -1883,55 +1892,55 @@ namespace ScopeDSCClient
             set { profile_.SetValue(section_, "AlignmentEquAxis", value); }
         }
 
-        public ScopeGotoClient.AlignmentConnectionData AlignmentConnectionGoTo
+        public ClientCommonAPI.AlignmentConnectionData AlignmentConnectionGoTo
         {
-            get { return (ScopeGotoClient.AlignmentConnectionData)profile_.GetValue(section_, "AlignmentConnectionGoTo", new ScopeGotoClient.AlignmentConnectionData()); }
+            get { return (ClientCommonAPI.AlignmentConnectionData)profile_.GetValue(section_, "AlignmentConnectionGoTo", new ClientCommonAPI.AlignmentConnectionData()); }
             set { profile_.SetValue(section_, "AlignmentConnectionGoTo", value); }
         }
 
         public bool AutoTrack
         {
-            get { return profile_.GetValue(section_, "AutoTrack", false); }
-            set { profile_.SetValue(section_, "AutoTrack", value); }
+            get { return profile_.GetValue(sectionGoTo_, "AutoTrack", false); }
+            set { profile_.SetValue(sectionGoTo_, "AutoTrack", value); }
         }
 
         public ScopeGotoClient.MotorOptions AltMotorOptions
         {
-            get { return (ScopeGotoClient.MotorOptions)profile_.GetValue(section_, "AltMotorOptions", new ScopeGotoClient.MotorOptions()); }
+            get { return (ScopeGotoClient.MotorOptions)profile_.GetValue(sectionGoTo_, "AltMotorOptions", new ScopeGotoClient.MotorOptions()); }
             set
             {
                 if (value.valid_)
-                    profile_.SetValue(section_, "AltMotorOptions", value);
+                    profile_.SetValue(sectionGoTo_, "AltMotorOptions", value);
             }
         }
 
         public ScopeGotoClient.MotorOptions AzmMotorOptions
         {
-            get { return (ScopeGotoClient.MotorOptions)profile_.GetValue(section_, "AzmMotorOptions", new ScopeGotoClient.MotorOptions()); }
+            get { return (ScopeGotoClient.MotorOptions)profile_.GetValue(sectionGoTo_, "AzmMotorOptions", new ScopeGotoClient.MotorOptions()); }
             set
             {
                 if (value.valid_)
-                    profile_.SetValue(section_, "AzmMotorOptions", value);
+                    profile_.SetValue(sectionGoTo_, "AzmMotorOptions", value);
             }
         }
 
         public ScopeGotoClient.AdapterOptions AltAdapterOptions
         {
-            get { return (ScopeGotoClient.AdapterOptions)profile_.GetValue(section_, "AltAdapterOptions", new ScopeGotoClient.AdapterOptions()); }
+            get { return (ScopeGotoClient.AdapterOptions)profile_.GetValue(sectionGoTo_, "AltAdapterOptions", new ScopeGotoClient.AdapterOptions()); }
             set
             {
                 if (value.valid_)
-                    profile_.SetValue(section_, "AltAdapterOptions", value);
+                    profile_.SetValue(sectionGoTo_, "AltAdapterOptions", value);
             }
         }
 
         public ScopeGotoClient.AdapterOptions AzmAdapterOptions
         {
-            get { return (ScopeGotoClient.AdapterOptions)profile_.GetValue(section_, "AzmAdapterOptions", new ScopeGotoClient.AdapterOptions()); }
+            get { return (ScopeGotoClient.AdapterOptions)profile_.GetValue(sectionGoTo_, "AzmAdapterOptions", new ScopeGotoClient.AdapterOptions()); }
             set
             {
                 if (value.valid_)
-                    profile_.SetValue(section_, "AzmAdapterOptions", value);
+                    profile_.SetValue(sectionGoTo_, "AzmAdapterOptions", value);
             }
         }
 
@@ -1940,7 +1949,7 @@ namespace ScopeDSCClient
             return profile_.Buffer();
         }
 
-        private const string section_ = "entriesGoTo";
+        private const string section_ = "entries", sectionGoTo_ = "entriesGoTo";
         private XmlProfile profile_ = new XmlProfile();
     }
 }

@@ -48,6 +48,7 @@
             this.buttonConnection = new System.Windows.Forms.Button();
             this.tableLayoutPanel6 = new System.Windows.Forms.TableLayoutPanel();
             this.tableLayoutPanel9 = new System.Windows.Forms.TableLayoutPanel();
+            this.buttonArrowSpeed = new System.Windows.Forms.Button();
             this.buttonTrackRight = new System.Windows.Forms.Button();
             this.buttonTrackDown = new System.Windows.Forms.Button();
             this.buttonTrackLeft = new System.Windows.Forms.Button();
@@ -58,7 +59,6 @@
             this.buttonStellariumConnect = new System.Windows.Forms.Button();
             this.textBoxPosition = new System.Windows.Forms.TextBox();
             this.timer1 = new System.Windows.Forms.Timer(this.components);
-            this.buttonArrowSpeed = new System.Windows.Forms.Button();
             this.tableLayoutPanel1.SuspendLayout();
             this.tableLayoutPanel2.SuspendLayout();
             this.tableLayoutPanel3.SuspendLayout();
@@ -369,6 +369,20 @@
             this.tableLayoutPanel9.Size = new System.Drawing.Size(286, 192);
             this.tableLayoutPanel9.TabIndex = 0;
             // 
+            // buttonArrowSpeed
+            // 
+            this.buttonArrowSpeed.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+                        | System.Windows.Forms.AnchorStyles.Left)
+                        | System.Windows.Forms.AnchorStyles.Right)));
+            this.buttonArrowSpeed.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+            this.buttonArrowSpeed.Location = new System.Drawing.Point(193, 3);
+            this.buttonArrowSpeed.Name = "buttonArrowSpeed";
+            this.buttonArrowSpeed.Size = new System.Drawing.Size(90, 90);
+            this.buttonArrowSpeed.TabIndex = 2;
+            this.buttonArrowSpeed.Text = "Arrow Speed";
+            this.buttonArrowSpeed.UseVisualStyleBackColor = true;
+            this.buttonArrowSpeed.Click += new System.EventHandler(this.buttonArrowSpeed_Click);
+            // 
             // buttonTrackRight
             // 
             this.buttonTrackRight.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
@@ -496,20 +510,6 @@
             this.timer1.Enabled = true;
             this.timer1.Interval = 250;
             this.timer1.Tick += new System.EventHandler(this.timer1_Tick);
-            // 
-            // buttonArrowSpeed
-            // 
-            this.buttonArrowSpeed.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-                        | System.Windows.Forms.AnchorStyles.Left)
-                        | System.Windows.Forms.AnchorStyles.Right)));
-            this.buttonArrowSpeed.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.buttonArrowSpeed.Location = new System.Drawing.Point(193, 3);
-            this.buttonArrowSpeed.Name = "buttonArrowSpeed";
-            this.buttonArrowSpeed.Size = new System.Drawing.Size(90, 90);
-            this.buttonArrowSpeed.TabIndex = 2;
-            this.buttonArrowSpeed.Text = "Arrow Speed";
-            this.buttonArrowSpeed.UseVisualStyleBackColor = true;
-            this.buttonArrowSpeed.Click += new System.EventHandler(this.buttonArrowSpeed_Click);
             // 
             // ScopeGotoClient
             // 

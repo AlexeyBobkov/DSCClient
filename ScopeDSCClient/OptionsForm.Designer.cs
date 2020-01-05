@@ -49,34 +49,35 @@
             this.textBoxStellariumTCPPort = new System.Windows.Forms.TextBox();
             this.checkBoxOppHorzPositionDirection = new System.Windows.Forms.CheckBox();
             this.checkBoxAutoTrack = new System.Windows.Forms.CheckBox();
-            this.buttonScreenKbd = new ScopeDSCClientHelper.NoSelectButton();
             this.checkBoxLogging = new System.Windows.Forms.CheckBox();
             this.buttonSaveLog = new System.Windows.Forms.Button();
             this.checkBoxLoggingAZM = new System.Windows.Forms.CheckBox();
             this.comboBoxLoggingType0 = new System.Windows.Forms.ComboBox();
             this.comboBoxLoggingType1 = new System.Windows.Forms.ComboBox();
+            this.buttonHostConfig = new System.Windows.Forms.Button();
+            this.buttonScreenKbd = new ScopeDSCClientHelper.NoSelectButton();
             this.groupBoxLocUnits.SuspendLayout();
             this.SuspendLayout();
             // 
             // buttonOK
             // 
             this.buttonOK.DialogResult = System.Windows.Forms.DialogResult.OK;
-            this.buttonOK.Location = new System.Drawing.Point(312, 547);
+            this.buttonOK.Location = new System.Drawing.Point(811, 435);
             this.buttonOK.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.buttonOK.Name = "buttonOK";
             this.buttonOK.Size = new System.Drawing.Size(201, 92);
-            this.buttonOK.TabIndex = 17;
+            this.buttonOK.TabIndex = 24;
             this.buttonOK.Text = "OK";
             this.buttonOK.UseVisualStyleBackColor = true;
             // 
             // buttonCancel
             // 
             this.buttonCancel.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.buttonCancel.Location = new System.Drawing.Point(583, 547);
+            this.buttonCancel.Location = new System.Drawing.Point(811, 553);
             this.buttonCancel.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.buttonCancel.Name = "buttonCancel";
             this.buttonCancel.Size = new System.Drawing.Size(201, 92);
-            this.buttonCancel.TabIndex = 18;
+            this.buttonCancel.TabIndex = 25;
             this.buttonCancel.Text = "Cancel";
             this.buttonCancel.UseVisualStyleBackColor = true;
             // 
@@ -90,7 +91,7 @@
             this.groupBoxLocUnits.Name = "groupBoxLocUnits";
             this.groupBoxLocUnits.Padding = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.groupBoxLocUnits.Size = new System.Drawing.Size(492, 83);
-            this.groupBoxLocUnits.TabIndex = 10;
+            this.groupBoxLocUnits.TabIndex = 11;
             this.groupBoxLocUnits.TabStop = false;
             this.groupBoxLocUnits.Text = "Units";
             // 
@@ -235,7 +236,7 @@
             this.checkBoxShowNearestAzmRotation.Location = new System.Drawing.Point(292, 220);
             this.checkBoxShowNearestAzmRotation.Name = "checkBoxShowNearestAzmRotation";
             this.checkBoxShowNearestAzmRotation.Size = new System.Drawing.Size(284, 33);
-            this.checkBoxShowNearestAzmRotation.TabIndex = 11;
+            this.checkBoxShowNearestAzmRotation.TabIndex = 12;
             this.checkBoxShowNearestAzmRotation.Text = "Nearest Azm Rotation";
             this.checkBoxShowNearestAzmRotation.UseVisualStyleBackColor = true;
             this.checkBoxShowNearestAzmRotation.CheckedChanged += new System.EventHandler(this.checkBoxShowNearestAzmRotation_CheckedChanged);
@@ -246,7 +247,7 @@
             this.checkBoxConnectToStellarium.Location = new System.Drawing.Point(292, 259);
             this.checkBoxConnectToStellarium.Name = "checkBoxConnectToStellarium";
             this.checkBoxConnectToStellarium.Size = new System.Drawing.Size(282, 33);
-            this.checkBoxConnectToStellarium.TabIndex = 12;
+            this.checkBoxConnectToStellarium.TabIndex = 13;
             this.checkBoxConnectToStellarium.Text = "Connect to Stellarium";
             this.checkBoxConnectToStellarium.UseVisualStyleBackColor = true;
             this.checkBoxConnectToStellarium.CheckedChanged += new System.EventHandler(this.checkBoxConnectToStellarium_CheckedChanged);
@@ -257,7 +258,7 @@
             this.labelStellariumTcpPort.Location = new System.Drawing.Point(346, 300);
             this.labelStellariumTcpPort.Name = "labelStellariumTcpPort";
             this.labelStellariumTcpPort.Size = new System.Drawing.Size(127, 29);
-            this.labelStellariumTcpPort.TabIndex = 13;
+            this.labelStellariumTcpPort.TabIndex = 14;
             this.labelStellariumTcpPort.Text = "TCP Port:";
             // 
             // textBoxStellariumTCPPort
@@ -265,16 +266,16 @@
             this.textBoxStellariumTCPPort.Location = new System.Drawing.Point(516, 297);
             this.textBoxStellariumTCPPort.Name = "textBoxStellariumTCPPort";
             this.textBoxStellariumTCPPort.Size = new System.Drawing.Size(100, 35);
-            this.textBoxStellariumTCPPort.TabIndex = 14;
+            this.textBoxStellariumTCPPort.TabIndex = 15;
             this.textBoxStellariumTCPPort.TextChanged += new System.EventHandler(this.textBoxStellariumTCPPort_TextChanged);
             // 
             // checkBoxOppHorzPositionDirection
             // 
             this.checkBoxOppHorzPositionDirection.AutoSize = true;
-            this.checkBoxOppHorzPositionDirection.Location = new System.Drawing.Point(292, 349);
+            this.checkBoxOppHorzPositionDirection.Location = new System.Drawing.Point(292, 341);
             this.checkBoxOppHorzPositionDirection.Name = "checkBoxOppHorzPositionDirection";
             this.checkBoxOppHorzPositionDirection.Size = new System.Drawing.Size(402, 33);
-            this.checkBoxOppHorzPositionDirection.TabIndex = 15;
+            this.checkBoxOppHorzPositionDirection.TabIndex = 16;
             this.checkBoxOppHorzPositionDirection.Text = "Opposite Horizontal Positioning";
             this.checkBoxOppHorzPositionDirection.UseVisualStyleBackColor = true;
             this.checkBoxOppHorzPositionDirection.CheckedChanged += new System.EventHandler(this.checkBoxOppHorzPositionDirection_CheckedChanged);
@@ -282,42 +283,31 @@
             // checkBoxAutoTrack
             // 
             this.checkBoxAutoTrack.AutoSize = true;
-            this.checkBoxAutoTrack.Location = new System.Drawing.Point(292, 388);
+            this.checkBoxAutoTrack.Location = new System.Drawing.Point(292, 380);
             this.checkBoxAutoTrack.Name = "checkBoxAutoTrack";
             this.checkBoxAutoTrack.Size = new System.Drawing.Size(157, 33);
-            this.checkBoxAutoTrack.TabIndex = 19;
+            this.checkBoxAutoTrack.TabIndex = 17;
             this.checkBoxAutoTrack.Text = "Auto Track";
             this.checkBoxAutoTrack.UseVisualStyleBackColor = true;
             this.checkBoxAutoTrack.CheckedChanged += new System.EventHandler(this.checkBoxAutoTrack_CheckedChanged);
             // 
-            // buttonScreenKbd
-            // 
-            this.buttonScreenKbd.Font = new System.Drawing.Font("Wingdings", 48F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(2)));
-            this.buttonScreenKbd.Location = new System.Drawing.Point(40, 547);
-            this.buttonScreenKbd.Name = "buttonScreenKbd";
-            this.buttonScreenKbd.Size = new System.Drawing.Size(114, 92);
-            this.buttonScreenKbd.TabIndex = 16;
-            this.buttonScreenKbd.Text = "7";
-            this.buttonScreenKbd.UseVisualStyleBackColor = true;
-            this.buttonScreenKbd.Click += new System.EventHandler(this.buttonScreenKbd_Click);
-            // 
             // checkBoxLogging
             // 
             this.checkBoxLogging.AutoSize = true;
-            this.checkBoxLogging.Location = new System.Drawing.Point(135, 456);
+            this.checkBoxLogging.Location = new System.Drawing.Point(49, 466);
             this.checkBoxLogging.Name = "checkBoxLogging";
             this.checkBoxLogging.Size = new System.Drawing.Size(76, 33);
-            this.checkBoxLogging.TabIndex = 20;
+            this.checkBoxLogging.TabIndex = 18;
             this.checkBoxLogging.Text = "Log";
             this.checkBoxLogging.UseVisualStyleBackColor = true;
             this.checkBoxLogging.CheckedChanged += new System.EventHandler(this.checkBoxLogging_CheckedChanged);
             // 
             // buttonSaveLog
             // 
-            this.buttonSaveLog.Location = new System.Drawing.Point(621, 449);
+            this.buttonSaveLog.Location = new System.Drawing.Point(535, 459);
             this.buttonSaveLog.Name = "buttonSaveLog";
             this.buttonSaveLog.Size = new System.Drawing.Size(163, 46);
-            this.buttonSaveLog.TabIndex = 21;
+            this.buttonSaveLog.TabIndex = 22;
             this.buttonSaveLog.Text = "Save Log";
             this.buttonSaveLog.UseVisualStyleBackColor = true;
             this.buttonSaveLog.Click += new System.EventHandler(this.buttonSaveLog_Click);
@@ -325,10 +315,10 @@
             // checkBoxLoggingAZM
             // 
             this.checkBoxLoggingAZM.AutoSize = true;
-            this.checkBoxLoggingAZM.Location = new System.Drawing.Point(227, 457);
+            this.checkBoxLoggingAZM.Location = new System.Drawing.Point(141, 467);
             this.checkBoxLoggingAZM.Name = "checkBoxLoggingAZM";
             this.checkBoxLoggingAZM.Size = new System.Drawing.Size(84, 33);
-            this.checkBoxLoggingAZM.TabIndex = 22;
+            this.checkBoxLoggingAZM.TabIndex = 19;
             this.checkBoxLoggingAZM.Text = "AZM";
             this.checkBoxLoggingAZM.UseVisualStyleBackColor = true;
             this.checkBoxLoggingAZM.CheckedChanged += new System.EventHandler(this.checkBoxLoggingAZM_CheckedChanged);
@@ -337,27 +327,50 @@
             // 
             this.comboBoxLoggingType0.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.comboBoxLoggingType0.FormattingEnabled = true;
-            this.comboBoxLoggingType0.Location = new System.Drawing.Point(324, 454);
+            this.comboBoxLoggingType0.Location = new System.Drawing.Point(238, 464);
             this.comboBoxLoggingType0.Name = "comboBoxLoggingType0";
             this.comboBoxLoggingType0.Size = new System.Drawing.Size(121, 37);
-            this.comboBoxLoggingType0.TabIndex = 23;
+            this.comboBoxLoggingType0.TabIndex = 20;
             this.comboBoxLoggingType0.SelectedIndexChanged += new System.EventHandler(this.comboBoxLoggingType0_SelectedIndexChanged);
             // 
             // comboBoxLoggingType1
             // 
             this.comboBoxLoggingType1.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.comboBoxLoggingType1.FormattingEnabled = true;
-            this.comboBoxLoggingType1.Location = new System.Drawing.Point(467, 454);
+            this.comboBoxLoggingType1.Location = new System.Drawing.Point(381, 464);
             this.comboBoxLoggingType1.Name = "comboBoxLoggingType1";
             this.comboBoxLoggingType1.Size = new System.Drawing.Size(121, 37);
-            this.comboBoxLoggingType1.TabIndex = 24;
+            this.comboBoxLoggingType1.TabIndex = 21;
             this.comboBoxLoggingType1.SelectedIndexChanged += new System.EventHandler(this.comboBoxLoggingType1_SelectedIndexChanged);
+            // 
+            // buttonHostConfig
+            // 
+            this.buttonHostConfig.Location = new System.Drawing.Point(811, 237);
+            this.buttonHostConfig.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
+            this.buttonHostConfig.Name = "buttonHostConfig";
+            this.buttonHostConfig.Size = new System.Drawing.Size(201, 96);
+            this.buttonHostConfig.TabIndex = 23;
+            this.buttonHostConfig.Text = "Host Configuration";
+            this.buttonHostConfig.UseVisualStyleBackColor = true;
+            this.buttonHostConfig.Click += new System.EventHandler(this.buttonHostConfig_Click);
+            // 
+            // buttonScreenKbd
+            // 
+            this.buttonScreenKbd.Font = new System.Drawing.Font("Wingdings", 48F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(2)));
+            this.buttonScreenKbd.Location = new System.Drawing.Point(40, 300);
+            this.buttonScreenKbd.Name = "buttonScreenKbd";
+            this.buttonScreenKbd.Size = new System.Drawing.Size(114, 92);
+            this.buttonScreenKbd.TabIndex = 10;
+            this.buttonScreenKbd.Text = "7";
+            this.buttonScreenKbd.UseVisualStyleBackColor = true;
+            this.buttonScreenKbd.Click += new System.EventHandler(this.buttonScreenKbd_Click);
             // 
             // OptionsForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(15F, 29F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(828, 683);
+            this.ClientSize = new System.Drawing.Size(1052, 683);
+            this.Controls.Add(this.buttonHostConfig);
             this.Controls.Add(this.comboBoxLoggingType1);
             this.Controls.Add(this.comboBoxLoggingType0);
             this.Controls.Add(this.checkBoxLoggingAZM);
@@ -425,5 +438,6 @@
         private System.Windows.Forms.CheckBox checkBoxLoggingAZM;
         private System.Windows.Forms.ComboBox comboBoxLoggingType0;
         private System.Windows.Forms.ComboBox comboBoxLoggingType1;
+        private System.Windows.Forms.Button buttonHostConfig;
     }
 }

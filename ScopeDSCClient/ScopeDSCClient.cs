@@ -211,6 +211,9 @@ namespace ScopeDSCClient
             public double Latitude { get { return parent_.latitude_; } }
             public double Longitude { get { return parent_.longitude_; } }
 
+            public string GetConfigurationName { get { return null; } }
+            public void CallConfiguration() {}
+
             private ScopeDSCClient parent_;
         }
         

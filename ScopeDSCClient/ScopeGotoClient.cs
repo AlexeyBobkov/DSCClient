@@ -1,4 +1,4 @@
-﻿#define TESTING
+﻿//#define TESTING
 
 using System;
 using System.Collections.Generic;
@@ -89,10 +89,10 @@ namespace ScopeDSCClient
         private const byte STATE_AZM_RUNNING = 2;
         private const byte STATE_SWITCH_ON = 4;
 
-        private const byte A_ALT = 0;   // command for alt adapter
-        private const byte A_AZM = 1;   // command for azm adapter
-        private const byte M_ALT = 2;   // command for alt motor
-        private const byte M_AZM = 3;   // command for azm motor
+        public const byte A_ALT = 0;    // command for alt adapter
+        public const byte A_AZM = 1;    // command for azm adapter
+        public const byte M_ALT = 2;    // command for alt motor
+        public const byte M_AZM = 3;    // command for azm motor
 
 #if LOGGING_ON
         private const UInt16 LMODE_ALT = 0;
@@ -251,6 +251,7 @@ namespace ScopeDSCClient
         private class ClientHost : ClientCommonAPI.IClientHost
         {
             public ClientHost(ScopeGotoClient parent) { parent_ = parent; }
+            public ClientHost(ScopeGotoClient parent, ScopeGotoClientSettings settings) { parent_ = parent; settings_ = settings; }
 
             public double AzmAngle { get { return parent_.AzmAngleLimited; } }
             public double AltAngle { get { return parent_.AltAngle; } }
@@ -260,7 +261,15 @@ namespace ScopeDSCClient
             public double Latitude { get { return parent_.latitude_; } }
             public double Longitude { get { return parent_.longitude_; } }
 
+            public string GetConfigurationName { get { return "GoTo Controller Configuration"; } }
+            public void CallConfiguration()
+            {
+                GotoConfigurationForm form = new GotoConfigurationForm(parent_, settings_);
+                form.ShowDialog();
+            }
+
             private ScopeGotoClient parent_;
+            private ScopeGotoClientSettings settings_;
         }
         
         private void SetPositionText()
@@ -789,7 +798,7 @@ namespace ScopeDSCClient
 
         private void buttonOptions_Click(object sender, EventArgs e)
         {
-            OptionsForm form = new OptionsForm(new ClientHost(this),
+            OptionsForm form = new OptionsForm(new ClientHost(this, settings_),
                                                showNearestAzmRotation_,
                                                connectToStellarium_,
                                                stellariumTcpPort_,
@@ -1463,33 +1472,10 @@ namespace ScopeDSCClient
                 return;
             }
 
-            {
-                MotorOptions opt = settings_.AltMotorOptions;
-                if (opt.valid_)
-                    SendSetMotorConfigOptions(M_ALT, opt);
-                else
-                    SendGetMotorConfigOptions(M_ALT);
-
-                opt = settings_.AzmMotorOptions;
-                if (opt.valid_)
-                    SendSetMotorConfigOptions(M_AZM, opt);
-                else
-                    SendGetMotorConfigOptions(M_AZM);
-            }
-
-            {
-                AdapterOptions opt = settings_.AltAdapterOptions;
-                if (opt.valid_)
-                    SendSetAdapterConfigOptions(A_ALT, opt);
-                else
-                    SendGetAdapterConfigOptions(A_ALT);
-
-                opt = settings_.AzmAdapterOptions;
-                if (opt.valid_)
-                    SendSetAdapterConfigOptions(A_AZM, opt);
-                else
-                    SendGetAdapterConfigOptions(A_AZM);
-            }
+            ConfigureMotor(M_ALT, settings_.AltMotorOptions);
+            ConfigureMotor(M_AZM, settings_.AzmMotorOptions);
+            ConfigureAdapter(A_ALT, settings_.AltAdapterOptions);
+            ConfigureAdapter(A_AZM, settings_.AzmAdapterOptions);
         }
         private void ReceiveSetMotorConfigOptions(byte[] data)
         {
@@ -1500,37 +1486,38 @@ namespace ScopeDSCClient
             SendGetAdapterConfigOptions(data[0]);
         }
 
-        private MotorOptions motorAzmOptions_, motorAltOptions_;
         private void ReceiveGetMotorConfigOptions(byte[] data)
         {
+            MotorOptions opt;
             switch (data[0])
             {
             default:
-            case M_ALT: ReadMotorOptions(data, 1, out motorAltOptions_); settings_.AltMotorOptions = motorAltOptions_; break;
-            case M_AZM: ReadMotorOptions(data, 1, out motorAzmOptions_); settings_.AzmMotorOptions = motorAzmOptions_; break;
+            case M_ALT: ReadMotorOptions(data, 1, out opt); settings_.AltMotorOptions = opt; break;
+            case M_AZM: ReadMotorOptions(data, 1, out opt); settings_.AzmMotorOptions = opt; break;
             }
         }
-
-        private AdapterOptions adapterAzmOptions_, adapterAltOptions_;
         private void ReceiveGetAdapterConfigOptions(byte[] data)
         {
+            AdapterOptions opt;
             switch (data[0])
             {
             default:
             case A_ALT:
-                ReadAdapterOptions(data, 1, out adapterAltOptions_); settings_.AltAdapterOptions = adapterAltOptions_;
+                ReadAdapterOptions(data, 1, out opt);
+                settings_.AltAdapterOptions = opt;
                 if(swapAzmAltEncoders_)
-                    azmRes_ = adapterAltOptions_.encRes_;
+                    azmRes_ = opt.encRes_;
                 else
-                    altRes_ = adapterAltOptions_.encRes_;
+                    altRes_ = opt.encRes_;
                 break;
 
             case A_AZM:
-                ReadAdapterOptions(data, 1, out adapterAzmOptions_); settings_.AzmAdapterOptions = adapterAzmOptions_;
+                ReadAdapterOptions(data, 1, out opt);
+                settings_.AzmAdapterOptions = opt;
                 if (swapAzmAltEncoders_)
-                    altRes_ = adapterAltOptions_.encRes_;
+                    altRes_ = opt.encRes_;
                 else
-                    azmRes_ = adapterAltOptions_.encRes_;
+                    azmRes_ = opt.encRes_;
                 break;
             }
         }
@@ -1630,6 +1617,25 @@ namespace ScopeDSCClient
             data.AddRange(BitConverter.GetBytes(opt.pidPollPeriod_));
             data.AddRange(BitConverter.GetBytes(opt.adjustPidTmo_));
             data.AddRange(BitConverter.GetBytes(opt.speedSmoothTime_));
+        }
+
+        public bool CanConfigureMotorsAndAdapters()
+        {
+            return connectionGoTo_ != null;
+        }
+        public void ConfigureMotor(byte dst, MotorOptions opt)
+        {
+            if (opt.valid_)
+                SendSetMotorConfigOptions(dst, opt);
+            else
+                SendGetMotorConfigOptions(dst);
+        }
+        public void ConfigureAdapter(byte dst, AdapterOptions opt)
+        {
+            if (opt.valid_)
+                SendSetAdapterConfigOptions(dst, opt);
+            else
+                SendGetAdapterConfigOptions(dst);
         }
 
         // MOTOR/ADAPTER CONFIGURATION OPTIONS END
@@ -1822,7 +1828,7 @@ namespace ScopeDSCClient
     }
 
     //Application settings wrapper class
-    sealed class ScopeGotoClientSettings
+    sealed public class ScopeGotoClientSettings
     {
         public ScopeGotoClientSettings()
         {

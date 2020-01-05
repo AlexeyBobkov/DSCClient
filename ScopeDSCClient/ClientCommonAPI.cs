@@ -53,6 +53,10 @@ namespace ScopeDSCClient
             bool NightMode { get; }
             double Latitude { get; }
             double Longitude { get; }
+
+            // host-specific configuration
+            string GetConfigurationName { get; }
+            void CallConfiguration();
         }
         
         // object databases

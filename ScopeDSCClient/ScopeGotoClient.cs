@@ -39,24 +39,9 @@ namespace ScopeDSCClient
         private SkyObjectForm.LastSettings lastObjSettings_ = SkyObjectForm.LastSettings.Default;
         private AlignmentForm.LastSettings lastAlignmentObjSettings_ = AlignmentForm.LastSettings.Default;
 
-        public struct AlignmentConnectionData
-        {
-            private string portName_;
-            private uint sessionId_;
-
-            public string PortName { get { return portName_; } set { portName_ = value; } }
-            public uint SessionId { get { return sessionId_; } set { sessionId_ = value; } }
-            
-            public AlignmentConnectionData(string portName, uint sessionId)
-            {
-                portName_ = portName;
-                sessionId_ = sessionId;
-            }
-        }
-
         // alignment data
         private DSCAlignment alignment_;
-        private AlignmentConnectionData alignmentConnectionGoTo_;
+        private ClientCommonAPI.AlignmentConnectionData alignmentConnectionGoTo_;
 
         // state
         private const int LAST_OBJ_COUNT = 20;
@@ -89,8 +74,10 @@ namespace ScopeDSCClient
         private const byte STATE_AZM_RUNNING = 2;
         private const byte STATE_SWITCH_ON = 4;
 
-        private const byte A_ALT = 0;   // command for alt adapter
-        private const byte A_AZM = 1;   // command for azm adapter
+        public const byte A_ALT = 0;    // command for alt adapter
+        public const byte A_AZM = 1;    // command for azm adapter
+        public const byte M_ALT = 2;    // command for alt motor
+        public const byte M_AZM = 3;    // command for azm motor
 
 #if LOGGING_ON
         private const UInt16 LMODE_ALT = 0;
@@ -252,16 +239,25 @@ namespace ScopeDSCClient
         private class ClientHost : ClientCommonAPI.IClientHost
         {
             public ClientHost(ScopeGotoClient parent) { parent_ = parent; }
+            public ClientHost(ScopeGotoClient parent, ScopeGotoClientSettings settings) { parent_ = parent; settings_ = settings; }
 
             public double AzmAngle { get { return parent_.AzmAngleLimited; } }
             public double AltAngle { get { return parent_.AltAngle; } }
-            public double EquAngle { get { return 0; } }
+            public double EquAngle { get { return -Math.PI; } }
 
             public bool NightMode { get { return parent_.nightMode_; } }
             public double Latitude { get { return parent_.latitude_; } }
             public double Longitude { get { return parent_.longitude_; } }
 
+            public string GetConfigurationName { get { return "GoTo Controller Configuration"; } }
+            public void CallConfiguration()
+            {
+                GotoConfigurationForm form = new GotoConfigurationForm(parent_, settings_);
+                form.ShowDialog();
+            }
+
             private ScopeGotoClient parent_;
+            private ScopeGotoClientSettings settings_;
         }
         
         private void SetPositionText()
@@ -280,7 +276,7 @@ namespace ScopeDSCClient
                 double d = ClientCommonAPI.CalcTime();
                 double azm, alt;
                 selectedObject_.CalcAzimuthal(d, latitude_, longitude_, out azm, out alt);
-                PairA objScope = alignment_.Horz2Scope(new PairA(azm * Const.toRad, alt * Const.toRad), 0);
+                PairA objScope = alignment_.Horz2Scope(new PairA(azm * Const.toRad, alt * Const.toRad), -Math.PI);
 
                 if (!showNearestAzmRotation_)
                     s += ClientCommonAPI.PrintAzmAltDifference(SkyObjectPosCalc.Rev(objScope.Azm * Const.toDeg) - AzmAngle * Const.toDeg, (objScope.Alt - AltAngle) * Const.toDeg, oppositeHorzPositioningDir_);
@@ -379,7 +375,7 @@ namespace ScopeDSCClient
                     s += "Scope Position Unknown" + Environment.NewLine;
                 else if (alignment_ != null && alignment_.IsAligned)
                 {
-                    PairA horz = alignment_.Scope2Horz(new PairA(AzmAngle, AltAngle), 0);
+                    PairA horz = alignment_.Scope2Horz(new PairA(AzmAngle, AltAngle), -Math.PI);
 
                     s += "Scope Position: Azm = " + ClientCommonAPI.PrintAngle(SkyObjectPosCalc.Rev(horz.Azm * Const.toDeg), false, false);
                     s += ", Alt = " + ClientCommonAPI.PrintAngle(SkyObjectPosCalc.Rev(horz.Alt * Const.toDeg), false, false) + Environment.NewLine;
@@ -598,7 +594,10 @@ namespace ScopeDSCClient
                     settings_.AlignmentStars = alignment_.Stars;
                     settings_.AlignmentEquAxis = alignment_.EquAxis;
                     if (connectionGoTo_ != null && connectionGoTo_.connection_ != null)
-                        settings_.AlignmentConnectionGoTo = alignmentConnectionGoTo_ = new AlignmentConnectionData(connectionGoTo_.connection_.PortName, connectionGoTo_.sessionId_);
+                    {
+                        settings_.AlignmentConnectionGoTo = alignmentConnectionGoTo_ =
+                            new ClientCommonAPI.AlignmentConnectionData(connectionGoTo_.connection_.PortName, connectionGoTo_.sessionId_);
+                    }
                 }
             }
         }
@@ -791,7 +790,7 @@ namespace ScopeDSCClient
 
         private void buttonOptions_Click(object sender, EventArgs e)
         {
-            OptionsForm form = new OptionsForm(new ClientHost(this),
+            OptionsForm form = new OptionsForm(new ClientHost(this, settings_),
                                                locations_,
                                                showNearestAzmRotation_,
                                                connectToStellarium_,
@@ -945,8 +944,9 @@ namespace ScopeDSCClient
             connectionGoTo_ = data;
             swapAzmAltEncoders_ = data.swapAzmAltEncoders_;
 
-            SendCommand(connectionGoTo_, 'h', 4, this.ReceiveAltAzmResolution);
+            //SendCommand(connectionGoTo_, 'h', 4, this.ReceiveAltAzmResolution);
             SendCommand(connectionGoTo_, 'R', 13, this.ReceiveStatus);
+            SetAndReciveMotorAndAdapterConfigOptions();
 
             ConnectionChangedGoTo();
             UpdateUI();
@@ -1070,7 +1070,7 @@ namespace ScopeDSCClient
                 trackedObject_.CalcTopoRaDec(d, latitude_, longitude_, out dec, out ra);
                 SkyObjectPosCalc.Equ2AzAlt(d, latitude_, longitude_, dec + trackedOffsetDec_, ra + trackedOffsetRa_, out azm, out alt);
             }
-            PairA objScope = alignment_.Horz2Scope(new PairA(azm * Const.toRad, alt * Const.toRad), 0);
+            PairA objScope = alignment_.Horz2Scope(new PairA(azm * Const.toRad, alt * Const.toRad), -Math.PI);
 
             // azimuth difference, in degree
             azmdDeg = SkyObjectPosCalc.Rev(objScope.Azm * Const.toDeg - AzmAngle * Const.toDeg);
@@ -1245,7 +1245,7 @@ namespace ScopeDSCClient
             if (alignment_ != null && connectionGoTo_ != null && switchOn_)
             {
                 // get current telescope position
-                PairA horz = alignment_.Scope2Horz(new PairA(AzmAngle, AltAngle), 0);
+                PairA horz = alignment_.Scope2Horz(new PairA(AzmAngle, AltAngle), -Math.PI);
                 double scopeDec, scopeRa;
                 SkyObjectPosCalc.AzAlt2Equ(ClientCommonAPI.CalcTime(), latitude_, longitude_,
                                             SkyObjectPosCalc.Rev(horz.Azm * Const.toDeg), SkyObjectPosCalc.Rev(horz.Alt * Const.toDeg), out scopeDec, out scopeRa);
@@ -1301,11 +1301,11 @@ namespace ScopeDSCClient
             if (trackedObject_ != null)
             {
                 // get current telescope position
-                PairA horz = alignment_.Scope2Horz(new PairA(AzmAngle, AltAngle), 0);
+                PairA horz = alignment_.Scope2Horz(new PairA(AzmAngle, AltAngle), -Math.PI);
                 double dec, ra;
                 SkyObjectPosCalc.AzAlt2Equ(ClientCommonAPI.CalcTime(), latitude_, longitude_,
                                             SkyObjectPosCalc.Rev(horz.Azm * Const.toDeg), SkyObjectPosCalc.Rev(horz.Alt * Const.toDeg), out dec, out ra);
-                horz = alignment_.Scope2Horz(new PairA(AzmAngle + offsetAzm * Const.toRad, AltAngle + offsetAlt * Const.toRad), 0);
+                horz = alignment_.Scope2Horz(new PairA(AzmAngle + offsetAzm * Const.toRad, AltAngle + offsetAlt * Const.toRad), -Math.PI);
                 double shiftedDec, shiftedRa;
                 SkyObjectPosCalc.AzAlt2Equ(ClientCommonAPI.CalcTime(), latitude_, longitude_,
                                             SkyObjectPosCalc.Rev(horz.Azm * Const.toDeg), SkyObjectPosCalc.Rev(horz.Alt * Const.toDeg), out shiftedDec, out shiftedRa);
@@ -1409,6 +1409,250 @@ namespace ScopeDSCClient
         private void ReceiveDummy(byte[] data)
         {
         }
+
+
+        // MOTOR/ADAPTER CONFIGURATION OPTIONS BEGIN
+
+        private void SetAndReciveMotorAndAdapterConfigOptions()
+        {
+            SendMotorConfigOptionsSizes();
+        }
+        private void SendMotorConfigOptionsSizes()
+        {
+            if (connectionGoTo_ != null)
+                SendCommand(connectionGoTo_, new byte[] { (byte)'Z' }, 4, ReceiveMotorConfigOptionsSizes);
+        }
+        private void SendGetMotorConfigOptions(byte dst)
+        {
+            if (connectionGoTo_ != null)
+                SendCommand(connectionGoTo_, new byte[] { (byte)'O', dst }, motorOptionSize_ + 1, ReceiveGetMotorConfigOptions);
+        }
+        private void SendSetMotorConfigOptions(byte dst, MotorOptions opt)
+        {
+            if (connectionGoTo_ != null)
+            {
+                List<byte> l = new List<byte>();
+                l.Add((byte)'M');
+                l.Add(dst);
+                WriteMotorOptions(opt, l);
+                SendCommand(connectionGoTo_, l.ToArray(), 1, ReceiveSetMotorConfigOptions);
+            }
+        }
+        private void SendGetAdapterConfigOptions(byte dst)
+        {
+            if (connectionGoTo_ != null)
+                SendCommand(connectionGoTo_, new byte[] { (byte)'O', dst }, adapterOptionSize_ + 1, ReceiveGetAdapterConfigOptions);
+        }
+        private void SendSetAdapterConfigOptions(byte dst, AdapterOptions opt)
+        {
+            if (connectionGoTo_ != null)
+            {
+                List<byte> l = new List<byte>();
+                l.Add((byte)'E');
+                l.Add(dst);
+                WriteAdapterOptions(opt, l);
+                SendCommand(connectionGoTo_, l.ToArray(), 1, ReceiveSetAdapterConfigOptions);
+            }
+        }
+
+        private const int motorOptionSize_ = 29, adapterOptionSize_ = 48;
+        private void ReceiveMotorConfigOptionsSizes(byte[] data)
+        {
+            if (motorOptionSize_ != BitConverter.ToInt16(data, 0) || adapterOptionSize_ != BitConverter.ToInt16(data, 2))
+            {
+                MessageBox.Show("Host and Controller Options Versions Mismatch", "Error", MessageBoxButtons.OK);
+                SendCommand(connectionGoTo_, 'h', 4, this.ReceiveAltAzmResolution);
+                return;
+            }
+
+            try
+            {
+                ConfigureMotor(M_ALT, settings_.AltMotorOptions);
+                ConfigureMotor(M_AZM, settings_.AzmMotorOptions);
+                ConfigureAdapter(A_ALT, settings_.AltAdapterOptions);
+                ConfigureAdapter(A_AZM, settings_.AzmAdapterOptions);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+        }
+        private void ReceiveSetMotorConfigOptions(byte[] data)
+        {
+            SendGetMotorConfigOptions(data[0]);
+        }
+        private void ReceiveSetAdapterConfigOptions(byte[] data)
+        {
+            SendGetAdapterConfigOptions(data[0]);
+        }
+
+        private void ReceiveGetMotorConfigOptions(byte[] data)
+        {
+            try
+            {
+                MotorOptions opt;
+                switch (data[0])
+                {
+                default:
+                case M_ALT: ReadMotorOptions(data, 1, out opt); settings_.AltMotorOptions = opt; break;
+                case M_AZM: ReadMotorOptions(data, 1, out opt); settings_.AzmMotorOptions = opt; break;
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+        }
+        private void ReceiveGetAdapterConfigOptions(byte[] data)
+        {
+            try
+            {
+                AdapterOptions opt;
+                switch (data[0])
+                {
+                default:
+                case A_ALT:
+                    ReadAdapterOptions(data, 1, out opt);
+                    settings_.AltAdapterOptions = opt;
+                    if (swapAzmAltEncoders_)
+                        azmRes_ = opt.encRes_;
+                    else
+                        altRes_ = opt.encRes_;
+                    break;
+
+                case A_AZM:
+                    ReadAdapterOptions(data, 1, out opt);
+                    settings_.AzmAdapterOptions = opt;
+                    if (swapAzmAltEncoders_)
+                        altRes_ = opt.encRes_;
+                    else
+                        azmRes_ = opt.encRes_;
+                    break;
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+        }
+
+        public enum ApproximationType
+        {
+            LINEAR,
+            EXPONENTIAL
+        };
+        public struct PWMProfile   // size = 4
+        {
+            public byte value_;        // required value
+            public byte magnitude_;    // PWM magnitude
+            public Int16 period_;      // PWM (and PID) period
+        }
+        public struct MotorOptions             // size = 4 + 4*4 + 1 + 4*2 = 29
+        {
+            public bool valid_;
+            public Int32 encRes_;
+            public float maxSpeedRPM_;
+            public float Kp_, KiF_, Kd_;
+            public ApproximationType approximationType_;
+            public PWMProfile loProfile_, hiProfile_;
+        }
+        private void ReadMotorOptions(byte[] data, int offset, out MotorOptions opt)
+        {
+            opt = new MotorOptions();
+            opt.valid_ = true;
+            opt.encRes_ = BitConverter.ToInt32(data, offset);
+            opt.maxSpeedRPM_ = BitConverter.ToSingle(data, offset + 4);
+            opt.Kp_ = BitConverter.ToSingle(data, offset + 8);
+            opt.KiF_ = BitConverter.ToSingle(data, offset + 12);
+            opt.Kd_ = BitConverter.ToSingle(data, offset + 16);
+            opt.approximationType_ = data[offset + 20] == 0 ? ApproximationType.LINEAR : ApproximationType.EXPONENTIAL;
+            opt.loProfile_.value_ = data[offset + 21];
+            opt.loProfile_.magnitude_ = data[offset + 22];
+            opt.loProfile_.period_ = BitConverter.ToInt16(data, offset + 23);
+            opt.hiProfile_.value_ = data[offset + 25];
+            opt.hiProfile_.magnitude_ = data[offset + 26];
+            opt.hiProfile_.period_ = BitConverter.ToInt16(data, offset + 27);
+        }
+        private void WriteMotorOptions(MotorOptions opt, List<byte> data)
+        {
+            data.AddRange(BitConverter.GetBytes(opt.encRes_));
+            data.AddRange(BitConverter.GetBytes(opt.maxSpeedRPM_));
+            data.AddRange(BitConverter.GetBytes(opt.Kp_));
+            data.AddRange(BitConverter.GetBytes(opt.KiF_));
+            data.AddRange(BitConverter.GetBytes(opt.Kd_));
+            data.Add((byte)(opt.approximationType_ == ApproximationType.LINEAR ? 0 : 1));
+            data.Add(opt.loProfile_.value_);
+            data.Add(opt.loProfile_.magnitude_);
+            data.AddRange(BitConverter.GetBytes(opt.loProfile_.period_));
+            data.Add(opt.hiProfile_.value_);
+            data.Add(opt.hiProfile_.magnitude_);
+            data.AddRange(BitConverter.GetBytes(opt.hiProfile_.period_));
+        }
+
+        public struct AdapterOptions             // size = 4*12 = 48
+        {
+            public bool valid_;
+            public Int32 encRes_;
+            public float scopeToMotor_;
+            public float deviationSpeedFactor_, KiF_, KdF_, KpFast2F_, KpFast3F_;
+            public float diff2_, diff3_;
+            public Int32 pidPollPeriod_;    // ms
+            public Int32 adjustPidTmo_;     // ms
+            public Int32 speedSmoothTime_;  // ms
+        }
+        private void ReadAdapterOptions(byte[] data, int offset, out AdapterOptions opt)
+        {
+            opt = new AdapterOptions();
+            opt.valid_ = true;
+            opt.encRes_ = BitConverter.ToInt32(data, offset);
+            opt.scopeToMotor_ = BitConverter.ToSingle(data, offset + 4);
+            opt.deviationSpeedFactor_ = BitConverter.ToSingle(data, offset + 8);
+            opt.KiF_ = BitConverter.ToSingle(data, offset + 12);
+            opt.KdF_ = BitConverter.ToSingle(data, offset + 16);
+            opt.KpFast2F_ = BitConverter.ToSingle(data, offset + 20);
+            opt.KpFast3F_ = BitConverter.ToSingle(data, offset + 24);
+            opt.diff2_ = BitConverter.ToSingle(data, offset + 28);
+            opt.diff3_ = BitConverter.ToSingle(data, offset + 32);
+            opt.pidPollPeriod_ = BitConverter.ToInt32(data, offset + 36);
+            opt.adjustPidTmo_ = BitConverter.ToInt32(data, offset + 40);
+            opt.speedSmoothTime_ = BitConverter.ToInt32(data, offset + 44);
+        }
+        private void WriteAdapterOptions(AdapterOptions opt, List<byte> data)
+        {
+            data.AddRange(BitConverter.GetBytes(opt.encRes_));
+            data.AddRange(BitConverter.GetBytes(opt.scopeToMotor_));
+            data.AddRange(BitConverter.GetBytes(opt.deviationSpeedFactor_));
+            data.AddRange(BitConverter.GetBytes(opt.KiF_));
+            data.AddRange(BitConverter.GetBytes(opt.KdF_));
+            data.AddRange(BitConverter.GetBytes(opt.KpFast2F_));
+            data.AddRange(BitConverter.GetBytes(opt.KpFast3F_));
+            data.AddRange(BitConverter.GetBytes(opt.diff2_));
+            data.AddRange(BitConverter.GetBytes(opt.diff3_));
+            data.AddRange(BitConverter.GetBytes(opt.pidPollPeriod_));
+            data.AddRange(BitConverter.GetBytes(opt.adjustPidTmo_));
+            data.AddRange(BitConverter.GetBytes(opt.speedSmoothTime_));
+        }
+
+        public bool CanConfigureMotorsAndAdapters()
+        {
+            return connectionGoTo_ != null;
+        }
+        public void ConfigureMotor(byte dst, MotorOptions opt)
+        {
+            if (opt.valid_)
+                SendSetMotorConfigOptions(dst, opt);
+            else
+                SendGetMotorConfigOptions(dst);
+        }
+        public void ConfigureAdapter(byte dst, AdapterOptions opt)
+        {
+            if (opt.valid_)
+                SendSetAdapterConfigOptions(dst, opt);
+            else
+                SendGetAdapterConfigOptions(dst);
+        }
+
+        // MOTOR/ADAPTER CONFIGURATION OPTIONS END
 
         private void CloseConnection(SerialConnection connection)
         {
@@ -1598,7 +1842,7 @@ namespace ScopeDSCClient
     }
 
     //Application settings wrapper class
-    sealed class ScopeGotoClientSettings
+    sealed public class ScopeGotoClientSettings
     {
         public ScopeGotoClientSettings()
         {
@@ -1653,38 +1897,64 @@ namespace ScopeDSCClient
             set { profile_.SetValue(section_, "AlignmentEquAxis", value); }
         }
 
-        public ScopeGotoClient.AlignmentConnectionData AlignmentConnectionGoTo
+        public ClientCommonAPI.AlignmentConnectionData AlignmentConnectionGoTo
         {
-            get { return (ScopeGotoClient.AlignmentConnectionData)profile_.GetValue(section_, "AlignmentConnectionGoTo", new ScopeGotoClient.AlignmentConnectionData()); }
+            get { return (ClientCommonAPI.AlignmentConnectionData)profile_.GetValue(section_, "AlignmentConnectionGoTo", new ClientCommonAPI.AlignmentConnectionData()); }
             set { profile_.SetValue(section_, "AlignmentConnectionGoTo", value); }
         }
 
         public bool AutoTrack
         {
-            get { return profile_.GetValue(section_, "AutoTrack", false); }
-            set { profile_.SetValue(section_, "AutoTrack", value); }
+            get { return profile_.GetValue(sectionGoTo_, "AutoTrack", false); }
+            set { profile_.SetValue(sectionGoTo_, "AutoTrack", value); }
         }
 
-        /*
-        public long AzmResolution
+        public ScopeGotoClient.MotorOptions AltMotorOptions
         {
-            get { return profile_.GetValue(section_, "AzmResolution", 1800); }
-            set { profile_.SetValue(section_, "AzmResolution", value); }
+            get { return (ScopeGotoClient.MotorOptions)profile_.GetValue(sectionGoTo_, "AltMotorOptions", new ScopeGotoClient.MotorOptions()); }
+            set
+            {
+                if (value.valid_)
+                    profile_.SetValue(sectionGoTo_, "AltMotorOptions", value);
+            }
         }
 
-        public long AltResolution
+        public ScopeGotoClient.MotorOptions AzmMotorOptions
         {
-            get { return profile_.GetValue(section_, "AltResolution", 1800); }
-            set { profile_.SetValue(section_, "AltResolution", value); }
+            get { return (ScopeGotoClient.MotorOptions)profile_.GetValue(sectionGoTo_, "AzmMotorOptions", new ScopeGotoClient.MotorOptions()); }
+            set
+            {
+                if (value.valid_)
+                    profile_.SetValue(sectionGoTo_, "AzmMotorOptions", value);
+            }
         }
-        */
+
+        public ScopeGotoClient.AdapterOptions AltAdapterOptions
+        {
+            get { return (ScopeGotoClient.AdapterOptions)profile_.GetValue(sectionGoTo_, "AltAdapterOptions", new ScopeGotoClient.AdapterOptions()); }
+            set
+            {
+                if (value.valid_)
+                    profile_.SetValue(sectionGoTo_, "AltAdapterOptions", value);
+            }
+        }
+
+        public ScopeGotoClient.AdapterOptions AzmAdapterOptions
+        {
+            get { return (ScopeGotoClient.AdapterOptions)profile_.GetValue(sectionGoTo_, "AzmAdapterOptions", new ScopeGotoClient.AdapterOptions()); }
+            set
+            {
+                if (value.valid_)
+                    profile_.SetValue(sectionGoTo_, "AzmAdapterOptions", value);
+            }
+        }
 
         public XmlBuffer Buffer()
         {
             return profile_.Buffer();
         }
 
-        private const string section_ = "entriesGoTo";
+        private const string section_ = "entries", sectionGoTo_ = "entriesGoTo";
         private XmlProfile profile_ = new XmlProfile();
     }
 }

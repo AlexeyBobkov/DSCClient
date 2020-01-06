@@ -43,6 +43,7 @@ namespace ScopeDSCClient
                             ClientCommonAPI.LoggingType ltype1,
                             List<int> logData)
         {
+            host_ = host;
             locations_ = locations;
             nightMode_ = host.NightMode;
             Latitude = host.Latitude;
@@ -63,6 +64,7 @@ namespace ScopeDSCClient
         }
 
         private bool init_ = false;
+        private ClientCommonAPI.IClientHost host_;
         private List<ClientCommonAPI.PhysicalLocation> locations_;
         private bool nightMode_ = false;
         private LocFormat locFmt_ = LocFormat.DMS;
@@ -164,6 +166,15 @@ namespace ScopeDSCClient
             comboBoxLoggingType0.Visible = false;
             comboBoxLoggingType1.Visible = false;
 #endif
+
+            string hostConfigurationName = host_.GetConfigurationName;
+            if (hostConfigurationName == null)
+            {
+                buttonHostConfig.Enabled = false;
+                buttonHostConfig.Visible = false;
+            }
+            else
+                buttonHostConfig.Text = hostConfigurationName;
             init_ = true;
         }
 
@@ -531,6 +542,11 @@ namespace ScopeDSCClient
             default: break;
             }
 #endif
+        }
+
+        private void buttonHostConfig_Click(object sender, EventArgs e)
+        {
+            host_.CallConfiguration();
         }
     }
 }

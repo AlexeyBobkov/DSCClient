@@ -11,25 +11,6 @@ namespace ScopeDSCClient
 {
     public partial class OptionsForm : Form
     {
-        private struct LocationData
-        {
-            public string name_;
-            public double latitude_, longitude_;
-            public LocationData(string name, double latitude, double longitude)
-            {
-                name_ = name;
-                latitude_ = latitude;
-                longitude_ = longitude;
-            }
-        }
-
-        private static LocationData[] locations_ = new LocationData[]
-        {
-            new LocationData("San Jose Houge Park", 37.257471, -121.942246),
-            new LocationData("Fremont Peak SP CA", 36.760441, -121.504472),
-            new LocationData("Adin CA, Frosty Acres", 41.130625, -120.976339)
-        };
-
         private enum LocFormat
         {
             DMS,
@@ -50,6 +31,7 @@ namespace ScopeDSCClient
 #endif
 
         public OptionsForm (ClientCommonAPI.IClientHost host,
+                            List<ClientCommonAPI.PhysicalLocation> locations,
                             bool showNearestAzmRotation,
                             bool connectToStellarium,
                             int stellariumTcpPort,
@@ -61,6 +43,7 @@ namespace ScopeDSCClient
                             ClientCommonAPI.LoggingType ltype1,
                             List<int> logData)
         {
+            locations_ = locations;
             nightMode_ = host.NightMode;
             Latitude = host.Latitude;
             Longitude = host.Longitude;
@@ -80,6 +63,7 @@ namespace ScopeDSCClient
         }
 
         private bool init_ = false;
+        private List<ClientCommonAPI.PhysicalLocation> locations_;
         private bool nightMode_ = false;
         private LocFormat locFmt_ = LocFormat.DMS;
         private int textBoxLatDegWidth_, textBoxLonDegWidth_;
@@ -97,11 +81,11 @@ namespace ScopeDSCClient
 
             comboBoxLocation.Items.Add("Enter Coordinates");
             int idx = 0;
-            for (int i = 0; i < locations_.Length; ++i)
+            for (int i = 0; i < locations_.Count; ++i)
             {
                 //comboBoxLocation.Items.Add(locations_[i].name_ + " (" + locations_[i].latitude_ + "," + locations_[i].longitude_ + ")");
                 comboBoxLocation.Items.Add(locations_[i].name_ + " (" + ClientCommonAPI.PrintAngle(locations_[i].latitude_) + ", " + ClientCommonAPI.PrintAngle(locations_[i].longitude_) + ")");
-                if (Latitude == locations_[i].latitude_ && Longitude == locations_[i].longitude_)
+                if (idx == 0 && Latitude == locations_[i].latitude_ && Longitude == locations_[i].longitude_)
                     idx = i + 1;
             }
             comboBoxLocation.SelectedIndex = idx;

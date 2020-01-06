@@ -1,4 +1,6 @@
-﻿using System;
+﻿#define ADD_MY_FAVORITE_LOCATIONS
+
+using System;
 using System.Collections.Generic;
 using System.Windows.Forms;
 using System.Drawing;
@@ -61,6 +63,19 @@ namespace ScopeDSCClient
             public string name_;
             public SkyObjectPosCalc.SkyPosition[] objects_;
         };
+
+        // physical location
+        public struct PhysicalLocation
+        {
+            public string name_;
+            public double latitude_, longitude_;
+            public PhysicalLocation(string name, double latitude, double longitude)
+            {
+                name_ = name;
+                latitude_ = latitude;
+                longitude_ = longitude;
+            }
+        }
 
         // timeout class
         public class Timeout
@@ -180,7 +195,7 @@ namespace ScopeDSCClient
             obj = objects.Count > 0 ? objects.ToArray() : null;
         }
 
-        public static void AddToDatabase(string path, ref List<ObjDatabaseEntry> database)
+        public static void AddToObjDatabase(string path, ref List<ObjDatabaseEntry> database)
         {
             SkyObjectPosCalc.SkyPosition[] objects = null;
             string name = "Unknown";
@@ -196,18 +211,60 @@ namespace ScopeDSCClient
             database.Add(new ClientCommonAPI.ObjDatabaseEntry() { name_ = "Messier Object", objects_ = SkyObjectPosCalc.messier });
 
             string startupPath = Application.StartupPath + @"\";
-            AddToDatabase(startupPath + "Objects0.csv", ref database);
-            AddToDatabase(startupPath + "Objects1.csv", ref database);
-            AddToDatabase(startupPath + "Objects2.csv", ref database);
-            AddToDatabase(startupPath + "Objects3.csv", ref database);
-            AddToDatabase(startupPath + "Objects4.csv", ref database);
-            AddToDatabase(startupPath + "Objects5.csv", ref database);
-            AddToDatabase(startupPath + "Objects6.csv", ref database);
-            AddToDatabase(startupPath + "Objects7.csv", ref database);
-            AddToDatabase(startupPath + "Objects8.csv", ref database);
-            AddToDatabase(startupPath + "Objects9.csv", ref database);
+            AddToObjDatabase(startupPath + "Objects0.csv", ref database);
+            AddToObjDatabase(startupPath + "Objects1.csv", ref database);
+            AddToObjDatabase(startupPath + "Objects2.csv", ref database);
+            AddToObjDatabase(startupPath + "Objects3.csv", ref database);
+            AddToObjDatabase(startupPath + "Objects4.csv", ref database);
+            AddToObjDatabase(startupPath + "Objects5.csv", ref database);
+            AddToObjDatabase(startupPath + "Objects6.csv", ref database);
+            AddToObjDatabase(startupPath + "Objects7.csv", ref database);
+            AddToObjDatabase(startupPath + "Objects8.csv", ref database);
+            AddToObjDatabase(startupPath + "Objects9.csv", ref database);
         }
-        
+
+        public static void AddLocationsFromFile(string path, ref List<PhysicalLocation> locations)
+        {
+            try
+            {
+                using (System.IO.StreamReader sr = new System.IO.StreamReader(path))
+                {
+                    string line;
+                    while ((line = sr.ReadLine()) != null)
+                    {
+                        string[] parts = line.Split(',');
+                        if (parts.Length < 3)
+                            throw new ApplicationException("Incorrect line: " + line);
+                        locations.Add(new PhysicalLocation(parts[0], Convert.ToDouble(parts[1]), Convert.ToDouble(parts[2])));
+                    }
+                }
+            }
+            catch (Exception)
+            {
+            }
+        }
+
+        public static void BuildLocationDatabase(ref List<PhysicalLocation> locations)
+        {
+#if ADD_MY_FAVORITE_LOCATIONS
+            locations.Add(new ClientCommonAPI.PhysicalLocation("San Jose Houge Park", 37.257471, -121.942246));
+            locations.Add(new ClientCommonAPI.PhysicalLocation("Adin CA, Frosty Acres", 41.130625, -120.976339));
+            locations.Add(new ClientCommonAPI.PhysicalLocation("Fremont Peak SP CA", 36.760441, -121.504472));
+#endif
+
+            string startupPath = Application.StartupPath + @"\";
+            AddLocationsFromFile(startupPath + "Locations0.csv", ref locations);
+            AddLocationsFromFile(startupPath + "Locations1.csv", ref locations);
+            AddLocationsFromFile(startupPath + "Locations2.csv", ref locations);
+            AddLocationsFromFile(startupPath + "Locations3.csv", ref locations);
+            AddLocationsFromFile(startupPath + "Locations4.csv", ref locations);
+            AddLocationsFromFile(startupPath + "Locations5.csv", ref locations);
+            AddLocationsFromFile(startupPath + "Locations6.csv", ref locations);
+            AddLocationsFromFile(startupPath + "Locations7.csv", ref locations);
+            AddLocationsFromFile(startupPath + "Locations8.csv", ref locations);
+            AddLocationsFromFile(startupPath + "Locations9.csv", ref locations);
+        }
+
         public static void EnterNightMode(Control control)
         {
             EnumControls(control, SetNightModeOnFn, 0);

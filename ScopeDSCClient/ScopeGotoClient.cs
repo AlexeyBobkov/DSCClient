@@ -144,7 +144,10 @@ namespace ScopeDSCClient
         private ClientCommonAPI.StellariumObject stellariumObj_ = new ClientCommonAPI.StellariumObject();
 
         // object databases
-        List<ClientCommonAPI.ObjDatabaseEntry> database_ = new List<ClientCommonAPI.ObjDatabaseEntry>();
+        private List<ClientCommonAPI.ObjDatabaseEntry> database_ = new List<ClientCommonAPI.ObjDatabaseEntry>();
+
+        // physical locations
+        private List<ClientCommonAPI.PhysicalLocation> locations_ = new List<ClientCommonAPI.PhysicalLocation>();
 
         private delegate void TimeoutDelegate(SerialConnection connection);
         private delegate void SetConnectionDelegate(ConnectionData data);
@@ -681,6 +684,7 @@ namespace ScopeDSCClient
 
             LoadAlignment();
             ClientCommonAPI.BuildObjectDatabase(ref database_);
+            ClientCommonAPI.BuildLocationDatabase(ref locations_);
         }
 
         private void buttonNightMode_Click(object sender, EventArgs e)
@@ -788,6 +792,7 @@ namespace ScopeDSCClient
         private void buttonOptions_Click(object sender, EventArgs e)
         {
             OptionsForm form = new OptionsForm(new ClientHost(this),
+                                               locations_,
                                                showNearestAzmRotation_,
                                                connectToStellarium_,
                                                stellariumTcpPort_,

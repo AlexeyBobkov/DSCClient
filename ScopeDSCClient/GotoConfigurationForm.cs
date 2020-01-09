@@ -41,21 +41,21 @@ namespace ScopeDSCClient
                 {
                     {
                         ScopeGotoClient.MotorOptions opt = settings_.AltMotorOptions;
-                        if (opt.valid_)
+                        if (opt.Valid)
                             profile.SetValue("entriesGoTo", "AltMotorOptions", opt);
 
                         opt = settings_.AzmMotorOptions;
-                        if (opt.valid_)
+                        if (opt.Valid)
                             profile.SetValue("entriesGoTo", "AzmMotorOptions", opt);
                     }
 
                     {
                         ScopeGotoClient.AdapterOptions opt = settings_.AltAdapterOptions;
-                        if (opt.valid_)
+                        if (opt.Valid)
                             profile.SetValue("entriesGoTo", "AltAdapterOptions", opt);
 
                         opt = settings_.AzmAdapterOptions;
-                        if (opt.valid_)
+                        if (opt.Valid)
                             profile.SetValue("entriesGoTo", "AzmAdapterOptions", opt);
                     }
                 }

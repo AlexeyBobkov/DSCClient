@@ -249,7 +249,7 @@ namespace ScopeDSCClient
             public double Latitude { get { return parent_.latitude_; } }
             public double Longitude { get { return parent_.longitude_; } }
 
-            public string GetConfigurationName { get { return "GoTo Controller Configuration"; } }
+            public string GetConfigurationName { get { return "Controller Configuration"; } }
             public void CallConfiguration()
             {
                 GotoConfigurationForm form = new GotoConfigurationForm(parent_, settings_);
@@ -1515,18 +1515,18 @@ namespace ScopeDSCClient
                     ReadAdapterOptions(data, 1, out opt);
                     settings_.AltAdapterOptions = opt;
                     if (swapAzmAltEncoders_)
-                        azmRes_ = opt.encRes_;
+                        azmRes_ = opt.EncResolution;
                     else
-                        altRes_ = opt.encRes_;
+                        altRes_ = opt.EncResolution;
                     break;
 
                 case A_AZM:
                     ReadAdapterOptions(data, 1, out opt);
                     settings_.AzmAdapterOptions = opt;
                     if (swapAzmAltEncoders_)
-                        altRes_ = opt.encRes_;
+                        altRes_ = opt.EncResolution;
                     else
-                        azmRes_ = opt.encRes_;
+                        azmRes_ = opt.EncResolution;
                     break;
                 }
             }
@@ -1543,110 +1543,110 @@ namespace ScopeDSCClient
         };
         public struct PWMProfile   // size = 4
         {
-            public byte value_;        // required value
-            public byte magnitude_;    // PWM magnitude
-            public Int16 period_;      // PWM (and PID) period
+            public byte Value;          // required value
+            public byte Magnitude;      // PWM magnitude
+            public Int16 Period;        // PWM (and PID) period
         }
         public struct MotorOptions             // size = 4 + 4*4 + 1 + 4*2 = 29
         {
-            public bool valid_;
-            public Int32 encRes_;
-            public float maxSpeedRPM_;
-            public float Kp_, KiF_, Kd_;
-            public ApproximationType approximationType_;
-            public PWMProfile loProfile_, hiProfile_;
+            public bool Valid;
+            public Int32 EncResolution;
+            public float MaxSpeedRPM;
+            public float Kp, KiF, Kd;
+            public ApproximationType ApproximationType;
+            public PWMProfile LoProfile, HiProfile;
         }
         private void ReadMotorOptions(byte[] data, int offset, out MotorOptions opt)
         {
             opt = new MotorOptions();
-            opt.valid_ = true;
-            opt.encRes_ = BitConverter.ToInt32(data, offset);
-            opt.maxSpeedRPM_ = BitConverter.ToSingle(data, offset + 4);
-            opt.Kp_ = BitConverter.ToSingle(data, offset + 8);
-            opt.KiF_ = BitConverter.ToSingle(data, offset + 12);
-            opt.Kd_ = BitConverter.ToSingle(data, offset + 16);
-            opt.approximationType_ = data[offset + 20] == 0 ? ApproximationType.LINEAR : ApproximationType.EXPONENTIAL;
-            opt.loProfile_.value_ = data[offset + 21];
-            opt.loProfile_.magnitude_ = data[offset + 22];
-            opt.loProfile_.period_ = BitConverter.ToInt16(data, offset + 23);
-            opt.hiProfile_.value_ = data[offset + 25];
-            opt.hiProfile_.magnitude_ = data[offset + 26];
-            opt.hiProfile_.period_ = BitConverter.ToInt16(data, offset + 27);
+            opt.Valid = true;
+            opt.EncResolution = BitConverter.ToInt32(data, offset);
+            opt.MaxSpeedRPM = BitConverter.ToSingle(data, offset + 4);
+            opt.Kp = BitConverter.ToSingle(data, offset + 8);
+            opt.KiF = BitConverter.ToSingle(data, offset + 12);
+            opt.Kd = BitConverter.ToSingle(data, offset + 16);
+            opt.ApproximationType = data[offset + 20] == 0 ? ApproximationType.LINEAR : ApproximationType.EXPONENTIAL;
+            opt.LoProfile.Value = data[offset + 21];
+            opt.LoProfile.Magnitude = data[offset + 22];
+            opt.LoProfile.Period = BitConverter.ToInt16(data, offset + 23);
+            opt.HiProfile.Value = data[offset + 25];
+            opt.HiProfile.Magnitude = data[offset + 26];
+            opt.HiProfile.Period = BitConverter.ToInt16(data, offset + 27);
         }
         private void WriteMotorOptions(MotorOptions opt, List<byte> data)
         {
-            data.AddRange(BitConverter.GetBytes(opt.encRes_));
-            data.AddRange(BitConverter.GetBytes(opt.maxSpeedRPM_));
-            data.AddRange(BitConverter.GetBytes(opt.Kp_));
-            data.AddRange(BitConverter.GetBytes(opt.KiF_));
-            data.AddRange(BitConverter.GetBytes(opt.Kd_));
-            data.Add((byte)(opt.approximationType_ == ApproximationType.LINEAR ? 0 : 1));
-            data.Add(opt.loProfile_.value_);
-            data.Add(opt.loProfile_.magnitude_);
-            data.AddRange(BitConverter.GetBytes(opt.loProfile_.period_));
-            data.Add(opt.hiProfile_.value_);
-            data.Add(opt.hiProfile_.magnitude_);
-            data.AddRange(BitConverter.GetBytes(opt.hiProfile_.period_));
+            data.AddRange(BitConverter.GetBytes(opt.EncResolution));
+            data.AddRange(BitConverter.GetBytes(opt.MaxSpeedRPM));
+            data.AddRange(BitConverter.GetBytes(opt.Kp));
+            data.AddRange(BitConverter.GetBytes(opt.KiF));
+            data.AddRange(BitConverter.GetBytes(opt.Kd));
+            data.Add((byte)(opt.ApproximationType == ApproximationType.LINEAR ? 0 : 1));
+            data.Add(opt.LoProfile.Value);
+            data.Add(opt.LoProfile.Magnitude);
+            data.AddRange(BitConverter.GetBytes(opt.LoProfile.Period));
+            data.Add(opt.HiProfile.Value);
+            data.Add(opt.HiProfile.Magnitude);
+            data.AddRange(BitConverter.GetBytes(opt.HiProfile.Period));
         }
 
         public struct AdapterOptions             // size = 4*12 = 48
         {
-            public bool valid_;
-            public Int32 encRes_;
-            public float scopeToMotor_;
-            public float deviationSpeedFactor_, KiF_, KdF_, KpFast2F_, KpFast3F_;
-            public float diff2_, diff3_;
-            public Int32 pidPollPeriod_;    // ms
-            public Int32 adjustPidTmo_;     // ms
-            public Int32 speedSmoothTime_;  // ms
+            public bool Valid;
+            public Int32 EncResolution;
+            public float ScopeToMotorRatio;
+            public float DeviationSpeedFactor, KiF, KdF, KpFast2F, KpFast3F;
+            public float Diff2, Diff3;
+            public Int32 PidPollPeriod;     // ms
+            public Int32 AdjustPidTmo;      // ms
+            public Int32 SpeedSmoothTime;   // ms
         }
         private void ReadAdapterOptions(byte[] data, int offset, out AdapterOptions opt)
         {
             opt = new AdapterOptions();
-            opt.valid_ = true;
-            opt.encRes_ = BitConverter.ToInt32(data, offset);
-            opt.scopeToMotor_ = BitConverter.ToSingle(data, offset + 4);
-            opt.deviationSpeedFactor_ = BitConverter.ToSingle(data, offset + 8);
-            opt.KiF_ = BitConverter.ToSingle(data, offset + 12);
-            opt.KdF_ = BitConverter.ToSingle(data, offset + 16);
-            opt.KpFast2F_ = BitConverter.ToSingle(data, offset + 20);
-            opt.KpFast3F_ = BitConverter.ToSingle(data, offset + 24);
-            opt.diff2_ = BitConverter.ToSingle(data, offset + 28);
-            opt.diff3_ = BitConverter.ToSingle(data, offset + 32);
-            opt.pidPollPeriod_ = BitConverter.ToInt32(data, offset + 36);
-            opt.adjustPidTmo_ = BitConverter.ToInt32(data, offset + 40);
-            opt.speedSmoothTime_ = BitConverter.ToInt32(data, offset + 44);
+            opt.Valid = true;
+            opt.EncResolution = BitConverter.ToInt32(data, offset);
+            opt.ScopeToMotorRatio = BitConverter.ToSingle(data, offset + 4);
+            opt.DeviationSpeedFactor = BitConverter.ToSingle(data, offset + 8);
+            opt.KiF = BitConverter.ToSingle(data, offset + 12);
+            opt.KdF = BitConverter.ToSingle(data, offset + 16);
+            opt.KpFast2F = BitConverter.ToSingle(data, offset + 20);
+            opt.KpFast3F = BitConverter.ToSingle(data, offset + 24);
+            opt.Diff2 = BitConverter.ToSingle(data, offset + 28);
+            opt.Diff3 = BitConverter.ToSingle(data, offset + 32);
+            opt.PidPollPeriod = BitConverter.ToInt32(data, offset + 36);
+            opt.AdjustPidTmo = BitConverter.ToInt32(data, offset + 40);
+            opt.SpeedSmoothTime = BitConverter.ToInt32(data, offset + 44);
         }
         private void WriteAdapterOptions(AdapterOptions opt, List<byte> data)
         {
-            data.AddRange(BitConverter.GetBytes(opt.encRes_));
-            data.AddRange(BitConverter.GetBytes(opt.scopeToMotor_));
-            data.AddRange(BitConverter.GetBytes(opt.deviationSpeedFactor_));
-            data.AddRange(BitConverter.GetBytes(opt.KiF_));
-            data.AddRange(BitConverter.GetBytes(opt.KdF_));
-            data.AddRange(BitConverter.GetBytes(opt.KpFast2F_));
-            data.AddRange(BitConverter.GetBytes(opt.KpFast3F_));
-            data.AddRange(BitConverter.GetBytes(opt.diff2_));
-            data.AddRange(BitConverter.GetBytes(opt.diff3_));
-            data.AddRange(BitConverter.GetBytes(opt.pidPollPeriod_));
-            data.AddRange(BitConverter.GetBytes(opt.adjustPidTmo_));
-            data.AddRange(BitConverter.GetBytes(opt.speedSmoothTime_));
+            data.AddRange(BitConverter.GetBytes(opt.EncResolution));
+            data.AddRange(BitConverter.GetBytes(opt.ScopeToMotorRatio));
+            data.AddRange(BitConverter.GetBytes(opt.DeviationSpeedFactor));
+            data.AddRange(BitConverter.GetBytes(opt.KiF));
+            data.AddRange(BitConverter.GetBytes(opt.KdF));
+            data.AddRange(BitConverter.GetBytes(opt.KpFast2F));
+            data.AddRange(BitConverter.GetBytes(opt.KpFast3F));
+            data.AddRange(BitConverter.GetBytes(opt.Diff2));
+            data.AddRange(BitConverter.GetBytes(opt.Diff3));
+            data.AddRange(BitConverter.GetBytes(opt.PidPollPeriod));
+            data.AddRange(BitConverter.GetBytes(opt.AdjustPidTmo));
+            data.AddRange(BitConverter.GetBytes(opt.SpeedSmoothTime));
         }
 
         public bool CanConfigureMotorsAndAdapters()
         {
-            return connectionGoTo_ != null;
+            return connectionGoTo_ != null && trackedObject_ == null;
         }
         public void ConfigureMotor(byte dst, MotorOptions opt)
         {
-            if (opt.valid_)
+            if (opt.Valid)
                 SendSetMotorConfigOptions(dst, opt);
             else
                 SendGetMotorConfigOptions(dst);
         }
         public void ConfigureAdapter(byte dst, AdapterOptions opt)
         {
-            if (opt.valid_)
+            if (opt.Valid)
                 SendSetAdapterConfigOptions(dst, opt);
             else
                 SendGetAdapterConfigOptions(dst);
@@ -1914,7 +1914,7 @@ namespace ScopeDSCClient
             get { return (ScopeGotoClient.MotorOptions)profile_.GetValue(sectionGoTo_, "AltMotorOptions", new ScopeGotoClient.MotorOptions()); }
             set
             {
-                if (value.valid_)
+                if (value.Valid)
                     profile_.SetValue(sectionGoTo_, "AltMotorOptions", value);
             }
         }
@@ -1924,7 +1924,7 @@ namespace ScopeDSCClient
             get { return (ScopeGotoClient.MotorOptions)profile_.GetValue(sectionGoTo_, "AzmMotorOptions", new ScopeGotoClient.MotorOptions()); }
             set
             {
-                if (value.valid_)
+                if (value.Valid)
                     profile_.SetValue(sectionGoTo_, "AzmMotorOptions", value);
             }
         }
@@ -1934,7 +1934,7 @@ namespace ScopeDSCClient
             get { return (ScopeGotoClient.AdapterOptions)profile_.GetValue(sectionGoTo_, "AltAdapterOptions", new ScopeGotoClient.AdapterOptions()); }
             set
             {
-                if (value.valid_)
+                if (value.Valid)
                     profile_.SetValue(sectionGoTo_, "AltAdapterOptions", value);
             }
         }
@@ -1944,7 +1944,7 @@ namespace ScopeDSCClient
             get { return (ScopeGotoClient.AdapterOptions)profile_.GetValue(sectionGoTo_, "AzmAdapterOptions", new ScopeGotoClient.AdapterOptions()); }
             set
             {
-                if (value.valid_)
+                if (value.Valid)
                     profile_.SetValue(sectionGoTo_, "AzmAdapterOptions", value);
             }
         }

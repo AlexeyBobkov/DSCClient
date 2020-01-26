@@ -17,7 +17,7 @@ namespace ScopeDSCClient
         public struct LastSettings
         {
             public int objTypeIdx_, objIdx_;
-            public static LastSettings Default { get { return new LastSettings { objTypeIdx_ = 0, objIdx_ = 0 }; } }
+            public static LastSettings Default { get { return new LastSettings { objTypeIdx_ = 1, objIdx_ = 0 }; } }
         }
 
         public LastSettings Settings;
@@ -61,10 +61,10 @@ namespace ScopeDSCClient
                 comboBoxType.SelectedIndex = 0;
 
             FillObjectComboBox();
-            if (Settings.objIdx_ >= 0 && Settings.objIdx_ < comboBoxObj.Items.Count)
-                comboBoxObj.SelectedIndex = Settings.objIdx_;
+            if (Settings.objIdx_ >= 0 && Settings.objIdx_ < listBoxObj.Items.Count)
+                listBoxObj.SelectedIndex = Settings.objIdx_;
             else
-                comboBoxObj.SelectedIndex = 0;
+                listBoxObj.SelectedIndex = 0;
 
             timer1.Enabled = true;
 
@@ -77,7 +77,7 @@ namespace ScopeDSCClient
 
         private SkyObjectPosCalc.SkyPosition GetObject()
         {
-            int index = comboBoxObj.SelectedIndex;
+            int index = listBoxObj.SelectedIndex;
 
             SkyObjectPosCalc.SkyPosition[] objs;
             if (comboBoxType.SelectedIndex == 0)
@@ -141,7 +141,7 @@ namespace ScopeDSCClient
 
         private void FillObjectComboBox()
         {
-            comboBoxObj.Items.Clear();
+            listBoxObj.Items.Clear();
             SkyObjectPosCalc.SkyPosition[] objs;
             switch (comboBoxType.SelectedIndex)
             {
@@ -157,7 +157,7 @@ namespace ScopeDSCClient
             }
 
             foreach (SkyObjectPosCalc.SkyPosition star in objs)
-                comboBoxObj.Items.Add(star.Name);
+                listBoxObj.Items.Add(star.Name);
         }
 
         private string MakeProfileName()
@@ -173,17 +173,17 @@ namespace ScopeDSCClient
                 return;
 
             FillObjectComboBox();
-            comboBoxObj.SelectedIndex = 0;
+            listBoxObj.SelectedIndex = 0;
 
             Settings.objTypeIdx_ = comboBoxType.SelectedIndex;
-            Settings.objIdx_ = comboBoxObj.SelectedIndex;
+            Settings.objIdx_ = listBoxObj.SelectedIndex;
 
             CalcAndOutputResults();
         }
 
-        private void comboBoxObj_SelectedIndexChanged(object sender, EventArgs e)
+        private void listBoxObj_SelectedIndexChanged(object sender, EventArgs e)
         {
-            Settings.objIdx_ = comboBoxObj.SelectedIndex;
+            Settings.objIdx_ = listBoxObj.SelectedIndex;
             CalcAndOutputResults();
         }
 

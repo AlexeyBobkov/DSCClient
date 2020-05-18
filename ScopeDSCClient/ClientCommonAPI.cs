@@ -266,9 +266,9 @@ namespace ScopeDSCClient
         public static void BuildLocationDatabase(ref List<PhysicalLocation> locations)
         {
 #if ADD_MY_FAVORITE_LOCATIONS
-            locations.Add(new ClientCommonAPI.PhysicalLocation("San Jose Houge Park", 37.257471, -121.942246));
-            locations.Add(new ClientCommonAPI.PhysicalLocation("Adin CA, Frosty Acres", 41.130625, -120.976339));
-            locations.Add(new ClientCommonAPI.PhysicalLocation("Fremont Peak SP CA", 36.760441, -121.504472));
+            locations.Add(new ClientCommonAPI.PhysicalLocation("San Jose Houge Park", 37.257521, -121.942354));
+            locations.Add(new ClientCommonAPI.PhysicalLocation("Adin CA, Frosty Acres", 41.135511, -120.978589));
+            locations.Add(new ClientCommonAPI.PhysicalLocation("Fremont Peak SP CA", 36.759363, -121.503721));
 #endif
 
             string startupPath = Application.StartupPath + @"\";

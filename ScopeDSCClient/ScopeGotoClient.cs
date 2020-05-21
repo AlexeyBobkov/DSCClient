@@ -945,6 +945,7 @@ namespace ScopeDSCClient
             swapAzmAltEncoders_ = data.swapAzmAltEncoders_;
 
             //SendCommand(connectionGoTo_, 'h', 4, this.ReceiveAltAzmResolution);
+            SendAndReceiveSerialTmo();
             SendCommand(connectionGoTo_, 'R', 13, this.ReceiveStatus);
             SetAndReciveMotorAndAdapterConfigOptions();
 
@@ -1411,6 +1412,16 @@ namespace ScopeDSCClient
         }
 
 
+        private void SendAndReceiveSerialTmo()
+        {
+            Int32 iTmo = settings_.SerialConnectionTmo;
+            SendCommand(connectionGoTo_, new byte[] { (byte)'I',
+                                                      (byte)iTmo,
+                                                      (byte)(iTmo >> 8),
+                                                      (byte)(iTmo >> 16),
+                                                      (byte)(iTmo >> 24)}, 4, ReceiveSerialTmo);
+        }
+
         // MOTOR/ADAPTER CONFIGURATION OPTIONS BEGIN
 
         private void SetAndReciveMotorAndAdapterConfigOptions()
@@ -1453,6 +1464,11 @@ namespace ScopeDSCClient
                 WriteAdapterOptions(opt, l);
                 SendCommand(connectionGoTo_, l.ToArray(), 1, ReceiveSetAdapterConfigOptions);
             }
+        }
+
+        private void ReceiveSerialTmo(byte[] data)
+        {
+            settings_.SerialConnectionTmo = GetInt32(data, 0);
         }
 
         private const int motorOptionSize_ = 29, adapterOptionSize_ = 48;
@@ -1947,6 +1963,12 @@ namespace ScopeDSCClient
                 if (value.Valid)
                     profile_.SetValue(sectionGoTo_, "AzmAdapterOptions", value);
             }
+        }
+
+        public Int32 SerialConnectionTmo
+        {
+            get { return profile_.GetValue(section_, "SerialConnectionTmo", 10000); }
+            set { profile_.SetValue(section_, "SerialConnectionTmo", value); }
         }
 
         public XmlBuffer Buffer()

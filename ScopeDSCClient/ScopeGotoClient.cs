@@ -1471,13 +1471,13 @@ namespace ScopeDSCClient
             settings_.SerialConnectionTmo = GetInt32(data, 0);
         }
 
-        private const int motorOptionSize_ = 29, adapterOptionSize_ = 48;
+        private const int motorOptionSize_ = 29, adapterOptionSize_ = 48, globalConfigSize_ = 16;
         private void ReceiveMotorConfigOptionsSizes(byte[] data)
         {
             if (motorOptionSize_ != BitConverter.ToInt16(data, 0) || adapterOptionSize_ != BitConverter.ToInt16(data, 2))
             {
                 MessageBox.Show("Host and Controller Options Versions Mismatch", "Error", MessageBoxButtons.OK);
-                SendCommand(connectionGoTo_, 'h', 4, this.ReceiveAltAzmResolution);
+                SendCommand(connectionGoTo_, 'h', 4, this.ReceiveAltAzmResolution); // ???
                 return;
             }
 
@@ -1648,6 +1648,28 @@ namespace ScopeDSCClient
             data.AddRange(BitConverter.GetBytes(opt.AdjustPidTmo));
             data.AddRange(BitConverter.GetBytes(opt.SpeedSmoothTime));
         }
+        public struct GlobalConfig              // size = 4*4 = 16
+        {
+            public bool Valid;
+            public float Ratio0, Ratio1, Ratio2, Ratio3;
+        }
+        private void ReadGlobalConfig(byte[] data, int offset, out GlobalConfig opt)
+        {
+            opt = new GlobalConfig();
+            opt.Valid = true;
+            opt.Ratio0 = BitConverter.ToSingle(data, offset);
+            opt.Ratio1 = BitConverter.ToSingle(data, offset + 4);
+            opt.Ratio2 = BitConverter.ToSingle(data, offset + 8);
+            opt.Ratio3 = BitConverter.ToSingle(data, offset + 12);
+        }
+        private void WriteGlobalConfig(GlobalConfig opt, List<byte> data)
+        {
+            data.AddRange(BitConverter.GetBytes(opt.Ratio0));
+            data.AddRange(BitConverter.GetBytes(opt.Ratio1));
+            data.AddRange(BitConverter.GetBytes(opt.Ratio2));
+            data.AddRange(BitConverter.GetBytes(opt.Ratio3));
+        }
+
 
         public bool CanConfigureMotorsAndAdapters()
         {

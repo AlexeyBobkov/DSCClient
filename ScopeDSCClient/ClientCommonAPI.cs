@@ -86,6 +86,7 @@ namespace ScopeDSCClient
         {
             private DateTime start_;
             private int timeoutInMS_;
+            private int timeoutOnceInMS_ = 0;
 
             public Timeout(int timeoutInMS)
             {
@@ -93,15 +94,25 @@ namespace ScopeDSCClient
                 Restart();
             }
 
-            public void Restart() { start_ = DateTime.Now; }
+            public void Restart() { timeoutOnceInMS_ = 0; start_ = DateTime.Now; }
             public void Restart(int timeoutInMS) { timeoutInMS_ = timeoutInMS; Restart(); }
+            public void RestartOnce(int timeoutInMS) { timeoutOnceInMS_ = timeoutInMS; start_ = DateTime.Now; }
 
             public bool CheckExpired() { return CheckExpired(true); }
             public bool CheckExpired(bool restart)
             {
                 DateTime now = DateTime.Now;
-                if ((now - start_).TotalMilliseconds < timeoutInMS_)
-                    return false;
+                if (timeoutOnceInMS_ > 0)
+                {
+                    if ((now - start_).TotalMilliseconds < timeoutOnceInMS_)
+                        return false;
+                    timeoutOnceInMS_ = 0;
+                }
+                else
+                {
+                    if ((now - start_).TotalMilliseconds < timeoutInMS_)
+                        return false;
+                }
                 if (restart)
                     start_ = now;
                 return true;

@@ -54,11 +54,17 @@ namespace ScopeDSCClient
         // debug test mode: azm only
         private bool dbgTestMode = false;
 
+        // time sync constants
+        private const int NEXT_POS_TIME_MSEC = 4000;
+        private const int SEND_POS_TMO_MSEC = 3800;
+        private const int FAST_NEXT_POS_TIME_MSEC = 500;
+        private const int FAST_SEND_POS_TMO_MSEC = 400;
+
         // time sync
         private Int32 controllerTs_;
         private DateTime thisTs_;       // UTC time
-        private ClientCommonAPI.Timeout tmoSendPos_ = new ClientCommonAPI.Timeout(3800);
-        private int nextPosTimeSec_ = 4;
+        private ClientCommonAPI.Timeout tmoSendPos_ = new ClientCommonAPI.Timeout(SEND_POS_TMO_MSEC);
+        private int nextPosTimeMsec_ = NEXT_POS_TIME_MSEC;
         private double arrowMoveSpeed_ = 1 / 30.0;  // degree
 
         private bool posTextChanged_ = true;
@@ -884,7 +890,7 @@ namespace ScopeDSCClient
             }
 
             if (trackedObject_ != null && tmoSendPos_.CheckExpired())
-                SendNextPositions();
+                SendNextPositions(nextPosTimeMsec_);
 
 #if LOGGING_ON
             if (connectionGoTo_ != null && loggingState_ == ClientCommonAPI.LoggingState.ON && tmoAddLogData_.CheckExpired())
@@ -1020,10 +1026,10 @@ namespace ScopeDSCClient
             {
                 double altd1, azmd1, altd2, azmd2;
                 CalcScopeShifts(DateTime.UtcNow, out altd1, out azmd1);
-                CalcScopeShifts(DateTime.UtcNow + new TimeSpan(0, 0, nextPosTimeSec_), out altd2, out azmd2);
+                CalcScopeShifts(DateTime.UtcNow + new TimeSpan(0, 0, 0, 0, nextPosTimeMsec_), out altd2, out azmd2);
 
-                Int32 altSpeed = (Int32)((altd2 - altd1) * altRes_ * 60.0 * 60.0 * 24.0 / (360.0 * nextPosTimeSec_));
-                Int32 azmSpeed = (Int32)((azmd2 - azmd1) * azmRes_ * 60.0 * 60.0 * 24.0 / (360.0 * nextPosTimeSec_));
+                Int32 altSpeed = (Int32)((altd2 - altd1) * altRes_ * 1000.0 * 60.0 * 60.0 * 24.0 / (360.0 * nextPosTimeMsec_));
+                Int32 azmSpeed = (Int32)((azmd2 - azmd1) * azmRes_ * 1000.0 * 60.0 * 60.0 * 24.0 / (360.0 * nextPosTimeMsec_));
 
                 if (!dbgTestMode)
                     SendCommand(connectionGoTo_, new byte[] { (byte)'S',
@@ -1055,7 +1061,7 @@ namespace ScopeDSCClient
         {
             azmStartSent_ = false;
             tmoSendPos_.Restart();
-            SendNextPositions();
+            SendNextPositions(nextPosTimeMsec_);
         }
         private void TimeoutAzmStart(SerialConnection connection)
         {
@@ -1089,12 +1095,12 @@ namespace ScopeDSCClient
                 altdDeg = (objScope.Alt - AltAngle) * Const.toDeg;
         }
 
-        private void SendNextPositions()
+        private void SendNextPositions(int nextPosTimeMsec)
         {
             if (trackedObject_ != null && alignment_ != null)
             {
                 // next timestamp
-                DateTime nextThisTs = DateTime.UtcNow + new TimeSpan(0, 0, nextPosTimeSec_);
+                DateTime nextThisTs = DateTime.UtcNow + new TimeSpan(0, 0, 0, 0, nextPosTimeMsec);
                 double altd, azmd;
                 CalcScopeShifts(nextThisTs, out altd, out azmd);
 
@@ -1317,8 +1323,8 @@ namespace ScopeDSCClient
                 trackedOffsetDec_ += shiftedDec - dec;
                 trackedOffsetRa_ += shiftedRa - ra;
 
-                tmoSendPos_.Restart();
-                SendNextPositions();
+                tmoSendPos_.RestartOnce(FAST_SEND_POS_TMO_MSEC);
+                SendNextPositions(FAST_NEXT_POS_TIME_MSEC);
                 TrackedObjectChanged(false);
             }
         }
@@ -1769,7 +1775,7 @@ namespace ScopeDSCClient
                     else
                     {
                         tmoSendPos_.Restart();
-                        SendNextPositions();
+                        SendNextPositions(nextPosTimeMsec_);
                         TrackedObjectChanged(false);
                     }
                 }

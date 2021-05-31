@@ -1,6 +1,4 @@
-﻿//#define TESTING
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -52,6 +50,9 @@ namespace ScopeDSCClient
         private bool autoTrack_ = true;
         private bool allowAutoTrack_ = false;
         private SkyObjectPosCalc.SkyPosition[] lastSelectedObjects_ = new SkyObjectPosCalc.SkyPosition[LAST_OBJ_COUNT];
+
+        // debug test mode: azm only
+        private bool dbgTestMode = false;
 
         // time sync
         private Int32 controllerTs_;
@@ -672,6 +673,8 @@ namespace ScopeDSCClient
 
             autoTrack_ = settings_.AutoTrack;
 
+            dbgTestMode = settings_.DbgTestMode;
+
             // Everything is changed! (Yes, it's redundant.)
             //OptionsOrTimeChanged();
             ConnectionChangedGoTo();
@@ -1021,14 +1024,15 @@ namespace ScopeDSCClient
 
                 Int32 altSpeed = (Int32)((altd2 - altd1) * altRes_ * 60.0 * 60.0 * 24.0 / (360.0 * nextPosTimeSec_));
                 Int32 azmSpeed = (Int32)((azmd2 - azmd1) * azmRes_ * 60.0 * 60.0 * 24.0 / (360.0 * nextPosTimeSec_));
-#if !TESTING
-                SendCommand(connectionGoTo_, new byte[] { (byte)'S',
-                                                          A_ALT,
-                                                          (byte)altSpeed,
-                                                          (byte)(altSpeed >> 8),
-                                                          (byte)(altSpeed >> 16),
-                                                          (byte)(altSpeed >> 24)}, 8, ReceiveAltStart, TimeoutAltStart);
-#endif
+
+                if (!dbgTestMode)
+                    SendCommand(connectionGoTo_, new byte[] { (byte)'S',
+                                                              A_ALT,
+                                                              (byte)altSpeed,
+                                                              (byte)(altSpeed >> 8),
+                                                              (byte)(altSpeed >> 16),
+                                                              (byte)(altSpeed >> 24)}, 8, ReceiveAltStart, TimeoutAltStart);
+
                 SendCommand(connectionGoTo_, new byte[] { (byte)'S',
                                                           A_AZM,
                                                           (byte)azmSpeed,
@@ -1079,11 +1083,10 @@ namespace ScopeDSCClient
                 azmdDeg -= 360;
 
             // altitude difference, in degree
-#if TESTING
-            altdDeg = 0;
-#else
-            altdDeg = (objScope.Alt - AltAngle) * Const.toDeg;
-#endif
+            if(dbgTestMode)
+                altdDeg = 0;
+            else
+                altdDeg = (objScope.Alt - AltAngle) * Const.toDeg;
         }
 
         private void SendNextPositions()
@@ -1381,14 +1384,15 @@ namespace ScopeDSCClient
                 bool altOn = (state & STATE_ALT_RUNNING) != 0, azmOn = (state & STATE_AZM_RUNNING) != 0;
                 if (trackedObject_ != null && !altStartSent_ && !azmStartSent_ && (!altOn || !azmOn))
                 {
-#if !TESTING
-                    if (altOn)
-                        SendStopMotorCommand(A_ALT);
-                    if (azmOn)
-                        SendStopMotorCommand(A_AZM);
-                    trackedObject_ = null;
-                    TrackedObjectChanged(true);
-#endif
+                    if (!dbgTestMode)
+                    {
+                        if (altOn)
+                            SendStopMotorCommand(A_ALT);
+                        if (azmOn)
+                            SendStopMotorCommand(A_AZM);
+                        trackedObject_ = null;
+                        TrackedObjectChanged(true);
+                    }
                 }
                 else if (!oldSwitchOn && autoTrack_ && allowAutoTrack_)
                     StartTracking();
@@ -1923,6 +1927,12 @@ namespace ScopeDSCClient
         {
             get { return profile_.GetValue(sectionGoTo_, "AutoTrack", false); }
             set { profile_.SetValue(sectionGoTo_, "AutoTrack", value); }
+        }
+
+        public bool DbgTestMode
+        {
+            get { return profile_.GetValue(sectionGoTo_, "DbgTestMode", false); }
+            set { profile_.SetValue(sectionGoTo_, "DbgTestMode", value); }
         }
 
         public ScopeGotoClient.MotorOptions AltMotorOptions

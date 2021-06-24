@@ -52,7 +52,7 @@ namespace ScopeDSCClient
         private SkyObjectPosCalc.SkyPosition[] lastSelectedObjects_ = new SkyObjectPosCalc.SkyPosition[LAST_OBJ_COUNT];
 
         // debug test mode: azm only
-        private bool dbgTestMode = false;
+        private bool dbgTestMode_ = false;
 
         // time sync constants
         private const int NEXT_POS_TIME_MSEC = 4000;
@@ -66,7 +66,7 @@ namespace ScopeDSCClient
         private ClientCommonAPI.Timeout tmoSendPos_ = new ClientCommonAPI.Timeout(SEND_POS_TMO_MSEC);
         private int nextPosTimeMsec_ = NEXT_POS_TIME_MSEC;
         private double arrowMoveSpeed_ = 1 / 30.0;  // degree
-        private int boostMode = 0;
+        private int boostModeCnt_ = 5, boostMode_ = 0;
 
         private bool posTextChanged_ = true;
         private bool connectionAndAlignTextChanged_ = true;
@@ -679,9 +679,10 @@ namespace ScopeDSCClient
             if (connectToStellarium_)
                 OpenStellariumConnection(stellariumTcpPort_);
 
+            boostModeCnt_ = settings_.BoostModeCnt;
             autoTrack_ = settings_.AutoTrack;
 
-            dbgTestMode = settings_.DbgTestMode;
+            dbgTestMode_ = settings_.DbgTestMode;
 
             // Everything is changed! (Yes, it's redundant.)
             //OptionsOrTimeChanged();
@@ -1033,7 +1034,7 @@ namespace ScopeDSCClient
                 Int32 altSpeed = (Int32)((altd2 - altd1) * altRes_ * 1000.0 * 60.0 * 60.0 * 24.0 / (360.0 * nextPosTimeMsec_));
                 Int32 azmSpeed = (Int32)((azmd2 - azmd1) * azmRes_ * 1000.0 * 60.0 * 60.0 * 24.0 / (360.0 * nextPosTimeMsec_));
 
-                if (!dbgTestMode)
+                if (!dbgTestMode_)
                     SendCommand(connectionGoTo_, new byte[] { (byte)'S',
                                                               A_ALT,
                                                               (byte)altSpeed,
@@ -1091,7 +1092,7 @@ namespace ScopeDSCClient
                 azmdDeg -= 360;
 
             // altitude difference, in degree
-            if(dbgTestMode)
+            if(dbgTestMode_)
                 altdDeg = 0;
             else
                 altdDeg = (objScope.Alt - AltAngle) * Const.toDeg;
@@ -1114,11 +1115,12 @@ namespace ScopeDSCClient
                 Int32 nextTs = controllerTs_ + Convert.ToInt32((nextThisTs - thisTs_).TotalMilliseconds);
 
                 // send positions
-                if (boostMode > 0)
+                if (boostMode_ != 0)
                 {
                     SendSetNextPosCommand((float)nextAltPos, nextTs, A_BOOST|A_ALT);
                     SendSetNextPosCommand((float)nextAzmPos, nextTs, A_BOOST|A_AZM);
-                    --boostMode;
+                    if (boostMode_ > 0)
+                        --boostMode_;
                 }
                 else
                 {
@@ -1335,7 +1337,7 @@ namespace ScopeDSCClient
                 trackedOffsetRa_ += shiftedRa - ra;
 
                 tmoSendPos_.RestartOnce(FAST_SEND_POS_TMO_MSEC);
-                boostMode = 5;
+                boostMode_ = boostModeCnt_;
                 SendNextPositions(FAST_NEXT_POS_TIME_MSEC);
                 TrackedObjectChanged(false);
             }
@@ -1402,7 +1404,7 @@ namespace ScopeDSCClient
                 bool altOn = (state & STATE_ALT_RUNNING) != 0, azmOn = (state & STATE_AZM_RUNNING) != 0;
                 if (trackedObject_ != null && !altStartSent_ && !azmStartSent_ && (!altOn || !azmOn))
                 {
-                    if (!dbgTestMode)
+                    if (!dbgTestMode_)
                     {
                         if (altOn)
                             SendStopMotorCommand(A_ALT);
@@ -1803,10 +1805,11 @@ namespace ScopeDSCClient
 
         private void buttonTrackLeft_Click(object sender, EventArgs e)
         {
-            if(oppositeHorzPositioningDir_)
-                OffsetTrackingObject(arrowMoveSpeed_, 0);
-            else
-                OffsetTrackingObject(-arrowMoveSpeed_, 0);
+            OffsetTrackingObject(-arrowMoveSpeed_, 0);
+            //if(oppositeHorzPositioningDir_)
+            //    OffsetTrackingObject(arrowMoveSpeed_, 0);
+            //else
+            //    OffsetTrackingObject(-arrowMoveSpeed_, 0);
         }
 
         private void buttonTrackDown_Click(object sender, EventArgs e)
@@ -1816,10 +1819,11 @@ namespace ScopeDSCClient
 
         private void buttonTrackRight_Click(object sender, EventArgs e)
         {
-            if (oppositeHorzPositioningDir_)
-                OffsetTrackingObject(-arrowMoveSpeed_, 0);
-            else
-                OffsetTrackingObject(arrowMoveSpeed_, 0);
+            OffsetTrackingObject(arrowMoveSpeed_, 0);
+            //if (oppositeHorzPositioningDir_)
+            //    OffsetTrackingObject(-arrowMoveSpeed_, 0);
+            //else
+            //    OffsetTrackingObject(arrowMoveSpeed_, 0);
         }
 
         private void buttonStop_Click(object sender, EventArgs e)
@@ -1945,6 +1949,12 @@ namespace ScopeDSCClient
         {
             get { return profile_.GetValue(sectionGoTo_, "AutoTrack", false); }
             set { profile_.SetValue(sectionGoTo_, "AutoTrack", value); }
+        }
+
+        public int BoostModeCnt
+        {
+            get { return profile_.GetValue(sectionGoTo_, "BoostModeCnt", 5); }
+            set { profile_.SetValue(sectionGoTo_, "BoostModeCnt", value); }
         }
 
         public bool DbgTestMode

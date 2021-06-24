@@ -57,8 +57,8 @@ namespace ScopeDSCClient
         // time sync constants
         private const int NEXT_POS_TIME_MSEC = 4000;
         private const int SEND_POS_TMO_MSEC = 3800;
-        private const int FAST_NEXT_POS_TIME_MSEC = 500;
-        private const int FAST_SEND_POS_TMO_MSEC = 400;
+        private const int FAST_NEXT_POS_TIME_MSEC = 1000;
+        private const int FAST_SEND_POS_TMO_MSEC = 900;
 
         // time sync
         private Int32 controllerTs_;
@@ -66,6 +66,7 @@ namespace ScopeDSCClient
         private ClientCommonAPI.Timeout tmoSendPos_ = new ClientCommonAPI.Timeout(SEND_POS_TMO_MSEC);
         private int nextPosTimeMsec_ = NEXT_POS_TIME_MSEC;
         private double arrowMoveSpeed_ = 1 / 30.0;  // degree
+        private int boostMode = 0;
 
         private bool posTextChanged_ = true;
         private bool connectionAndAlignTextChanged_ = true;
@@ -85,6 +86,7 @@ namespace ScopeDSCClient
         public const byte A_AZM = 1;    // command for azm adapter
         public const byte M_ALT = 2;    // command for alt motor
         public const byte M_AZM = 3;    // command for azm motor
+        public const byte A_BOOST = 0x80; // boost mode flag
 
 #if LOGGING_ON
         private const UInt16 LMODE_ALT = 0;
@@ -1112,8 +1114,17 @@ namespace ScopeDSCClient
                 Int32 nextTs = controllerTs_ + Convert.ToInt32((nextThisTs - thisTs_).TotalMilliseconds);
 
                 // send positions
-                SendSetNextPosCommand((float)nextAltPos, nextTs, A_ALT);
-                SendSetNextPosCommand((float)nextAzmPos, nextTs, A_AZM);
+                if (boostMode > 0)
+                {
+                    SendSetNextPosCommand((float)nextAltPos, nextTs, A_BOOST|A_ALT);
+                    SendSetNextPosCommand((float)nextAzmPos, nextTs, A_BOOST|A_AZM);
+                    --boostMode;
+                }
+                else
+                {
+                    SendSetNextPosCommand((float)nextAltPos, nextTs, A_ALT);
+                    SendSetNextPosCommand((float)nextAzmPos, nextTs, A_AZM);
+                }
             }
         }
         private void ReceiveNextPosCommand(byte[] data)
@@ -1324,6 +1335,7 @@ namespace ScopeDSCClient
                 trackedOffsetRa_ += shiftedRa - ra;
 
                 tmoSendPos_.RestartOnce(FAST_SEND_POS_TMO_MSEC);
+                boostMode = 5;
                 SendNextPositions(FAST_NEXT_POS_TIME_MSEC);
                 TrackedObjectChanged(false);
             }

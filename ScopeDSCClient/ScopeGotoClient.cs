@@ -680,6 +680,8 @@ namespace ScopeDSCClient
                 OpenStellariumConnection(stellariumTcpPort_);
 
             boostModeCnt_ = settings_.BoostModeCnt;
+            settings_.BoostModeCnt = boostModeCnt_;
+
             autoTrack_ = settings_.AutoTrack;
 
             dbgTestMode_ = settings_.DbgTestMode;

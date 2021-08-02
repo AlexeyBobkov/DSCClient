@@ -66,7 +66,7 @@ namespace ScopeDSCClient
         private ClientCommonAPI.Timeout tmoSendPos_ = new ClientCommonAPI.Timeout(SEND_POS_TMO_MSEC);
         private int nextPosTimeMsec_ = NEXT_POS_TIME_MSEC;
         private double arrowMoveSpeed_ = 1 / 30.0;  // degree
-        private int boostModeCnt_ = 5, boostMode_ = 0;
+        private int boostModeCnt_ = -1, boostMode_ = 0;
 
         private bool posTextChanged_ = true;
         private bool connectionAndAlignTextChanged_ = true;
@@ -1955,7 +1955,7 @@ namespace ScopeDSCClient
 
         public int BoostModeCnt
         {
-            get { return profile_.GetValue(sectionGoTo_, "BoostModeCnt", 5); }
+            get { return profile_.GetValue(sectionGoTo_, "BoostModeCnt", -1); }
             set { profile_.SetValue(sectionGoTo_, "BoostModeCnt", value); }
         }
 

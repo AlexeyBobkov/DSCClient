@@ -157,7 +157,7 @@ namespace ScopeDSCClient
             }
 
             foreach (SkyObjectPosCalc.SkyPosition star in objs)
-                listBoxObj.Items.Add(star.Name);
+                listBoxObj.Items.Add(star.NameInfo);
         }
 
         private string MakeProfileName()

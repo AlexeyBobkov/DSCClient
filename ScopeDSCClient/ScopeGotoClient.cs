@@ -430,7 +430,7 @@ namespace ScopeDSCClient
             if (!objectNameChanged_)
                 return;
             objectNameChanged_ = false;
-            objectNameLabel.Text = (selectedObject_ != null) ? selectedObject_.Name : "";
+            objectNameLabel.Text = (selectedObject_ != null) ? selectedObject_.NameInfo : "";
         }
 
         private void UpdateUI()

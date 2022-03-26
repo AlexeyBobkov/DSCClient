@@ -41,6 +41,7 @@ namespace KeyboardClassLibrary
 
             ClientSize = new Size(keyboardcontrol.Size.Width, keyboardcontrol.Size.Height);
             Location = new Point(0, Screen.FromControl(this).Bounds.Bottom - Size.Height);
+            TopMost = true;
         }
 
         private void keyboardcontrol_UserKeyPressed(object sender, KeyboardEventArgs e)

@@ -103,6 +103,9 @@ namespace ScopeDSCClient
             else
             {
                 s += object_.Name + ":" + Environment.NewLine;
+                if (object_.Info != null && object_.Info.Length > 0)
+                    s += object_.Info + Environment.NewLine;
+                s += Environment.NewLine;
 
                 double dec, ra;
                 object_.CalcTopoRaDec(d, latitude_, longitude_, out dec, out ra);

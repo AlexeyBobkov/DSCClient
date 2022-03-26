@@ -42,7 +42,7 @@ namespace ScopeDSCClient
             {
                 foreach (var obj in lastObjects_)
                     if (obj != null)
-                        listBoxLastObjs.Items.Add(obj.Name);
+                        listBoxLastObjs.Items.Add(obj.NameInfo);
 
                 if (listBoxLastObjs.Items.Count <= 0)
                     buttonOK.Enabled = false;
@@ -76,6 +76,9 @@ namespace ScopeDSCClient
             else
             {
                 s += object_.Name + ":" + Environment.NewLine;
+                if (object_.Info != null && object_.Info.Length > 0)
+                    s += object_.Info + Environment.NewLine;
+                s += Environment.NewLine;
 
                 double dec, ra;
                 object_.CalcTopoRaDec(d, latitude_, longitude_, out dec, out ra);

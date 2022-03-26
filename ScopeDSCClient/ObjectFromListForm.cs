@@ -93,6 +93,10 @@ namespace ScopeDSCClient
             object_ = GetObject();
             s += object_.Name + ":" + Environment.NewLine;
 
+            if(object_.Info != null && object_.Info.Length > 0)
+                s += object_.Info + Environment.NewLine;
+            s += Environment.NewLine;
+
             double dec, ra;
             object_.CalcTopoRaDec(d, latitude_, longitude_, out dec, out ra);
             s += "R.A.\t= " + ClientCommonAPI.PrintTime(ra) + " (" + ra.ToString("F5") + "\x00B0)" + Environment.NewLine;
@@ -113,7 +117,7 @@ namespace ScopeDSCClient
             listBoxObj.Items.Clear();
             SkyObjectPosCalc.SkyPosition[] objs = GetObjects();
             foreach (SkyObjectPosCalc.SkyPosition star in objs)
-                listBoxObj.Items.Add(star.Name);
+                listBoxObj.Items.Add(star.NameInfo);
         }
 
         private void comboBoxType_SelectedIndexChanged(object sender, EventArgs e)

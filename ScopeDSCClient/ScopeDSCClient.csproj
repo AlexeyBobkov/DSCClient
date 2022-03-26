@@ -79,6 +79,12 @@
     <Compile Include="ObjectLastSelectionForm.Designer.cs">
       <DependentUpon>ObjectLastSelectionForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="ObjectSearch.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ObjectSearch.Designer.cs">
+      <DependentUpon>ObjectSearch.cs</DependentUpon>
+    </Compile>
     <Compile Include="OptionsForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -116,6 +122,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="ObjectLastSelectionForm.resx">
       <DependentUpon>ObjectLastSelectionForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="ObjectSearch.resx">
+      <DependentUpon>ObjectSearch.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="OptionsForm.resx">
       <DependentUpon>OptionsForm.cs</DependentUpon>

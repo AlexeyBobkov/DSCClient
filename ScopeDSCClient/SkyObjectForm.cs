@@ -83,6 +83,17 @@ namespace ScopeDSCClient
             }
         }
 
+        private void buttonSearch_Click(object sender, EventArgs e)
+        {
+            ObjectSearch form = new ObjectSearch(nightMode_, latitude_, longitude_, database_, settings_.objListLastSettings_);
+            if (form.ShowDialog() == DialogResult.OK)
+            {
+                object_ = form.Object;
+                settings_.objListLastSettings_ = form.Settings;
+                DialogResult = DialogResult.OK;
+            }
+        }
+
         private void buttonLastObj_Click(object sender, EventArgs e)
         {
             ObjectLastSelectionForm form = new ObjectLastSelectionForm(nightMode_, latitude_, longitude_, lastObjects_);

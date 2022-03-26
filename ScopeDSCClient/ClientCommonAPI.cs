@@ -150,6 +150,22 @@ namespace ScopeDSCClient
             }
         }
 
+        private static string MakeInfo(string[] parts, int startIdx)
+        {
+            string info = "";
+            for (int i = startIdx; i < parts.Length; ++i)
+            {
+                if (parts[i].Length > 0)
+                {
+                    if (info.Length > 0)
+                        info += " " + parts[i];
+                    else
+                        info = parts[i];
+                }
+            }
+            return info;
+        }
+
         public static void LoadSkyObjectsFromFile(string path, ref string name, ref SkyObjectPosCalc.SkyPosition[] obj)
         {
             List<SkyObjectPosCalc.SkyPosition> objects = new List<SkyObjectPosCalc.SkyPosition>();
@@ -175,7 +191,7 @@ namespace ScopeDSCClient
                                     string[] parts = line.Split(',');
                                     if (parts.Length < 3)
                                         throw new ApplicationException("Incorrect line: " + line);
-                                    objects.Add(new SkyObjectPosCalc.StarPosition(parts[0], Convert.ToDouble(parts[1]), Convert.ToDouble(parts[2])));
+                                    objects.Add(new SkyObjectPosCalc.StarPosition(parts[0], MakeInfo(parts, 3), Convert.ToDouble(parts[1]), Convert.ToDouble(parts[2])));
                                 }
                                 break;
                             }
@@ -209,7 +225,7 @@ namespace ScopeDSCClient
                                             dec -= Convert.ToDouble(parts[4]) / 60;
                                     }
 
-                                    objects.Add(new SkyObjectPosCalc.StarPosition(parts[0], ra, dec));
+                                    objects.Add(new SkyObjectPosCalc.StarPosition(parts[0], MakeInfo(parts, 5), ra, dec));
                                 }
                                 break;
                             }

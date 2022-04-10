@@ -44,6 +44,7 @@
             // 
             this.listBoxMatch.Font = new System.Drawing.Font("Microsoft Sans Serif", 27.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
             this.listBoxMatch.FormattingEnabled = true;
+            this.listBoxMatch.HorizontalScrollbar = true;
             this.listBoxMatch.ItemHeight = 42;
             this.listBoxMatch.Location = new System.Drawing.Point(42, 141);
             this.listBoxMatch.Name = "listBoxMatch";

@@ -223,7 +223,7 @@ namespace ScopeDSCClient
 
             if (timerStart_ < 0)
                 timerCnt_ = (UInt16)(timerCnt_ & 0x07);
-            else if (timerCnt_ - timerStart_ > 6)
+            else if (timerCnt_ - timerStart_ > 8)
             {
                 CorrectMatchingList();
                 timerStart_ = -1;
